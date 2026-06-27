@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spec Kit for Claude Code — Hướng dẫn Setup (cá nhân)</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d2129; --border:#2a2f3a;
+    --text:#e6e9ef; --muted:#9aa3b2; --accent:#7c9cff; --accent2:#5ad1a8;
+    --warn:#ffcf6b; --danger:#ff7b72; --code:#0b0d12; --chip:#222734;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f6f7fb; --panel:#ffffff; --panel2:#f0f2f7; --border:#e2e6ee;
+      --text:#1b2230; --muted:#5a6475; --accent:#3b5bdb; --accent2:#0a9d6e;
+      --warn:#a86a00; --danger:#c0392b; --code:#0b0d12; --chip:#eef1f7; }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji",sans-serif;
+    line-height:1.65;font-size:16px}
+  .wrap{max-width:880px;margin:0 auto;padding:32px 20px 96px}
+  header.hero{padding:28px 0 8px;border-bottom:1px solid var(--border);margin-bottom:28px}
+  .eyebrow{color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+  h1{font-size:30px;margin:.25em 0 .15em;line-height:1.2}
+  h2{font-size:22px;margin:2.2em 0 .6em;padding-top:.4em;display:flex;align-items:center;gap:.5em}
+  h3{font-size:17px;margin:1.4em 0 .4em}
+  .sub{color:var(--muted);font-size:16px;max-width:62ch}
+  p{margin:.6em 0}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;
+    background:var(--chip);padding:.12em .4em;border-radius:6px}
+  .muted{color:var(--muted)}
+  .pill{display:inline-block;background:var(--chip);border:1px solid var(--border);
+    border-radius:999px;padding:3px 12px;font-size:13px;color:var(--muted);margin:2px 4px 2px 0}
+  /* TOC */
+  nav.toc{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin:18px 0 8px}
+  nav.toc strong{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  nav.toc ol{margin:.5em 0 0;padding-left:1.2em;columns:2;column-gap:28px}
+  nav.toc li{margin:.2em 0}
+  /* callouts */
+  .box{border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin:16px 0;background:var(--panel)}
+  .box .ti{font-weight:700;margin-bottom:.2em;display:flex;align-items:center;gap:.5em}
+  .box.info{border-left:4px solid var(--accent)}
+  .box.ok{border-left:4px solid var(--accent2)}
+  .box.warn{border-left:4px solid var(--warn)}
+  .box.danger{border-left:4px solid var(--danger)}
+  /* steps */
+  .step{display:flex;gap:16px;margin:18px 0;align-items:flex-start}
+  .step .num{flex:0 0 38px;height:38px;width:38px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),#9b7cff);color:#fff;font-weight:800;
+    display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 10px rgba(124,156,255,.35)}
+  .step .body{flex:1;min-width:0}
+  .step .body h3{margin-top:.15em}
+  /* code block */
+  .cb{position:relative;margin:.7em 0}
+  .cb pre{background:var(--code);color:#e8edf6;border:1px solid #20242e;border-radius:12px;
+    padding:14px 44px 14px 16px;overflow:auto;margin:0;font-size:13.5px;line-height:1.6}
+  .cb pre code{background:none;padding:0;color:inherit}
+  .cb .copy{position:absolute;top:8px;right:8px;background:#2a3140;color:#cbd5e7;border:1px solid #3a4356;
+    border-radius:8px;font-size:12px;padding:4px 9px;cursor:pointer;transition:.15s}
+  .cb .copy:hover{background:#384156}
+  .cb .copy.done{background:var(--accent2);color:#04120c;border-color:transparent}
+  .cmt{color:#7e8aa0}
+  /* table */
+  table{border-collapse:collapse;width:100%;margin:1em 0;font-size:14.5px;background:var(--panel);
+    border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{background:var(--panel2);font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  tr:last-child td{border-bottom:none}
+  td code{white-space:nowrap}
+  .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+  .tag.green{background:rgba(90,209,168,.16);color:var(--accent2)}
+  .tag.blue{background:rgba(124,156,255,.16);color:var(--accent)}
+  hr{border:none;border-top:1px solid var(--border);margin:2.4em 0}
+  footer{color:var(--muted);font-size:13px;margin-top:40px;text-align:center}
+  .kbd{font-family:ui-monospace,monospace;background:var(--chip);border:1px solid var(--border);
+    border-bottom-width:2px;border-radius:6px;padding:1px 7px;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Claude Code · Cá nhân</div>
+    <h1>🚀 Spec Kit — Hướng dẫn Setup từng bước</h1>
+    <p class="sub">Bộ công cụ spec-driven (plan → code → review → test → evidence) chạy trên <b>Claude Code</b>,
+    port từ extension Auto Spec Kit (vốn dùng GitHub Copilot). Hướng dẫn này cấu hình ở chế độ
+    <b>chỉ-mình-bạn</b>: chạy lệnh gì cũng <b>không để lại dấu vết</b> trong repo team/dự án.</p>
+    <div style="margin-top:10px">
+      <span class="pill">🔧 Tool: cài 1 lần (global)</span>
+      <span class="pill">📚 KB: riêng từng project</span>
+      <span class="pill">🙈 Zero footprint trong repo team</span>
+      <span class="pill">🔑 Không cần API key</span>
+    </div>
+  </header>
+
+  <div class="box ok">
+    <div class="ti">✅ Trạng thái trên máy này</div>
+    <p style="margin:.2em 0">Mọi thứ trong hướng dẫn này <b>đã được cài sẵn</b> trên máy của bạn rồi
+    (symlink vào <code>~/.claude</code> + global gitignore). Các bước bên dưới giúp bạn (1) <b>hiểu</b> đã setup gì,
+    (2) <b>kiểm tra</b> lại, (3) <b>làm lại trên máy khác</b> nếu cần.</p>
+  </div>
+
+  <nav class="toc">
+    <strong>Mục lục</strong>
+    <ol>
+      <li><a href="#concept">Mô hình hoạt động (đọc 1 phút)</a></li>
+      <li><a href="#setup">Các bước Setup</a></li>
+      <li><a href="#use">Cách dùng hằng ngày</a></li>
+      <li><a href="#commands">Bảng lệnh</a></li>
+      <li><a href="#safe">Vì sao an toàn với team</a></li>
+      <li><a href="#maintain">Cập nhật &amp; Gỡ</a></li>
+      <li><a href="#trouble">Khắc phục sự cố</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ CONCEPT ============ -->
+  <h2 id="concept">🧭 1. Mô hình hoạt động <span class="muted" style="font-size:14px;font-weight:400">(đọc 1 phút là hiểu)</span></h2>
+  <p>Chỉ cần nhớ <b>3 lớp tách biệt</b>:</p>
+  <table>
+    <thead><tr><th>Lớp</th><th>Là gì</th><th>Đặt ở đâu</th></tr></thead>
+    <tbody>
+      <tr><td>🔧 <b>Tool</b></td><td>skills / commands / agents</td><td><code>~/.claude/</code> — cài 1 lần, dùng cho mọi project</td></tr>
+      <tr><td>📚 <b>KB</b> (Knowledge Base)</td><td>hiểu biết về 1 project cụ thể</td><td><code>&lt;project&gt;/knowledge-base/</code> — mỗi project một bản, ở local</td></tr>
+      <tr><td>🗑️ <b>Artifact</b></td><td>plan, code, evidence sinh ra mỗi lần chạy</td><td><code>&lt;project&gt;/spec-kit-sessions/</code> — bị git bỏ qua toàn máy</td></tr>
+    </tbody>
+  </table>
+  <div class="box info">
+    <div class="ti">💡 Câu thần chú</div>
+    <p style="margin:.2em 0"><b>Tool global · KB theo từng project · mỗi phiên làm 1 project.</b>
+    Cái quyết định "đang làm project nào" là <b>thư mục bạn mở Claude Code</b> (cwd) — không phải chỗ cài tool.</p>
+  </div>
+
+  <!-- ============ SETUP ============ -->
+  <h2 id="setup">🛠️ 2. Các bước Setup</h2>
+  <p class="muted">Trên máy hiện tại đã xong. Dùng các bước này khi cài trên <b>máy mới</b>, hoặc để kiểm tra lại.</p>
+
+  <div class="step">
+    <div class="num">1</div>
+    <div class="body">
+      <h3>Lấy mã nguồn của tool</h3>
+      <p>Clone repo về một chỗ cố định (đã có sẵn tại <code>/Users/MAC/AI-TOOL/claude-skill</code> trên máy này).</p>
+      <div class="cb"><button class="copy">Copy</button><pre><code><span class="cmt"># SSH (khuyên dùng nếu GitHub của bạn xài SSH key)</span>
+git clone git@github.com:NamHT4Devlop/claude-skill.git ~/claude-skill</code></pre></div>
+      <p class="muted">Bên dưới gọi thư mục này là <b>&lt;TOOL&gt;</b>. Trên máy này <b>&lt;TOOL&gt;</b> = <code>/Users/MAC/AI-TOOL/claude-skill</code>.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">2</div>
+    <div class="body">
+      <h3>Cài tool cho riêng bạn (symlink vào <code>~/.claude</code>)</h3>
+      <p>Một lệnh duy nhất — tạo symlink 8 skills + 7 agents + 9 commands vào home của bạn. Lệnh được đặt tiền tố
+      <code>spec-</code> để không đè lệnh built-in (như <span class="kbd">/help</span>).</p>
+      <div class="cb"><button class="copy">Copy</button><pre><code>/Users/MAC/AI-TOOL/claude-skill/scripts/personal-install.sh</code></pre></div>
+      <p class="muted">Vì là symlink → sau này <code>git pull</code> trong &lt;TOOL&gt; là tự cập nhật, không phải cài lại.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">3</div>
+    <div class="body">
+      <h3>Chặn rò rỉ — global gitignore (cấu hình máy, không đụng repo)</h3>
+      <p>Để dù bạn lỡ chạy lệnh trong repo team, KB &amp; session sinh ra vẫn <b>local + không bao giờ commit</b>.</p>
+      <div class="cb"><button class="copy">Copy</button><pre><code>touch ~/.gitignore_global
+printf '%s\n' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' '.spec-kit/' &gt;&gt; ~/.gitignore_global
+git config --global core.excludesfile ~/.gitignore_global</code></pre></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">4</div>
+    <div class="body">
+      <h3>Kiểm tra</h3>
+      <p>Xác nhận symlink &amp; gitignore hoạt động:</p>
+      <div class="cb"><button class="copy">Copy</button><pre><code><span class="cmt"># thấy các symlink spec-* trỏ về &lt;TOOL&gt;</span>
+ls -la ~/.claude/skills | grep spec-
+<span class="cmt"># xác nhận KB/sessions bị ignore ở mọi repo</span>
+git config --global core.excludesfile</code></pre></div>
+      <p>Rồi mở Claude Code, gõ <span class="kbd">/</span> và xem có <code>/spec-build</code>, <code>/spec-ask</code>… xuất hiện không.</p>
+    </div>
+  </div>
+
+  <div class="box danger">
+    <div class="ti">⚠️ Chỉ chọn 1 cách cài</div>
+    <p style="margin:.2em 0">Đã dùng <code>personal-install.sh</code> thì <b>ĐỪNG</b> chạy thêm <code>/plugin install</code> cho cùng plugin này —
+    sẽ bị <b>trùng lệnh</b> (định nghĩa 2 lần).</p>
+  </div>
+
+  <!-- ============ USE ============ -->
+  <h2 id="use">▶️ 3. Cách dùng hằng ngày</h2>
+  <p><b>Quan trọng:</b> luôn mở Claude Code <b>bên trong</b> project bạn muốn làm, để nó đọc đúng KB của project đó.</p>
+  <div class="cb"><button class="copy">Copy</button><pre><code><span class="cmt"># 1) vào đúng project</span>
+cd /Users/MAC/AI-TOOL/human-essentials
+claude
+
+<span class="cmt"># 2) lần đầu với 1 project: tạo Knowledge Base</span>
+/spec-scan
+
+<span class="cmt"># 3) sau đó dùng thoải mái</span>
+/spec-ask   luồng thanh toán hoạt động thế nào?
+/spec-build thêm tính năng quên mật khẩu qua email OTP, hết hạn sau 10 phút
+/spec-review</code></pre></div>
+  <div class="box info">
+    <div class="ti">💬 Mẹo</div>
+    <p style="margin:.2em 0">Không bắt buộc gõ slash command — skill <b>tự kích hoạt</b> khi bạn nói tự nhiên,
+    ví dụ <i>"review giúp tôi file này"</i> hay <i>"build tính năng X theo KB"</i>.</p>
+  </div>
+
+  <!-- ============ COMMANDS ============ -->
+  <h2 id="commands">📋 4. Bảng lệnh</h2>
+  <table>
+    <thead><tr><th>Lệnh</th><th>Làm gì</th><th>Khi nào</th></tr></thead>
+    <tbody>
+      <tr><td><code>/spec-scan</code></td><td>Tạo Knowledge Base (16 docs + review-skills + per-module)</td><td><span class="tag blue">Đầu tiên</span> với repo mới</td></tr>
+      <tr><td><code>/spec-rescan</code></td><td>Cập nhật KB sau khi code đổi (theo git diff)</td><td>Sau mỗi feature</td></tr>
+      <tr><td><code>/spec-build</code></td><td>Pipeline 13 bước: plan → code → review → test → evidence</td><td><span class="tag green">Lõi</span> khi làm tính năng</td></tr>
+      <tr><td><code>/spec-review</code></td><td>Review 2 pha: chất lượng + nhất quán nghiệp vụ</td><td>Trước khi commit/PR</td></tr>
+      <tr><td><code>/spec-ask</code></td><td>Hỏi-đáp codebase (giải thích + sơ đồ Mermaid + chi tiết kỹ thuật)</td><td>Hiểu nhanh 1 phần</td></tr>
+      <tr><td><code>/spec-plan</code></td><td>PO/BA: Epic → features → user stories (Given/When/Then) → sprint</td><td>Chia việc</td></tr>
+      <tr><td><code>/spec-map</code></td><td>Sơ đồ phụ thuộc (import/DI/call/inheritance) → Mermaid</td><td>Nhìn tổng thể kiến trúc</td></tr>
+      <tr><td><code>/spec-document</code></td><td>Tài liệu business↔code chi tiết tới từng field</td><td>Viết doc 1 module/entity</td></tr>
+      <tr><td><code>/spec-help</code></td><td>Liệt kê lệnh + báo trạng thái KB của repo hiện tại</td><td>Khi quên</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Luồng đề xuất: <b>scan</b> → <b>ask/map/document</b> (hiểu) → <b>plan</b> (chia việc) → <b>build</b> (làm) → <b>rescan</b> (cập nhật KB).</p>
+
+  <!-- ============ SAFE ============ -->
+  <h2 id="safe">🙈 5. Vì sao an toàn tuyệt đối với team</h2>
+  <table>
+    <thead><tr><th>Thứ có thể "lộ"</th><th>Đã chặn bằng</th></tr></thead>
+    <tbody>
+      <tr><td>Tool (skills/commands)</td><td>Nằm ở <code>~/.claude</code> — teammate clone repo <b>không thấy gì</b></td></tr>
+      <tr><td><code>knowledge-base/</code></td><td>Global gitignore → local mãi mãi, <code>git add -A</code> cũng không add</td></tr>
+      <tr><td><code>spec-kit-sessions/</code></td><td>Global gitignore → tự bị bỏ qua ở mọi repo</td></tr>
+      <tr><td>Ghi chú cá nhân</td><td><code>CLAUDE.local.md</code> bị ignore toàn máy</td></tr>
+    </tbody>
+  </table>
+  <div class="box ok">
+    <div class="ti">✅ Kết luận</div>
+    <p style="margin:.2em 0">Chạy <code>/spec-scan</code> hay <code>/spec-build</code> ngay trong repo team (ví dụ <code>agenta</code>, <code>human-essentials</code>)
+    cũng <b>không rò rỉ</b> gì. Chỉ khi bạn dùng <code>/spec-build</code> để sửa <b>code thật</b> thì bạn mới chủ động review &amp; commit — đó là việc bạn muốn.</p>
+  </div>
+
+  <!-- ============ MAINTAIN ============ -->
+  <h2 id="maintain">🔄 6. Cập nhật &amp; Gỡ</h2>
+  <h3>Cập nhật lên bản mới nhất</h3>
+  <div class="cb"><button class="copy">Copy</button><pre><code>cd /Users/MAC/AI-TOOL/claude-skill &amp;&amp; git pull</code></pre></div>
+  <p class="muted">Vì là symlink nên kéo về là áp dụng ngay, không cần cài lại.</p>
+  <h3>Gỡ sạch (chỉ xóa symlink trong ~/.claude, không đụng repo nào)</h3>
+  <div class="cb"><button class="copy">Copy</button><pre><code>/Users/MAC/AI-TOOL/claude-skill/scripts/personal-install.sh uninstall</code></pre></div>
+
+  <!-- ============ TROUBLE ============ -->
+  <h2 id="trouble">🩺 7. Khắc phục sự cố</h2>
+  <table>
+    <thead><tr><th>Triệu chứng</th><th>Cách xử lý</th></tr></thead>
+    <tbody>
+      <tr><td>Không thấy lệnh <code>/spec-*</code></td><td>Reload lại cửa sổ/session Claude Code; kiểm tra <code>ls ~/.claude/skills | grep spec-</code></td></tr>
+      <tr><td>Lệnh báo "no knowledge-base found"</td><td>Chạy <code>/spec-scan</code> một lần trong repo đó</td></tr>
+      <tr><td>Trùng lệnh / định nghĩa 2 lần</td><td>Bạn đã cài cả symlink lẫn plugin — gỡ 1 trong 2 (chạy <code>… uninstall</code> hoặc <code>/plugin uninstall spec-kit</code>)</td></tr>
+      <tr><td>Lỡ muốn commit KB cho 1 dự án cá nhân</td><td>KB đang bị ignore toàn máy → ép thêm: <code>git add -f knowledge-base/</code></td></tr>
+      <tr><td><code>git clone</code> đòi mật khẩu / permission denied</td><td>Repo private — dùng tài khoản có quyền hoặc cấu hình SSH key</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ FAQ ============ -->
+  <h2 id="faq">❓ 8. FAQ</h2>
+  <h3>Mỗi project có phải tạo folder <code>.claude</code> không?</h3>
+  <p>Không. Bạn cài 1 lần ở <code>~/.claude</code> (global) → mọi project dùng được. Chỉ tạo <code>.claude</code> trong từng repo
+  khi bạn <i>cố tình</i> muốn chia sẻ tool kèm repo cho team — mà bạn thì không.</p>
+  <h3>KB cũ tôi đã gen ở máy khác có dùng lại được không?</h3>
+  <p>Được 100%. KB là Markdown thuần trong <code>knowledge-base/</code>; cứ copy về đúng thư mục project là mọi lệnh đọc được ngay — không cần gen lại.</p>
+  <h3>Cài kiểu skill thuần thì có cần copy thư mục <code>resources/</code> không?</h3>
+  <p>Không. Mỗi skill đã tự chứa thứ nó cần trong <code>references/</code> riêng. <code>resources/</code> ở gốc chỉ là bản canonical cho dạng plugin.</p>
+  <h3>Monorepo thì sao?</h3>
+  <p>Ngược lại với workspace nhiều-repo: mở Claude Code ở <b>gốc repo</b>, KB đặt ở gốc với <code>knowledge-base/modules/</code> (lệnh <code>scan</code> tự sinh per-module).</p>
+
+  <hr>
+  <footer>
+    Spec Kit for Claude Code — port của Auto Spec Kit · Repo: <code>NamHT4Devlop/claude-skill</code><br>
+    Tài liệu này nằm tại <code>&lt;TOOL&gt;/docs/huong-dan-setup.html</code> — mở bằng trình duyệt bất kỳ.
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll('.cb .copy').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var code = btn.parentElement.querySelector('code');
+      var text = code.innerText;
+      navigator.clipboard.writeText(text).then(function(){
+        var old = btn.textContent;
+        btn.textContent = '✓ Đã copy'; btn.classList.add('done');
+        setTimeout(function(){ btn.textContent = old; btn.classList.remove('done'); }, 1400);
+      });
+    });
+  });
+</script>
+</body>
+</html>
