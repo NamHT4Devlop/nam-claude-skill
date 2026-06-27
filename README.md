@@ -134,6 +134,33 @@ KB-section spec. `resources/` at the repo root is only a canonical copy for the 
 > they're `/build`, `/review`, `/scan`, etc. If those names clash with other commands you have,
 > rename the files in `.claude/commands/` (e.g. `build.md` → `spec-build.md`).
 
+## Install — Option C: personal-only, zero footprint in any repo (just for you)
+
+Use this when the plugin/skills are **for your eyes only** and must never appear in — or be
+committed to — any team/project repo. It installs into your home dir via symlinks and routes
+all generated artifacts to a machine-wide gitignore.
+
+```bash
+# 1) symlink skills/agents/commands into ~/.claude (commands get a spec- prefix)
+<PLUGIN_DIR>/scripts/personal-install.sh
+
+# 2) make every Spec Kit artifact invisible to git, machine-wide (no per-repo edits)
+touch ~/.gitignore_global
+printf '%s\n' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' '.spec-kit/' >> ~/.gitignore_global
+git config --global core.excludesfile ~/.gitignore_global
+```
+
+- Commands become `/spec-build`, `/spec-scan`, `/spec-review`, … (prefixed so they don't shadow
+  built-ins like `/help`). Skills also auto-activate from plain English.
+- Because it's symlinks, `git pull` in `<PLUGIN_DIR>` instantly updates your install.
+- The global gitignore means even if you run `/spec-kit:scan` inside a team repo, its
+  `knowledge-base/` and `spec-kit-sessions/` stay **local and uncommitted** — nothing leaks.
+- **Pick ONE method** — if you use this, do *not* also `/plugin install` the same plugin.
+- Uninstall: `<PLUGIN_DIR>/scripts/personal-install.sh uninstall`.
+
+> Note: a global ignore of `knowledge-base/` keeps your KBs private. If a project legitimately
+> needs a committed `knowledge-base/`, force-add it there with `git add -f knowledge-base/`.
+
 ---
 
 ## Verify the install
