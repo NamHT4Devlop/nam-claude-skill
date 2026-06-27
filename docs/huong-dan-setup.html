@@ -181,7 +181,7 @@ git config --global core.excludesfile ~/.gitignore_global</code></pre></div>
 ls -la ~/.claude/skills | grep spec-
 <span class="cmt"># xác nhận KB/sessions bị ignore ở mọi repo</span>
 git config --global core.excludesfile</code></pre></div>
-      <p>Rồi mở Claude Code, gõ <span class="kbd">/</span> và xem có <code>/spec-build</code>, <code>/spec-ask</code>… xuất hiện không.</p>
+      <p>Rồi mở Claude Code, gõ <span class="kbd">/</span> và xem có <code>/namht-build</code>, <code>/namht-ask</code>… xuất hiện không.</p>
     </div>
   </div>
 
@@ -199,12 +199,12 @@ cd /Users/MAC/AI-TOOL/human-essentials
 claude
 
 <span class="cmt"># 2) lần đầu với 1 project: tạo Knowledge Base</span>
-/spec-scan
+/namht-scan
 
 <span class="cmt"># 3) sau đó dùng thoải mái</span>
-/spec-ask   luồng thanh toán hoạt động thế nào?
-/spec-build thêm tính năng quên mật khẩu qua email OTP, hết hạn sau 10 phút
-/spec-review</code></pre></div>
+/namht-ask   luồng thanh toán hoạt động thế nào?
+/namht-build thêm tính năng quên mật khẩu qua email OTP, hết hạn sau 10 phút
+/namht-review</code></pre></div>
   <div class="box info">
     <div class="ti">💬 Mẹo</div>
     <p style="margin:.2em 0">Không bắt buộc gõ slash command — skill <b>tự kích hoạt</b> khi bạn nói tự nhiên,
@@ -216,15 +216,15 @@ claude
   <table>
     <thead><tr><th>Lệnh</th><th>Làm gì</th><th>Khi nào</th></tr></thead>
     <tbody>
-      <tr><td><code>/spec-scan</code></td><td>Tạo Knowledge Base (16 docs + review-skills + per-module)</td><td><span class="tag blue">Đầu tiên</span> với repo mới</td></tr>
-      <tr><td><code>/spec-rescan</code></td><td>Cập nhật KB sau khi code đổi (theo git diff)</td><td>Sau mỗi feature</td></tr>
-      <tr><td><code>/spec-build</code></td><td>Pipeline 13 bước: plan → code → review → test → evidence</td><td><span class="tag green">Lõi</span> khi làm tính năng</td></tr>
-      <tr><td><code>/spec-review</code></td><td>Review 2 pha: chất lượng + nhất quán nghiệp vụ</td><td>Trước khi commit/PR</td></tr>
-      <tr><td><code>/spec-ask</code></td><td>Hỏi-đáp codebase (giải thích + sơ đồ Mermaid + chi tiết kỹ thuật)</td><td>Hiểu nhanh 1 phần</td></tr>
-      <tr><td><code>/spec-plan</code></td><td>PO/BA: Epic → features → user stories (Given/When/Then) → sprint</td><td>Chia việc</td></tr>
-      <tr><td><code>/spec-map</code></td><td>Sơ đồ phụ thuộc (import/DI/call/inheritance) → Mermaid</td><td>Nhìn tổng thể kiến trúc</td></tr>
-      <tr><td><code>/spec-document</code></td><td>Tài liệu business↔code chi tiết tới từng field</td><td>Viết doc 1 module/entity</td></tr>
-      <tr><td><code>/spec-help</code></td><td>Liệt kê lệnh + báo trạng thái KB của repo hiện tại</td><td>Khi quên</td></tr>
+      <tr><td><code>/namht-scan</code></td><td>Tạo Knowledge Base (16 docs + review-skills + per-module)</td><td><span class="tag blue">Đầu tiên</span> với repo mới</td></tr>
+      <tr><td><code>/namht-rescan</code></td><td>Cập nhật KB sau khi code đổi (theo git diff)</td><td>Sau mỗi feature</td></tr>
+      <tr><td><code>/namht-build</code></td><td>Pipeline 13 bước: plan → code → review → test → evidence</td><td><span class="tag green">Lõi</span> khi làm tính năng</td></tr>
+      <tr><td><code>/namht-review</code></td><td>Review 2 pha: chất lượng + nhất quán nghiệp vụ</td><td>Trước khi commit/PR</td></tr>
+      <tr><td><code>/namht-ask</code></td><td>Hỏi-đáp codebase (giải thích + sơ đồ Mermaid + chi tiết kỹ thuật)</td><td>Hiểu nhanh 1 phần</td></tr>
+      <tr><td><code>/namht-plan</code></td><td>PO/BA: Epic → features → user stories (Given/When/Then) → sprint</td><td>Chia việc</td></tr>
+      <tr><td><code>/namht-map</code></td><td>Sơ đồ phụ thuộc (import/DI/call/inheritance) → Mermaid</td><td>Nhìn tổng thể kiến trúc</td></tr>
+      <tr><td><code>/namht-document</code></td><td>Tài liệu business↔code chi tiết tới từng field</td><td>Viết doc 1 module/entity</td></tr>
+      <tr><td><code>/namht-help</code></td><td>Liệt kê lệnh + báo trạng thái KB của repo hiện tại</td><td>Khi quên</td></tr>
     </tbody>
   </table>
   <p class="muted">Luồng đề xuất: <b>scan</b> → <b>ask/map/document</b> (hiểu) → <b>plan</b> (chia việc) → <b>build</b> (làm) → <b>rescan</b> (cập nhật KB).</p>
@@ -242,8 +242,8 @@ claude
   </table>
   <div class="box ok">
     <div class="ti">✅ Kết luận</div>
-    <p style="margin:.2em 0">Chạy <code>/spec-scan</code> hay <code>/spec-build</code> ngay trong repo team (ví dụ <code>agenta</code>, <code>human-essentials</code>)
-    cũng <b>không rò rỉ</b> gì. Chỉ khi bạn dùng <code>/spec-build</code> để sửa <b>code thật</b> thì bạn mới chủ động review &amp; commit — đó là việc bạn muốn.</p>
+    <p style="margin:.2em 0">Chạy <code>/namht-scan</code> hay <code>/namht-build</code> ngay trong repo team (ví dụ <code>agenta</code>, <code>human-essentials</code>)
+    cũng <b>không rò rỉ</b> gì. Chỉ khi bạn dùng <code>/namht-build</code> để sửa <b>code thật</b> thì bạn mới chủ động review &amp; commit — đó là việc bạn muốn.</p>
   </div>
 
   <!-- ============ MAINTAIN ============ -->
@@ -259,8 +259,8 @@ claude
   <table>
     <thead><tr><th>Triệu chứng</th><th>Cách xử lý</th></tr></thead>
     <tbody>
-      <tr><td>Không thấy lệnh <code>/spec-*</code></td><td>Reload lại cửa sổ/session Claude Code; kiểm tra <code>ls ~/.claude/skills | grep spec-</code></td></tr>
-      <tr><td>Lệnh báo "no knowledge-base found"</td><td>Chạy <code>/spec-scan</code> một lần trong repo đó</td></tr>
+      <tr><td>Không thấy lệnh <code>/namht-*</code></td><td>Reload lại cửa sổ/session Claude Code; kiểm tra <code>ls ~/.claude/skills | grep namht-</code></td></tr>
+      <tr><td>Lệnh báo "no knowledge-base found"</td><td>Chạy <code>/namht-scan</code> một lần trong repo đó</td></tr>
       <tr><td>Trùng lệnh / định nghĩa 2 lần</td><td>Bạn đã cài cả symlink lẫn plugin — gỡ 1 trong 2 (chạy <code>… uninstall</code> hoặc <code>/plugin uninstall spec-kit</code>)</td></tr>
       <tr><td>Lỡ muốn commit KB cho 1 dự án cá nhân</td><td>KB đang bị ignore toàn máy → ép thêm: <code>git add -f knowledge-base/</code></td></tr>
       <tr><td><code>git clone</code> đòi mật khẩu / permission denied</td><td>Repo private — dùng tài khoản có quyền hoặc cấu hình SSH key</td></tr>

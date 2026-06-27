@@ -8,7 +8,7 @@ tools: file ops, Bash, git, parallel sub-agents) instead of GitHub Copilot / `vs
 
 > **Your existing Knowledge Bases work as-is.** The KBs you generated with the old extension
 > are plain Markdown under each repo's `knowledge-base/`. Every command here reads that same
-> folder — nothing to migrate or regenerate. Only run `/spec-kit:scan` for brand-new repos.
+> folder — nothing to migrate or regenerate. Only run `/namht-scan` for brand-new repos.
 
 ---
 
@@ -19,16 +19,16 @@ claude-skill/
 ├── .claude-plugin/
 │   ├── plugin.json          # plugin manifest
 │   └── marketplace.json     # local marketplace (for one-command install)
-├── commands/                # 9 slash commands → /spec-kit:build, :scan, :review, …
+├── commands/                # 9 slash commands → /namht-build, :scan, :review, …
 ├── skills/                  # 8 skills (the methodology — also usable standalone)
-│   ├── spec-build/          #   13-step pipeline   (+ bundled review checklist)
-│   ├── spec-scan/           #   KB generation       (+ bundled kb-steps spec)
-│   ├── spec-rescan/         #   incremental KB update
-│   ├── spec-review/         #   two-phase review    (+ bundled review checklist)
-│   ├── spec-ask/            #   KB-grounded Q&A
-│   ├── spec-plan/           #   PO/BA user stories
-│   ├── spec-map/            #   dependency graph → Mermaid
-│   └── spec-document/       #   business↔code doc
+│   ├── namht-build/          #   13-step pipeline   (+ bundled review checklist)
+│   ├── namht-scan/           #   KB generation       (+ bundled kb-steps spec)
+│   ├── namht-rescan/         #   incremental KB update
+│   ├── namht-review/         #   two-phase review    (+ bundled review checklist)
+│   ├── namht-ask/            #   KB-grounded Q&A
+│   ├── namht-plan/           #   PO/BA user stories
+│   ├── namht-map/            #   dependency graph → Mermaid
+│   └── namht-document/       #   business↔code doc
 ├── agents/                  # 7 specialist sub-agents (planning + review)
 └── resources/               # review-skills-universal.md, kb-steps.md
 ```
@@ -73,7 +73,7 @@ If you keep the files somewhere else, substitute that absolute path.
 ## Install — Option A: as a plugin (recommended)
 
 Best when you want every command available across **all** your repos on a machine, with the
-nice `/spec-kit:*` namespacing. Run these **inside a Claude Code session** (the `/plugin`
+nice `/namht-*` namespacing. Run these **inside a Claude Code session** (the `/plugin`
 commands are typed into Claude Code, not your shell):
 
 ```
@@ -90,8 +90,8 @@ commands are typed into Claude Code, not your shell):
 - Reload when prompted (or run `/plugin` to manage installed plugins).
 
 After install you'll have these commands (type `/` to see them):
-`/spec-kit:scan`, `/spec-kit:rescan`, `/spec-kit:build`, `/spec-kit:review`, `/spec-kit:ask`,
-`/spec-kit:plan`, `/spec-kit:map`, `/spec-kit:document`, `/spec-kit:help`. The 8 skills and 7
+`/namht-scan`, `/namht-rescan`, `/namht-build`, `/namht-review`, `/namht-ask`,
+`/namht-plan`, `/namht-map`, `/namht-document`, `/namht-help`. The 8 skills and 7
 sub-agents load automatically — skills also activate from plain English (you don't have to
 type the slash command).
 
@@ -127,12 +127,12 @@ cp -R <PLUGIN_DIR>/agents/*   ~/.claude/agents/
 **You do NOT need to copy the plugin's `resources/` folder for Option B.** Each skill is
 self-contained — it bundles whatever it needs under its own `references/` subfolder, which
 comes along automatically with `cp -R skills/*`:
-`spec-build`/`spec-review`/`spec-scan`/`spec-rescan` carry the review checklist and/or the
+`namht-build`/`namht-review`/`namht-scan`/`namht-rescan` carry the review checklist and/or the
 KB-section spec. `resources/` at the repo root is only a canonical copy for the plugin form.
 
 > ⚠️ **Difference from Option A:** as plain skills the slash commands are **not** namespaced —
 > they're `/build`, `/review`, `/scan`, etc. If those names clash with other commands you have,
-> rename the files in `.claude/commands/` (e.g. `build.md` → `spec-build.md`).
+> rename the files in `.claude/commands/` (e.g. `build.md` → `namht-build.md`).
 
 ## Install — Option C: personal-only, zero footprint in any repo (just for you)
 
@@ -150,10 +150,10 @@ printf '%s\n' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' '.spec-ki
 git config --global core.excludesfile ~/.gitignore_global
 ```
 
-- Commands become `/spec-build`, `/spec-scan`, `/spec-review`, … (prefixed so they don't shadow
+- Commands become `/namht-build`, `/namht-scan`, `/namht-review`, … (prefixed so they don't shadow
   built-ins like `/help`). Skills also auto-activate from plain English.
 - Because it's symlinks, `git pull` in `<PLUGIN_DIR>` instantly updates your install.
-- The global gitignore means even if you run `/spec-kit:scan` inside a team repo, its
+- The global gitignore means even if you run `/namht-scan` inside a team repo, its
   `knowledge-base/` and `spec-kit-sessions/` stay **local and uncommitted** — nothing leaks.
 - **Pick ONE method** — if you use this, do *not* also `/plugin install` the same plugin.
 - Uninstall: `<PLUGIN_DIR>/scripts/personal-install.sh uninstall`.
@@ -167,7 +167,7 @@ git config --global core.excludesfile ~/.gitignore_global
 
 1. In a Claude Code session, type `/` and confirm the `spec-kit:` commands (Option A) or
    `/build`, `/scan`… (Option B) appear.
-2. Run `/spec-kit:help` (or `/help` for plain skills) — it prints all commands **and** checks
+2. Run `/namht-help` (or `/help` for plain skills) — it prints all commands **and** checks
    whether the current repo has a `knowledge-base/`.
 3. Plugin only: run `/plugin` → you should see **spec-kit** listed as installed/enabled.
 
@@ -187,7 +187,7 @@ git config --global core.excludesfile ~/.gitignore_global
 - **Option A:** `/plugin uninstall spec-kit` (and optionally
   `/plugin marketplace remove spec-kit-marketplace`).
 - **Option B:** delete the copied folders, e.g.
-  `rm -rf ~/.claude/skills/spec-* ~/.claude/commands/{build,scan,rescan,review,ask,plan,map,document,help}.md ~/.claude/agents/{codebase-analyzer,impact-detector,business-flow-tracer,security-reviewer,architecture-reviewer,performance-reviewer,business-consistency-reviewer}.md`.
+  run `<PLUGIN_DIR>/scripts/personal-install.sh uninstall` (removes only the symlinks that point back to this repo).
 
 ## Troubleshooting
 
@@ -197,7 +197,7 @@ git config --global core.excludesfile ~/.gitignore_global
 | `marketplace add` fails on a path | Pass an **absolute** path to `<PLUGIN_DIR>` and ensure `.claude-plugin/marketplace.json` exists there. |
 | `git clone` asks for a password / permission denied | The repo is private — use an account with access, set up SSH keys, or have the owner share/publish it. |
 | Commands don't show up | Reload the Claude Code window/session after install; for plain skills, confirm files landed in `.claude/commands` & `.claude/skills`. |
-| A command says "no knowledge-base found" | Run `/spec-kit:scan` once in that repo (or reuse an existing `knowledge-base/` folder). |
+| A command says "no knowledge-base found" | Run `/namht-scan` once in that repo (or reuse an existing `knowledge-base/` folder). |
 | Command name clash (Option B) | Rename the files in `.claude/commands/`. |
 
 ---
@@ -209,7 +209,7 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
 - **Tool = global, from git.** Install once as a plugin (Option A). Update everywhere with one
   `git pull` + marketplace update. Don't copy skills into each repo.
 - **Knowledge Base = per project, versioned with the code.** Each repo keeps its own
-  `knowledge-base/`; commit it so the team shares it. Refresh with `/spec-kit:rescan`.
+  `knowledge-base/`; commit it so the team shares it. Refresh with `/namht-rescan`.
 - **Operate one project per session.** `cd <project> && claude` so commands read *that*
   project's `knowledge-base/`. The parent workspace is just an organizing folder — don't run
   from the workspace root and expect commands to guess which sub-project you mean. (A true
@@ -224,21 +224,21 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
   ```
 
   It adds `spec-kit-sessions/` to `.gitignore`, creates a starter `CLAUDE.md` (only if absent),
-  and reports whether the project has a KB yet (→ run `/spec-kit:scan` if not).
+  and reports whether the project has a KB yet (→ run `/namht-scan` if not).
 
 ## Commands
 
 | Command | What it does |
 |---------|--------------|
-| `/spec-kit:scan` | Generate the Knowledge Base from the codebase (16 docs + `review-skills.md` + per-module docs). Run first on a new repo. |
-| `/spec-kit:rescan` | Update the KB incrementally after code changes (git-diff aware). |
-| `/spec-kit:build <requirement>` | 13-step pipeline: clarify → plan (impact + business flow) → code → multi-lens review → tests → run tests → evidence → update KB. |
-| `/spec-kit:review [file]` | Two-phase review: quality checklist + business consistency vs the KB. Empty arg = current diff. |
-| `/spec-kit:ask <question>` | Q&A grounded in the KB — plain language + Mermaid diagram + technical detail. |
-| `/spec-kit:plan <epic>` | PO/BA: Epic → features → impact → user stories (Given/When/Then) → sprint plan. |
-| `/spec-kit:map [scope]` | Dependency graph (imports/DI/calls/inheritance) → Mermaid, enriched with business meaning. |
-| `/spec-kit:document <topic>` | Business↔code field-level technical document for a feature/entity/module. |
-| `/spec-kit:help` | Show all commands + KB status for the current repo. |
+| `/namht-scan` | Generate the Knowledge Base from the codebase (16 docs + `review-skills.md` + per-module docs). Run first on a new repo. |
+| `/namht-rescan` | Update the KB incrementally after code changes (git-diff aware). |
+| `/namht-build <requirement>` | 13-step pipeline: clarify → plan (impact + business flow) → code → multi-lens review → tests → run tests → evidence → update KB. |
+| `/namht-review [file]` | Two-phase review: quality checklist + business consistency vs the KB. Empty arg = current diff. |
+| `/namht-ask <question>` | Q&A grounded in the KB — plain language + Mermaid diagram + technical detail. |
+| `/namht-plan <epic>` | PO/BA: Epic → features → impact → user stories (Given/When/Then) → sprint plan. |
+| `/namht-map [scope]` | Dependency graph (imports/DI/calls/inheritance) → Mermaid, enriched with business meaning. |
+| `/namht-document <topic>` | Business↔code field-level technical document for a feature/entity/module. |
+| `/namht-help` | Show all commands + KB status for the current repo. |
 
 **Recommended flow:** `scan` once → `ask` / `map` / `document` to understand → `plan` to break
 down work → `build` to implement → `rescan` to keep the KB fresh.
@@ -267,7 +267,7 @@ down work → `build` to implement → `rescan` to keep the KB fresh.
 
 ## Notes
 - Every command degrades gracefully if a repo has no `knowledge-base/` — it'll read source
-  directly and suggest running `/spec-kit:scan`, but results are richer with a KB.
+  directly and suggest running `/namht-scan`, but results are richer with a KB.
 - `build` and `review` enforce the **"Architecture Invariants — DO NOT BREAK"** list from
   `knowledge-base/16-architecture-patterns.md` and the rules in `knowledge-base/review-skills.md`.
 - Source of truth for the methodology: the original prompts in

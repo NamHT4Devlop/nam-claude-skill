@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# personal-install.sh — install Spec Kit for YOUR user only (zero footprint in any repo).
+# personal-install.sh — install for YOUR user only (zero footprint in any repo).
 #
-# It symlinks this repo's skills/agents/commands into ~/.claude so they are available in
-# every project, but live only in your home dir — never inside (or committed to) a project.
-# Commands are installed with a `spec-` prefix so they don't shadow built-ins like /help.
-# Symlinks mean `git pull` in this repo instantly updates your installed copy.
+# Symlinks this repo's skills/agents/commands into ~/.claude so they're available in every
+# project but live only in your home dir — never inside (or committed to) a project repo.
+# Everything is already named `namht-*`, so commands are /namht-build, /namht-ask, … (they
+# don't shadow built-ins like /help). Symlinks mean `git pull` here instantly updates you.
 #
 # Usage:
-#   scripts/personal-install.sh            # install / refresh
-#   scripts/personal-install.sh uninstall  # remove everything it created
+#   scripts/personal-install.sh            # install / refresh (idempotent)
+#   scripts/personal-install.sh uninstall  # remove only the symlinks pointing back here
 #
 # Pick ONE install method — if you use this, do NOT also `/plugin install` the same plugin.
 
@@ -16,32 +16,40 @@ set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # repo root
 DEST="$HOME/.claude"
-ACTION="${1:-install}"
 
-SKILLS=(spec-build spec-scan spec-rescan spec-review spec-ask spec-plan spec-map spec-document)
-AGENTS=(codebase-analyzer impact-detector business-flow-tracer security-reviewer \
-        architecture-reviewer performance-reviewer business-consistency-reviewer)
-# command file (in repo)  ->  installed as spec-<file>.md (avoids clashing with /help, /review…)
-CMDS=(build scan rescan review ask plan map document help)
+# Remove any symlink under $DEST/{skills,commands,agents} that resolves back into $SRC.
+unlink_ours() {
+  for sub in skills commands agents; do
+    local dir="$DEST/$sub"
+    [ -d "$dir" ] || continue
+    for entry in "$dir"/*; do
+      [ -L "$entry" ] || continue
+      local target; target="$(readlink "$entry" || true)"
+      case "$target" in
+        "$SRC"/*) rm -f "$entry"; echo "   - removed $sub/$(basename "$entry")";;
+      esac
+    done
+  done
+}
 
-if [ "$ACTION" = "uninstall" ]; then
-  echo "▶  Uninstalling Spec Kit (personal)…"
-  for s in "${SKILLS[@]}"; do rm -f "$DEST/skills/$s"; done
-  for a in "${AGENTS[@]}"; do rm -f "$DEST/agents/$a.md"; done
-  for c in "${CMDS[@]}"; do rm -f "$DEST/commands/spec-$c.md"; done
-  echo "✔  Removed all Spec Kit symlinks from $DEST (your repos were never touched)."
+if [ "${1:-install}" = "uninstall" ]; then
+  echo "▶  Uninstalling (personal)…"
+  unlink_ours
+  echo "✔  Done. Removed our symlinks from $DEST — your repos were never touched."
   exit 0
 fi
 
-echo "▶  Installing Spec Kit for this user only"
+echo "▶  Installing for this user only"
 echo "   source: $SRC"
 echo "   dest:   $DEST  (symlinks)"
 mkdir -p "$DEST/skills" "$DEST/agents" "$DEST/commands"
+unlink_ours   # clean any stale links first (e.g. after a rename), then relink fresh
 
-for s in "${SKILLS[@]}"; do ln -sfn "$SRC/skills/$s"      "$DEST/skills/$s"; done
-for a in "${AGENTS[@]}"; do ln -sfn "$SRC/agents/$a.md"   "$DEST/agents/$a.md"; done
-for c in "${CMDS[@]}";   do ln -sfn "$SRC/commands/$c.md" "$DEST/commands/spec-$c.md"; done
+n_s=0; n_a=0; n_c=0
+for d in "$SRC"/skills/*/;     do [ -d "$d" ] && ln -sfn "${d%/}" "$DEST/skills/$(basename "$d")"   && n_s=$((n_s+1)); done
+for f in "$SRC"/agents/*.md;   do [ -f "$f" ] && ln -sfn "$f"     "$DEST/agents/$(basename "$f")"   && n_a=$((n_a+1)); done
+for f in "$SRC"/commands/*.md; do [ -f "$f" ] && ln -sfn "$f"     "$DEST/commands/$(basename "$f")" && n_c=$((n_c+1)); done
 
-echo "   ✅ ${#SKILLS[@]} skills, ${#AGENTS[@]} agents, ${#CMDS[@]} commands linked"
-echo "✔  Done. Open Claude Code in any project and use /spec-build, /spec-ask, /spec-review, …"
-echo "   (Skills also auto-activate from plain English — the slash commands are optional.)"
+echo "   ✅ linked $n_s skills, $n_a agents, $n_c commands"
+echo "✔  Done. Open Claude Code in any project and use /namht-build, /namht-ask, /namht-review, …"
+echo "   (Skills also auto-activate from plain English — slash commands are optional.)"
