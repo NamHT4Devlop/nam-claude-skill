@@ -1,50 +1,56 @@
 ---
 name: namht-simplify
 description: >-
-  Reduce complexity and improve clarity of existing code WITHOUT changing its
-  behavior — remove dead code, flatten nesting, extract/rename for readability,
-  kill duplication, drop needless abstraction — one small behavior-preserving
-  refactor at a time, kept green by tests. Use when the user says "/simplify",
-  "refactor for clarity", "reduce complexity", "clean up this code", or "this is
-  too complex". Edits code (change-discipline applies).
+  Make existing code easier to read and change WITHOUT changing what it does —
+  guarded by tests, one small refactor at a time. Removes dead code, flattens
+  nesting, extracts and renames for intent, kills duplication, and deletes
+  needless abstraction. Use when the user says "/simplify", "refactor for
+  clarity", "reduce complexity", "clean up this code", or "this is too complex".
+  Edits code — change-discipline applies. Behavior must not change.
 ---
 
 # namht-simplify — behavior-preserving simplification
 
-Make code **easier to read and change** without altering what it does. The north star is
-**clarity over cleverness**. This is refactoring only — **not** a behavior/feature change.
+The goal is the code a new teammate could read in one pass. The constraint is absolute: **same
+inputs → same outputs and side-effects.** This is refactoring, not a feature or bug change — if you
+spot a bug, you stop and report it, you do not "fix" it here.
 
-## Inputs & grounding
-- The **file/function/module** to simplify (or the current diff). Read the real code + relevant KB
-  (`12-conventions`, `16-architecture-patterns`) so the result matches house style and invariants.
-- The **tests** that guard the behavior. If coverage is thin, add a **characterization test** first
-  (capture current behavior) before refactoring — or proceed in tiny steps and verify manually (say so).
+## Two rules that make this safe
+1. **A test net comes first.** Refactoring without tests is just editing and hoping. Confirm the
+   target behavior is covered; if not, write **characterization tests** (assert what the code does
+   *today*, bug-for-bug) before changing anything — those tests are the definition of "unchanged".
+2. **One transformation at a time → run tests → next.** Never batch several risky moves. Green after
+   each step is the proof behavior held; red means revert that step.
 
-## What to look for
-- **Dead code** (unused vars/functions/branches/flags) → delete.
-- **Deep nesting** → guard clauses / early returns.
-- **Long functions** doing many things → extract well-named helpers.
-- **Duplication** → one source of truth (but don't over-DRY tiny incidental repeats).
-- **Unclear names / magic numbers** → intention-revealing names + named constants.
-- **Needless abstraction / indirection** → inline it (clarity > cleverness).
-- **Convoluted conditionals** → simplify boolean logic, use early exits.
+## What to hunt (and the fix)
+- **Dead code** — unused vars, functions, branches, feature flags that are always one value → delete.
+- **Deep nesting / arrow code** → guard clauses and early returns.
+- **Long functions doing many jobs** → extract intention-revealing helpers (one job each).
+- **Duplication** → one source of truth — but don't force-DRY *incidental* repetition that will diverge.
+- **Mystery names / magic numbers** → names that state intent; named constants.
+- **Needless indirection / over-abstraction** → inline it. A tiny wrapper used once hurts more than a
+  little repetition. Clarity beats cleverness.
+- **Tangled conditionals** → simplify boolean logic; replace flag arguments with clear call sites.
+
+## Stack smells (common in this fleet)
+- **Java:** speculative interfaces/factories with one impl, getters/setters hiding logic, deep
+  inheritance → prefer composition, inline the single-impl indirection.
+- **Rails:** fat models, callback chains, `method_missing` cleverness → extract POROs/service objects,
+  make the flow explicit.
+- **Node:** callback pyramids / long `.then` chains → `async/await`; scattered config → one module.
 
 ## Method
-1. **Establish a safety net** — confirm tests cover the target behavior (or add characterization tests).
-2. **One small refactor at a time**: apply a single transformation → **run tests** → confirm still
-   green (behavior unchanged) → next. Never batch many risky changes.
-3. **Stop when it's clear enough** — don't gold-plate or restructure beyond the ask.
+1. **Establish the net** — confirm/add tests around the target behavior.
+2. **Simplify in small green steps** — apply one refactor, run tests, keep it only if green.
+3. **Stop at "clear enough."** Don't restructure beyond the ask or gold-plate.
 
 ## Output
-Chat summary of what was simplified + why (readability/complexity reduced), with tests green. Optionally
-save `spec-kit-sessions/simplify/<area>-<date>.md`. Keep the diff reviewable.
+Chat summary: what got simpler and why (nesting/length/duplication reduced), tests green, diff kept
+reviewable. Optionally save `spec-kit-sessions/simplify/<area>-<date>.md`.
 
 ## Rules
-- **Behavior-preserving — NON-NEGOTIABLE.** Same inputs → same outputs/side-effects. If you find a
-  bug while simplifying, STOP and flag it (fix is a separate task via `/namht-fix-bug`) — don't
-  silently change behavior.
-- **Minimal diff, one refactor at a time**; tests must stay green after each. If you can't keep them
-  green, revert.
-- **Don't over-abstract** — prefer readable and slightly repetitive over clever and opaque.
-- Respect conventions + architecture invariants; no structure churn / library swaps.
-- Change-discipline (scope-lock, verify+rollback, never touch secrets, confirm before destructive actions).
+- **Behavior-preserving — NON-NEGOTIABLE.** No functional change. Found a bug? Stop, flag it, hand to `/namht-fix-bug`.
+- **Minimal diff, one refactor at a time**; tests green after each or revert.
+- **Don't over-abstract** — readable-and-slightly-repetitive beats clever-and-opaque.
+- Respect conventions and the architecture invariants; no library swaps or structure churn.
+- Change-discipline: scope-lock, verify + rollback, never touch secrets, confirm before destructive actions.

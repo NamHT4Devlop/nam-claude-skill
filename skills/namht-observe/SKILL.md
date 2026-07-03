@@ -1,56 +1,72 @@
 ---
 name: namht-observe
 description: >-
-  Add or improve observability in code — structured logging, correlation/trace
-  IDs, metrics, and rich error context — so tools like Splunk/ELK/Datadog can
-  actually answer questions. Aligns log fields with the project's conventions and
-  the backend's schema. Use when the user says "/observe", "add logging",
-  "instrument this", "add metrics/tracing", "structured logs", or wants a service
-  to be queryable/monitorable. Edits code (change-discipline applies).
+  Make a service answerable in production — add structured logging, a correlation
+  ID that flows across HTTP and SQS, the four golden signals as metrics, and error
+  context rich enough to group by. Emits fields that match the team's Splunk schema
+  so queries and dashboards actually work. Use when the user says "/observe", "add
+  logging", "instrument this", "add metrics/tracing", "structured logs", or wants a
+  service to be queryable/monitorable. Edits code — change-discipline applies.
 ---
 
-# namht-observe — instrument code for real observability
+# namht-observe — instrument a service so it can be debugged from the outside
 
-Make a service **answerable**: when something breaks, the logs/metrics should let you find *what,
-where, and why* fast. Pairs directly with `/namht-splunk-report` — instrument with the right fields
-here, query them there.
+When something breaks at 3am you don't have the code in front of you — you have logs, metrics and a
+trace ID. This skill puts those in place so a service can be diagnosed **without** re-reading its
+source. It is the producer side of `/namht-splunk-report`: instrument the right fields here, query
+them there.
 
-## Inputs & grounding
-- The **code/flow to instrument** (a service, endpoint, consumer, job). Ground in the KB
-  (`10-core-flows`, `03-entry-points`, `14-integrations`, `12-conventions`) + read the real code.
-- The **observability backend** (Splunk / ELK / Datadog / Prometheus / OpenTelemetry) and its
-  **field schema** — match it. E.g. if Splunk queries use `cai_app` / `cai_enviroment`, emit those exact fields.
-- Existing logging conventions (log library, levels, format) — follow them; don't introduce a new style.
+## Ground it first
+- Read the target flow in the KB (`03-entry-points`, `10-core-flows`, `14-integrations`,
+  `12-conventions`) and the real code. Follow the **existing** logging library/format — never
+  introduce a second logging style.
+- Learn the **downstream schema** and emit its exact field names. If the team's Splunk uses
+  `cai_app` / `cai_enviroment`, those are the field keys you write — not `app` / `env`.
 
-## What to add (at the right points, not everywhere)
-1. **Structured logs** (key=value or JSON, not free-text) at: request/message **entry**, key
-   **decisions/branches**, **external calls** (DB/HTTP/queue) with outcome+latency, **errors**, and
-   **exit/result**. Consistent field schema across the service.
-2. **Correlation / trace IDs** — generate at the edge, **propagate** through the whole flow and
-   **across services**: HTTP headers (`X-Request-Id`/W3C `traceparent`) and **SQS/queue message
-   attributes**. One request → one traceable id end-to-end.
-3. **Error context** — on exceptions log: error **type/class**, message, stack, and the correlating
-   IDs + inputs (masked). This is what lets `/namht-splunk-report` group errors by signature.
-4. **Metrics** where they matter — counters (requests, errors by type), timers/latency on key ops
-   and external calls, queue depth/consumer lag for async. Name them consistently.
-5. **Levels done right** — ERROR = needs attention, WARN = recoverable, INFO = business milestones,
-   DEBUG = detail. No noise at INFO; no swallowed exceptions.
+## The instrumentation model (what "good" looks like)
+**One correlation ID, end to end.** Generate it at the edge (HTTP filter / first consumer), carry it
+through every log line, and **propagate it across service hops**:
+- HTTP: read/set `X-Request-Id` (or W3C `traceparent`); pass it on outbound calls.
+- **SQS/async:** put it in the message's `MessageAttributes` on send; the consumer reads it back and
+  re-establishes it before doing any work. This is the piece most teams miss — without it, a request
+  becomes untraceable the moment it crosses a queue.
+
+**Structured events, not prose.** Log key=value / JSON at meaningful boundaries only: request/message
+**entry**, each **external call** (DB / HTTP / queue) with outcome + duration, notable **decisions**,
+**errors**, and the **result**. A consistent field set per service (service, env, correlation id,
+operation, outcome, duration_ms, plus the error fields below).
+
+**Error context you can aggregate.** On failure log: exception **class**, message, stack, the
+correlation ID, and the (masked) inputs that triggered it. Stable `error_type` field → lets
+`/namht-splunk-report` collapse thousands of messages into a handful of error signatures.
+
+**The four golden signals as metrics.** Latency, traffic (throughput), errors (by type), saturation
+(pool/queue depth, consumer lag for SQS). Prefer one standard (OpenTelemetry) so it's uniform across
+the polyglot fleet.
+
+## Stack notes (match what the service already uses)
+- **Java / Spring:** SLF4J + Logback with **MDC** for the correlation ID (set in a servlet filter /
+  Camel processor / `@SqsListener`); JSON via `logstash-logback-encoder`; Micrometer for metrics.
+- **Ruby on Rails:** tagged logging / Lograge or `semantic_logger` for structured lines; set the
+  correlation tag in middleware and in the Shoryuken/Sidekiq worker.
+- **Node:** `pino`/`winston` structured JSON; carry the id via `AsyncLocalStorage`; set it in the
+  Express middleware and the `sqs-consumer` handler.
+- **Apache Camel:** instrument routes at `from`/`to`; propagate the id via exchange headers → SQS attributes.
 
 ## Method
-1. **Audit** current instrumentation: what's logged, at what level, structured or not, gaps, noise,
-   and any **secrets/PII leaking** into logs (flag immediately).
-2. Propose an **instrumentation plan** (fields schema + where to add what) — show it, get an OK.
-3. Apply with **change-discipline** (scope-locked, minimal diff, match conventions, verify build/tests,
-   rollback if red) — see `namht-build`. One area at a time.
-4. State which **new fields/metrics become queryable** (so the user can build Splunk/dashboard queries).
+1. **Audit** current instrumentation: structured or prose, levels, gaps, noise, and any
+   **secret/PII leakage** into logs (flag and fix immediately).
+2. Propose a small **field schema + instrumentation plan** (what fields, where, which metrics). Show it, get an OK.
+3. Apply with change-discipline (scope-locked, minimal diff, match conventions, verify build/tests, rollback if red).
+4. Report the **new queryable fields/metrics** + 2–3 example Splunk queries the instrumentation unlocks.
 
 ## Output (dual-audience; save + report)
-Chat summary + save `spec-kit-sessions/observe/<area>-<date>.md`: the field schema, what was added
-where, and example queries the new instrumentation enables.
+Chat summary + `spec-kit-sessions/observe/<area>-<date>.md`: the field schema, what changed where,
+and example queries/dashboards it enables.
 
 ## Rules
-- **Never log secrets or PII** (tokens, passwords, full PANs, emails unless required+masked). Mask/redact.
-- **Match the backend's field names** exactly (so existing queries/dashboards keep working).
-- **Signal over noise** — instrument decisions/errors/boundaries, not every line. Right level, right cardinality.
-- Behavior-preserving: logging/metrics must not change business logic or throw.
-- Change-discipline (scope-lock, minimal diff, verify+rollback, never touch secrets, confirm outward actions).
+- **Never log secrets or PII** (tokens, passwords, full PANs, raw emails) — mask/redact at the log call.
+- **Match the downstream field names exactly** so existing queries/dashboards keep working.
+- **Signal over noise** — instrument boundaries/decisions/errors, right level, sane cardinality (no unbounded label values).
+- Logging/metrics are **side-effect-free**: they must never alter business logic or throw.
+- Change-discipline: minimal diff, verify + rollback, confirm outward actions, never touch secrets.
