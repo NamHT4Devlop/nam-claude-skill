@@ -19,8 +19,8 @@ nam-claude-skill/
 ├── .claude-plugin/
 │   ├── plugin.json          # plugin manifest
 │   └── marketplace.json     # local marketplace (for one-command install)
-├── commands/                # 22 slash commands → /namht:build (plugin) or /namht-build (personal), …
-├── skills/                  # 21 skills (the methodology — also usable standalone)
+├── commands/                # 26 slash commands → /namht:build (plugin) or /namht-build (personal), …
+├── skills/                  # 25 skills (the methodology — also usable standalone)
 │   ├── namht-build/          #   13-step pipeline   (+ bundled review checklist)
 │   ├── namht-scan/           #   KB generation       (+ bundled kb-steps spec)
 │   ├── namht-rescan/         #   incremental KB update
@@ -251,6 +251,10 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
 | `/namht-retro [window]` | Engineering retrospective from git history — shipped, pain, quality signals, action items. |
 | `/namht-skillify <name+purpose>` | Scaffold a new `namht-*` skill + command following the conventions (self-extend the kit). |
 | `/namht-splunk-report [apps + window]` | Query Splunk for per-app errors over a window (default today), aggregate into one table, and post it to Slack. Read-only on Splunk; credentials from env/MCP, never hardcoded. Needs network. |
+| `/namht-observe [area]` | Instrument code for observability — structured logs, correlation/trace IDs (HTTP + SQS), metrics, error context; matches the backend field schema. Edits code. |
+| `/namht-migrate [change]` | Plan + execute a safe migration/deprecation (API, DB schema, event contract, library) — backward-compatible, staged, with a rollback per step + deprecation window. |
+| `/namht-simplify [target]` | Behavior-preserving simplification — remove dead code, flatten nesting, extract/rename, kill duplication; one refactor at a time, tests stay green. |
+| `/namht-perf [area]` | Measure-first performance optimization — N+1, indexes, blocking calls, caching, pagination; proves the win with before/after numbers. |
 | `/namht-help` | Show all commands + KB status for the current repo. |
 
 **Recommended flow:** `discover` → `plan` → `plan-review` → `qa` (design tests) → `build` →

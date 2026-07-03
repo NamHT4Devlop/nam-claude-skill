@@ -31,6 +31,10 @@ Commands (all namespaced under `/namht-`):
 | `/namht-retro [window]` | Engineering retrospective from git history — shipped, pain, action items. |
 | `/namht-skillify <name+purpose>` | Scaffold a new namht-* skill + command (self-extend the kit). |
 | `/namht-splunk-report [apps+window]` | Query Splunk for per-app errors (default today) → one table → post to Slack. Read-only; creds from env. |
+| `/namht-observe [area]` | Instrument code: structured logs, correlation/trace IDs, metrics, error context — matches the backend schema. |
+| `/namht-migrate [change]` | Safe migration/deprecation (API/DB/event/lib) — backward-compatible, staged, rollback + deprecation window. |
+| `/namht-simplify [target]` | Behavior-preserving simplification — reduce complexity/duplication/nesting; tests stay green. |
+| `/namht-perf [area]` | Measure-first performance optimization — find the real bottleneck, fix it, prove it with before/after numbers. |
 
 Recommended flow: **scan** once → **ask/map/document** to understand → **plan** to break down
 work → **build** to implement → **rescan** to keep the KB fresh. The KB lives in
