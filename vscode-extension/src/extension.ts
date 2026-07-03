@@ -1,18 +1,14 @@
 import * as vscode from 'vscode';
 import { spawn, ChildProcessWithoutNullStreams, execFile } from 'child_process';
 
-// Only these read-safe, non-dev skills are exposed in the UI. The webview may
-// request nothing else — the host rejects any command not on this list.
+// Every namht-* skill is exposed in the UI. The webview may request nothing
+// else — the host rejects any command not on this list.
 const ALLOWED = new Set([
-  'namht-ask',
-  'namht-discover',
-  'namht-plan',
-  'namht-plan-review',
-  'namht-qa',
-  'namht-retro',
-  'namht-document',
-  'namht-system-map',
-  'namht-splunk-report',
+  'namht-scan', 'namht-rescan', 'namht-ask', 'namht-map', 'namht-system-map', 'namht-document',
+  'namht-discover', 'namht-plan', 'namht-plan-review',
+  'namht-build', 'namht-fix-bug', 'namht-migrate', 'namht-simplify', 'namht-perf', 'namht-observe',
+  'namht-review', 'namht-qa', 'namht-qa-integration', 'namht-security-audit', 'namht-design-review', 'namht-pr',
+  'namht-splunk-report', 'namht-retro', 'namht-pdf', 'namht-skillify',
 ]);
 
 export function activate(context: vscode.ExtensionContext) {

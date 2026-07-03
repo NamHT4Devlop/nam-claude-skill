@@ -4,13 +4,20 @@ A **point-and-click** panel over the safe, read-oriented `namht-*` skills, so no
 (Product Managers, Scrum Masters) can use them **without typing slash commands or opening a terminal**.
 It runs the **Claude Code CLI** under the hood — no API key of its own.
 
-## What it exposes (read-safe skills only)
-Ask · Sharpen an idea (Discover) · Plan an epic · Review a plan · QA test cases · Document a feature ·
-Retrospective · System map · Splunk error digest.
+## What it exposes (all 25 skills, categorized)
+- **Understand:** scan · rescan · ask · map · system-map · document
+- **Plan:** discover · plan · plan-review
+- **Build & Fix:** build · fix-bug · migrate · simplify · perf · observe
+- **Review & QA:** review · qa · qa-integration · security-audit · design-review · pr
+- **Ops & Docs:** splunk-report · retro · pdf · skillify
 
-> Developer skills that change code (`build`, `fix-bug`, `review`, `security-audit`, `migrate`,
-> `observe`, `perf`, `simplify`) are **intentionally not exposed** here — those belong in the full
-> Claude Code panel used by developers.
+Search to filter, click a card, fill the form, **Run**. Output renders as styled Markdown (headings,
+tables, code); a **"Open full report"** button opens the skill's saved HTML (with Mermaid drawn).
+
+> Skills that **change code** (build, fix-bug, migrate, simplify, perf, observe) are marked
+> **"edits code"** and run with auto-approve — review the diff in Source Control afterwards; the
+> git-guard hook still blocks dangerous git. For interactive diff-by-diff review, developers should
+> use the official Claude Code panel instead.
 
 ## Prerequisites
 1. **Claude Code CLI** installed and signed in (`claude --version` works). The extension shells out to it.
