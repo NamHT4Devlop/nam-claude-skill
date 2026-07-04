@@ -38,7 +38,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
       switch (m?.type) {
         case 'check': this.checkClaude(); this.post({ type: 'history', items: this.history() }); break;
         case 'run': this.start(m); break;
-        case 'followup': this.followup(String(m.runId), String(m.text || '')); break;
+        case 'followup': this.followup(String(m.runId), String(m.text || ''), String(m.sessionId || '')); break;
         case 'cancel': this.cancel(String(m.runId)); break;
         case 'openReport': this.openReport(String(m.path || '')); break;
         case 'clearHistory': this.ctx.workspaceState.update(HIST_KEY, []); this.post({ type: 'history', items: [] }); break;
@@ -86,10 +86,13 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     this.spawnClaude(runId, ['-p', prompt], cwd, `▶ ${prompt}\n(cwd: ${cwd})\n\n`);
   }
 
-  private followup(runId: string, text: string) {
+  private followup(runId: string, text: string, sessionId?: string) {
     if (!text.trim()) return;
     const cwd = this.cwd(); if (!cwd) return;
-    const sid = this.sessions.get(runId);
+    // Prefer the id passed from the webview (survives reload — Claude persists sessions on disk),
+    // else the in-memory map, else continue the most recent session.
+    const sid = (sessionId && sessionId.trim()) ? sessionId.trim() : this.sessions.get(runId);
+    if (sid) this.sessions.set(runId, sid);
     const resume = sid ? ['--resume', sid] : ['--continue'];
     this.spawnClaude(runId, ['-p', text, ...resume], cwd, `\n\n────────\n💬 ${text}\n\n`);
   }
@@ -130,7 +133,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     const s = line.trim(); if (!s) return undefined;
     let ev: any; try { ev = JSON.parse(s); } catch { emit(s); return undefined; }
     if (ev.type === 'system' && ev.subtype === 'init') {
-      if (ev.session_id) { this.sessions.set(runId, ev.session_id); this.post({ type: 'session', runId, sessionId: ev.session_id }); }
+      if (ev.session_id) { this.sessions.set(runId, ev.session_id); this.histPatch(runId, { sessionId: ev.session_id }); this.post({ type: 'session', runId, sessionId: ev.session_id }); }
       emit(`▸ session started · model ${ev.model || '?'} · ${(ev.tools?.length || 0)} tools available`); return undefined;
     }
     if (ev.type === 'assistant' && ev.message?.content) {

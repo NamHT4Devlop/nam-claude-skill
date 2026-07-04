@@ -126,18 +126,13 @@ function renderGrids(wrap) {
   });
 }
 function reopen(it) {
-  if (runs[it.runId]) return openRun(it.runId);              // live run in this session
-  const a = byCmd(it.command);
-  if (it.result) {                                            // historical answer — view + re-ask
-    cur = { view: 'run', runId: it.runId };
-    app.innerHTML = ''; app.appendChild(nav());
-    app.appendChild(el('h2', null, (a ? a.icon + '  ' : '') + (it.title || it.command)));
-    app.appendChild(el('div', 'muted', 'From history · ' + ago(it.when) + ' ago'));
-    const res = el('div', 'result'); res.innerHTML = mdToHtml(it.result); app.appendChild(res);
-    if (a) { const again = el('button', 'primary', '↻  Ask again'); again.onclick = () => renderForm(a, it.values); app.appendChild(again); }
-    return;
+  // Rebuild the run from persisted history if it's not live in this session. The
+  // sessionId survives reloads (Claude persists sessions on disk) → follow-up resumes it.
+  if (!runs[it.runId]) {
+    runs[it.runId] = { cmd: it.command, title: it.title || it.command, values: it.values || {},
+      status: it.status || 'done', log: '', result: it.result || '', sessionId: it.sessionId || null, report: it.report || null };
   }
-  if (a) renderForm(a, it.values);
+  openRun(it.runId);
 }
 
 // ---------- form ----------
@@ -177,6 +172,7 @@ function openRun(id) {
   const bar = el('div', 'runbar');
   const cancel = el('button', 'ghost', 'Cancel'); cancel.onclick = () => vscode.postMessage({ type: 'cancel', runId: id }); bar.appendChild(cancel);
   toggleBtn = el('button', 'ghost', 'Result'); toggleBtn.onclick = () => showView(logEl.style.display === 'none' ? 'activity' : 'result'); bar.appendChild(toggleBtn);
+  if (a) { const fb = el('button', 'ghost', '↻ Form'); fb.onclick = () => renderForm(a, r.values); bar.appendChild(fb); }
   doneEl = el('span', 'runstate ' + (r.status === 'running' ? '' : (r.status === 'done' ? 'ok' : 'bad')), '● ' + r.status); bar.appendChild(doneEl);
   if (r.report) addReportBtn(r.report);
   app.appendChild(bar);
@@ -187,7 +183,7 @@ function openRun(id) {
   followRow = el('div', 'follow');
   const fi = el('textarea', 'field'); fi.placeholder = 'Ask a follow-up in this session…'; fi.rows = 2; followRow.appendChild(fi);
   const send = el('button', 'primary', 'Send'); send.disabled = r.status === 'running';
-  send.onclick = () => { const t = fi.value.trim(); if (!t) return; fi.value = ''; runs[id].status = 'running'; if (doneEl) { doneEl.className = 'runstate'; doneEl.textContent = '● running…'; } vscode.postMessage({ type: 'followup', runId: id, text: t }); showView('activity'); };
+  send.onclick = () => { const t = fi.value.trim(); if (!t) return; fi.value = ''; runs[id].status = 'running'; if (doneEl) { doneEl.className = 'runstate'; doneEl.textContent = '● running…'; } vscode.postMessage({ type: 'followup', runId: id, text: t, sessionId: runs[id].sessionId }); showView('activity'); };
   followRow.appendChild(send);
   app.appendChild(followRow);
 }
