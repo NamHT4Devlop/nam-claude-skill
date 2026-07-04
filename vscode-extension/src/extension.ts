@@ -50,7 +50,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   private post(m: unknown) { this.view?.webview.postMessage(m); }
   private cfg() {
     const c = vscode.workspace.getConfiguration('namhtSpecUi');
-    return { claudePath: c.get<string>('claudePath', 'claude'), extraArgs: c.get<string[]>('extraArgs', ['--permission-mode', 'acceptEdits']), usdToVnd: c.get<number>('usdToVnd', 26000) };
+    return { claudePath: c.get<string>('claudePath', 'claude'), extraArgs: c.get<string[]>('extraArgs', ['--permission-mode', 'acceptEdits']), usdToVnd: c.get<number>('usdToVnd', 26000), model: c.get<string>('model', 'sonnet') };
   }
   private cwd(): string | undefined { return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath; }
 
@@ -101,8 +101,8 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
 
   private spawnClaude(runId: string, baseArgs: string[], cwd: string, header: string) {
     if (this.procs.has(runId)) { this.post({ type: 'log', runId, text: '[this run is still busy — wait for it or cancel]' }); return; }
-    const { claudePath, extraArgs } = this.cfg();
-    const cliArgs = [...baseArgs, '--output-format', 'stream-json', '--verbose', ...extraArgs];
+    const { claudePath, extraArgs, model } = this.cfg();
+    const cliArgs = [...baseArgs, '--output-format', 'stream-json', '--verbose', ...(model ? ['--model', model] : []), ...extraArgs];
     let st = this.state.get(runId);
     if (!st) { st = { runId, command: '', title: runId, log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now() }; this.state.set(runId, st); }
     st.status = 'running'; st.log += header;

@@ -64,6 +64,12 @@ not billed per token** — the number reflects usage value, not a charge.
 - `namhtSpecUi.extraArgs` — extra args for `claude -p` (default `--permission-mode acceptEdits`, which
   auto-approves the report files skills save; tighten with `--allowedTools` if you prefer).
 - `namhtSpecUi.usdToVnd` — VND rate to show đồng next to USD cost (0 = off; e.g. `25400`).
+- `namhtSpecUi.model` — model for the UI's runs (default **`sonnet`** — ~5x cheaper than Opus for
+  read-only Q&A/planning; use `opus` for the hardest code tasks, `haiku` for cheap lookups, empty to inherit).
+
+## Keeping cost down
+Output tokens dominate cost (Opus output ≈ $75/1M). Tips: keep the default **`sonnet`** model for
+Q&A/planning; ask **specific** questions (shorter answers); keep the KB lean; use `haiku` for simple lookups.
 
 ## Extend it
 Add an action in `media/main.js` (`ACTIONS`) **and** add its command to `ALLOWED` in `src/extension.ts`.
