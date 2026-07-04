@@ -2,7 +2,7 @@
   "name": "namht-spec-ui",
   "displayName": "Spec Kit UI",
   "description": "Point-and-click UI over the namht-* Spec Kit skills for non-technical roles (PM/SM). Runs Claude Code under the hood.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "namht",
   "private": true,
   "license": "MIT",
@@ -58,8 +58,8 @@
         },
         "namhtSpecUi.usdToVnd": {
           "type": "number",
-          "default": 0,
-          "description": "Optional VND rate to also show an approx đồng figure next to the USD cost (0 = off). e.g. 25400."
+          "default": 26000,
+          "description": "Approx VND per USD, shown next to the USD cost. Adjust to your rate; set 0 to hide VND."
         }
       }
     }

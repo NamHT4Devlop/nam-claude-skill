@@ -55,8 +55,9 @@ webview (cards + form)  --run{command,args}-->  extension host
 ## Cost & tokens
 Each run shows a **cost chip** — the tokens used (input→output) and the **API-equivalent cost in USD**
 for that run (summed across follow-ups), read straight from Claude's `result` event (`usage` +
-`total_cost_usd`). Set `namhtSpecUi.usdToVnd` to also show an approx **₫** figure. Note: on a
-**Team/Enterprise seat you are not billed per token** — the number reflects usage value, not a charge.
+`total_cost_usd`). It also shows an approx **₫** figure by default (rate `namhtSpecUi.usdToVnd`,
+default 26000 — adjust to your rate, or set 0 to hide VND). Note: on a **Team/Enterprise seat you are
+not billed per token** — the number reflects usage value, not a charge.
 
 ## Settings
 - `namhtSpecUi.claudePath` — path to the `claude` CLI (default `claude`).
