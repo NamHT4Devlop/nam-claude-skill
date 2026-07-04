@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { spawn, ChildProcessWithoutNullStreams, execFile } from 'child_process';
+import { spawn, ChildProcess, execFile } from 'child_process';
 
 // Every namht-* skill is exposed in the UI. The webview may request nothing
 // else — the host rejects any command not on this list.
@@ -24,7 +24,7 @@ export function deactivate() {}
 
 class SpecKitViewProvider implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
-  private proc?: ChildProcessWithoutNullStreams;
+  private proc?: ChildProcess;
 
   constructor(private readonly extensionUri: vscode.Uri) {}
 
@@ -98,33 +98,80 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     }
     const prompt = `/${command} ${args}`.trim();
     const { claudePath, extraArgs } = this.cfg();
+    // Stream the agent's steps (tool calls, narration) live, like a terminal.
+    const cliArgs = ['-p', prompt, '--output-format', 'stream-json', '--verbose', ...extraArgs];
 
     this.post({ type: 'running', command });
-    this.post({ type: 'output', chunk: `▶ ${prompt}\n\n` });
+    this.post({ type: 'output', chunk: `▶ ${prompt}\n(cwd: ${cwd})\n\n` });
 
-    let buffer = '';
+    let seen = '';          // accumulated readable text (for report detection)
+    let finalText = '';
+    let lineBuf = '';
+    const emit = (t: string) => { seen += t + '\n'; this.post({ type: 'output', chunk: t + '\n' }); };
+    const feed = (line: string) => { finalText = this.handleLine(line, emit) ?? finalText; };
+
     try {
-      this.proc = spawn(claudePath, ['-p', prompt, ...extraArgs], { cwd });
+      // stdin 'ignore' → no "waiting for stdin" delay/warning.
+      this.proc = spawn(claudePath, cliArgs, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
     } catch (e) {
       this.post({ type: 'output', chunk: `\n[failed to start Claude: ${String(e)}]\n` });
       this.post({ type: 'done', code: 1 });
       return;
     }
 
-    this.proc.stdout.on('data', (d) => {
-      const t = d.toString();
-      buffer += t;
-      this.post({ type: 'output', chunk: t });
+    this.proc.stdout?.on('data', (d: Buffer) => {
+      lineBuf += d.toString();
+      let nl: number;
+      while ((nl = lineBuf.indexOf('\n')) >= 0) { const l = lineBuf.slice(0, nl); lineBuf = lineBuf.slice(nl + 1); feed(l); }
     });
-    this.proc.stderr.on('data', (d) => this.post({ type: 'output', chunk: d.toString() }));
-    this.proc.on('error', (e) => {
-      this.post({ type: 'output', chunk: `\n[error: ${e.message}]\n` });
-    });
+    this.proc.stderr?.on('data', (d: Buffer) => this.post({ type: 'output', chunk: d.toString() }));
+    this.proc.on('error', (e) => this.post({ type: 'output', chunk: `\n[error: ${e.message}]\n` }));
     this.proc.on('close', (code) => {
+      if (lineBuf.trim()) feed(lineBuf);
       this.proc = undefined;
-      const report = this.findReport(buffer, cwd);
+      if (finalText) this.post({ type: 'result', text: finalText });
+      const report = this.findReport(seen + '\n' + finalText, cwd);
       this.post({ type: 'done', code: code ?? 0, report });
     });
+  }
+
+  // Parse one stream-json line into a readable activity line. Returns the final
+  // result text when the terminal 'result' event arrives, else undefined.
+  private handleLine(line: string, emit: (t: string) => void): string | undefined {
+    const s = line.trim();
+    if (!s) return undefined;
+    let ev: any;
+    try { ev = JSON.parse(s); } catch { emit(s); return undefined; } // non-JSON (e.g. a warning) → show raw
+    if (ev.type === 'system' && ev.subtype === 'init') {
+      emit(`▸ session started · model ${ev.model || '?'} · ${(ev.tools?.length || 0)} tools available`); return undefined;
+    }
+    if (ev.type === 'assistant' && ev.message?.content) {
+      for (const c of ev.message.content) {
+        if (c.type === 'text' && c.text?.trim()) emit(c.text.trim());
+        else if (c.type === 'tool_use') emit(`🔧 ${c.name}${this.shortInput(c.input)}`);
+      }
+      return undefined;
+    }
+    if (ev.type === 'user' && ev.message?.content) {
+      for (const c of ev.message.content) {
+        if (c.type === 'tool_result') emit(`   ↳ ${c.is_error ? 'error' : 'ok'}${this.resultLen(c.content)}`);
+      }
+      return undefined;
+    }
+    if (ev.type === 'result') return typeof ev.result === 'string' ? ev.result : undefined;
+    return undefined;
+  }
+
+  private shortInput(input: any): string {
+    if (!input || typeof input !== 'object') return '';
+    const pick = input.file_path || input.command || input.pattern || input.description || input.path || input.query || input.url || input.prompt;
+    if (!pick) return '';
+    const t = String(pick).replace(/\s+/g, ' ').trim();
+    return `  ${t.length > 90 ? t.slice(0, 90) + '…' : t}`;
+  }
+
+  private resultLen(content: any): string {
+    try { const s = typeof content === 'string' ? content : JSON.stringify(content); return s.length ? ` (${s.length} chars)` : ''; } catch { return ''; }
   }
 
   private cancel() {

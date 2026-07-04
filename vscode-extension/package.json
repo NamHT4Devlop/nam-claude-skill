@@ -2,23 +2,39 @@
   "name": "namht-spec-ui",
   "displayName": "Spec Kit UI",
   "description": "Point-and-click UI over the namht-* Spec Kit skills for non-technical roles (PM/SM). Runs Claude Code under the hood.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "namht",
   "private": true,
   "license": "MIT",
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Other"],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NamHT4Devlop/nam-claude-skill"
+  },
+  "categories": [
+    "Other"
+  ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
-        { "id": "namhtSpec", "title": "Spec Kit", "icon": "media/icon.svg" }
+        {
+          "id": "namhtSpec",
+          "title": "Spec Kit",
+          "icon": "media/icon.svg"
+        }
       ]
     },
     "views": {
       "namhtSpec": [
-        { "id": "namhtSpec.view", "type": "webview", "name": "Spec Kit" }
+        {
+          "id": "namhtSpec.view",
+          "type": "webview",
+          "name": "Spec Kit"
+        }
       ]
     },
     "configuration": {
@@ -31,8 +47,13 @@
         },
         "namhtSpecUi.extraArgs": {
           "type": "array",
-          "items": { "type": "string" },
-          "default": ["--permission-mode", "acceptEdits"],
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "--permission-mode",
+            "acceptEdits"
+          ],
           "description": "Extra args passed to `claude -p`. Default auto-approves file writes (skills save reports under spec-kit-sessions/); the git-guard hook still blocks dangerous git. Tighten with --allowedTools if desired."
         }
       }

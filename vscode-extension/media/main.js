@@ -144,28 +144,38 @@ function renderForm(a) {
   if (a.fields[0]) a.fields[0] && setTimeout(() => inputs[a.fields[0].name].focus(), 30);
 }
 
-let raw = '', logEl, resEl, doneEl, curReport;
+let actLog = '', logEl, resEl, doneEl, toggleBtn, hasResult = false;
+function showView(which) {
+  const act = which === 'activity';
+  logEl.style.display = act ? 'block' : 'none';
+  resEl.style.display = act ? 'none' : 'block';
+  toggleBtn.textContent = act ? 'Result' : 'Activity';
+}
 function renderRun(a) {
-  app.innerHTML = ''; raw = ''; curReport = null;
+  app.innerHTML = ''; actLog = ''; hasResult = false;
   app.appendChild(el('h2', null, a.icon + '  ' + a.title));
   const bar = el('div', 'runbar');
   const cancel = el('button', 'ghost', 'Cancel'); cancel.onclick = () => vscode.postMessage({ type: 'cancel' }); bar.appendChild(cancel);
-  const toggle = el('button', 'ghost', 'Raw'); toggle.onclick = () => { const r = resEl.style.display !== 'none'; resEl.style.display = r ? 'none' : 'block'; logEl.style.display = r ? 'block' : 'none'; toggle.textContent = r ? 'Rendered' : 'Raw'; }; bar.appendChild(toggle);
+  toggleBtn = el('button', 'ghost', 'Result');
+  toggleBtn.onclick = () => showView(logEl.style.display === 'none' ? 'activity' : 'result');
+  bar.appendChild(toggleBtn);
   doneEl = el('span', 'runstate', '● running…'); bar.appendChild(doneEl);
   app.appendChild(bar);
   resEl = el('div', 'result'); app.appendChild(resEl);
-  logEl = el('pre', 'output'); logEl.style.display = 'none'; app.appendChild(logEl);
+  logEl = el('pre', 'output'); app.appendChild(logEl);
+  showView('activity'); // show live steps by default, like a terminal
   const home = el('button', 'link', '← Back to actions'); home.onclick = renderHome; app.appendChild(home);
 }
 
 window.addEventListener('message', ev => {
   const m = ev.data;
-  if (m.type === 'status') { statusOk = m.ok; statusMsg = m.msg; if (!logEl || !document.querySelector('.result')) renderHome(); }
-  else if (m.type === 'output' && logEl) { raw += m.chunk; logEl.textContent = raw; resEl.innerHTML = mdToHtml(raw); resEl.scrollTop = resEl.scrollHeight; }
+  if (m.type === 'status') { statusOk = m.ok; statusMsg = m.msg; if (!document.querySelector('.result')) renderHome(); }
+  else if (m.type === 'output' && logEl) { actLog += m.chunk; logEl.textContent = actLog; logEl.scrollTop = logEl.scrollHeight; }
+  else if (m.type === 'result' && resEl) { hasResult = true; resEl.innerHTML = mdToHtml(m.text); }
   else if (m.type === 'done' && doneEl) {
     doneEl.className = 'runstate ' + (m.code === 0 ? 'ok' : 'bad');
     doneEl.textContent = m.code === 0 ? '● done' : '● exited (' + m.code + ')';
-    resEl.innerHTML = mdToHtml(raw);
+    if (hasResult) showView('result');
     if (m.report) { const b = el('button', 'primary', '📄  Open full report'); b.onclick = () => vscode.postMessage({ type: 'openReport', path: m.report }); doneEl.parentElement.appendChild(b); }
   }
 });
