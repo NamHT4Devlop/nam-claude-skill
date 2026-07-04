@@ -72,6 +72,8 @@ let cur = { view: 'home', runId: null };
 const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 const ago = ms => { const s = Math.max(1, Math.round((Date.now() - ms) / 1000)); if (s < 60) return s + 's'; if (s < 3600) return Math.round(s / 60) + 'm'; if (s < 86400) return Math.round(s / 3600) + 'h'; return Math.round(s / 86400) + 'd'; };
 const dot = st => st === 'running' ? '🟡' : st === 'done' ? '🟢' : st === 'cancelled' ? '⚪' : '🔴';
+const kt = n => (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n || 0));
+const costText = r => (r && r.cost != null) ? `💰 $${(r.cost || 0).toFixed(4)}${r.vnd ? ' ≈ ' + r.vnd.toLocaleString() + '₫' : ''} · ${kt(r.usage && r.usage.input)}→${kt(r.usage && r.usage.output)} tok` : '';
 
 function nav() {
   const bar = el('div', 'nav');
@@ -99,7 +101,7 @@ function renderHome() {
     history.slice(0, 8).forEach(it => {
       const a = byCmd(it.command); const row = el('button', 'hrow');
       row.appendChild(el('span', 'hic', (a ? a.icon : '•')));
-      const mid = el('span', 'hmid'); mid.appendChild(el('span', 'ht', it.title || it.command)); mid.appendChild(el('span', 'hmeta', dot(it.status) + ' ' + it.status + ' · ' + ago(it.when))); row.appendChild(mid);
+      const mid = el('span', 'hmid'); mid.appendChild(el('span', 'ht', it.title || it.command)); mid.appendChild(el('span', 'hmeta', dot(it.status) + ' ' + it.status + ' · ' + ago(it.when) + (it.cost ? ' · $' + it.cost.toFixed(3) : ''))); row.appendChild(mid);
       row.onclick = () => reopen(it); rc.appendChild(row);
     });
     app.appendChild(rc);
@@ -162,7 +164,7 @@ function renderForm(a, values) {
 }
 
 // ---------- run view (per runId; survives navigation) ----------
-let logEl, resEl, doneEl, toggleBtn, followRow;
+let logEl, resEl, doneEl, toggleBtn, followRow, costEl;
 function showView(which) { const act = which === 'activity'; logEl.style.display = act ? 'block' : 'none'; resEl.style.display = act ? 'none' : 'block'; toggleBtn.textContent = act ? 'Result' : 'Activity'; }
 function openRun(id) {
   cur = { view: 'run', runId: id }; const r = runs[id]; if (!r) return renderHome();
@@ -174,6 +176,7 @@ function openRun(id) {
   toggleBtn = el('button', 'ghost', 'Result'); toggleBtn.onclick = () => showView(logEl.style.display === 'none' ? 'activity' : 'result'); bar.appendChild(toggleBtn);
   if (a) { const fb = el('button', 'ghost', '↻ Form'); fb.onclick = () => renderForm(a, r.values); bar.appendChild(fb); }
   doneEl = el('span', 'runstate ' + (r.status === 'running' ? '' : (r.status === 'done' ? 'ok' : 'bad')), '● ' + r.status); bar.appendChild(doneEl);
+  costEl = el('span', 'costchip', costText(r)); costEl.title = 'Estimated API-equivalent cost for this run (all turns). Team/Enterprise seats are not billed per token.'; bar.appendChild(costEl);
   if (r.report) addReportBtn(r.report);
   app.appendChild(bar);
   resEl = el('div', 'result'); resEl.innerHTML = mdToHtml(r.result); app.appendChild(resEl);
@@ -195,7 +198,7 @@ window.addEventListener('message', ev => {
   if (m.type === 'status') { statusOk = m.ok; statusMsg = m.msg; if (cur.view === 'home') renderHome(); return; }
   if (m.type === 'history') { history = m.items || []; if (cur.view === 'home') renderHome(); return; }
   if (m.type === 'restore') { // rebuild live runs (incl. logs) after a webview recreation — background runs are NOT lost
-    (m.runs || []).forEach(s => { const ex = runs[s.runId] || {}; runs[s.runId] = { cmd: s.command || ex.cmd || '', title: s.title || ex.title || s.runId, values: ex.values || {}, status: s.status || 'done', log: s.log || ex.log || '', result: s.result || ex.result || '', sessionId: s.sessionId || ex.sessionId || null, report: s.report || ex.report || null }; });
+    (m.runs || []).forEach(s => { const ex = runs[s.runId] || {}; runs[s.runId] = { cmd: s.command || ex.cmd || '', title: s.title || ex.title || s.runId, values: ex.values || {}, status: s.status || 'done', log: s.log || ex.log || '', result: s.result || ex.result || '', sessionId: s.sessionId || ex.sessionId || null, report: s.report || ex.report || null, cost: s.cost != null ? s.cost : ex.cost, usage: s.usage || ex.usage, vnd: s.vnd != null ? s.vnd : ex.vnd }; });
     if (cur.view === 'home') renderHome(); return;
   }
   if (!id || !runs[id]) { if (id && m.type !== 'status') runs[id] = { cmd: '', title: id, values: {}, status: 'running', log: '', result: '', sessionId: null, report: null }; }
@@ -204,11 +207,13 @@ window.addEventListener('message', ev => {
   else if (m.type === 'log') { r.log += m.text + '\n'; if (cur.runId === id && logEl) { logEl.textContent = r.log; logEl.scrollTop = logEl.scrollHeight; } }
   else if (m.type === 'session') { r.sessionId = m.sessionId; }
   else if (m.type === 'result') { r.result = m.text; if (cur.runId === id && resEl) resEl.innerHTML = mdToHtml(r.result); }
+  else if (m.type === 'usage') { r.cost = m.totalCost; r.usage = m.totalUsage; r.vnd = m.vnd; if (cur.runId === id && costEl) costEl.textContent = costText(r); }
   else if (m.type === 'done') {
     r.status = m.code === 0 ? 'done' : (m.code === 130 ? 'cancelled' : 'error'); if (m.report) r.report = m.report;
     if (cur.runId === id) {
       if (doneEl) { doneEl.className = 'runstate ' + (m.code === 0 ? 'ok' : 'bad'); doneEl.textContent = '● ' + r.status; }
       if (r.result && resEl) { resEl.innerHTML = mdToHtml(r.result); showView('result'); }
+      if (costEl) costEl.textContent = costText(r);
       if (r.report) addReportBtn(r.report);
       if (followRow) { const s = followRow.querySelector('button'); if (s) s.disabled = false; }
     }

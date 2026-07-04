@@ -52,10 +52,17 @@ webview (cards + form)  --run{command,args}-->  extension host
 - **Only whitelisted commands run** — the host rejects anything not in `ALLOWED` (see `src/extension.ts`).
 - The **git-guard hook** and Claude Code's permission system still apply underneath.
 
+## Cost & tokens
+Each run shows a **cost chip** — the tokens used (input→output) and the **API-equivalent cost in USD**
+for that run (summed across follow-ups), read straight from Claude's `result` event (`usage` +
+`total_cost_usd`). Set `namhtSpecUi.usdToVnd` to also show an approx **₫** figure. Note: on a
+**Team/Enterprise seat you are not billed per token** — the number reflects usage value, not a charge.
+
 ## Settings
 - `namhtSpecUi.claudePath` — path to the `claude` CLI (default `claude`).
 - `namhtSpecUi.extraArgs` — extra args for `claude -p` (default `--permission-mode acceptEdits`, which
   auto-approves the report files skills save; tighten with `--allowedTools` if you prefer).
+- `namhtSpecUi.usdToVnd` — VND rate to show đồng next to USD cost (0 = off; e.g. `25400`).
 
 ## Extend it
 Add an action in `media/main.js` (`ACTIONS`) **and** add its command to `ALLOWED` in `src/extension.ts`.

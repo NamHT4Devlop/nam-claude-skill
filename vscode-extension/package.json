@@ -2,7 +2,7 @@
   "name": "namht-spec-ui",
   "displayName": "Spec Kit UI",
   "description": "Point-and-click UI over the namht-* Spec Kit skills for non-technical roles (PM/SM). Runs Claude Code under the hood.",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "publisher": "namht",
   "private": true,
   "license": "MIT",
@@ -55,6 +55,11 @@
             "acceptEdits"
           ],
           "description": "Extra args passed to `claude -p`. Default auto-approves file writes (skills save reports under spec-kit-sessions/); the git-guard hook still blocks dangerous git. Tighten with --allowedTools if desired."
+        },
+        "namhtSpecUi.usdToVnd": {
+          "type": "number",
+          "default": 0,
+          "description": "Optional VND rate to also show an approx đồng figure next to the USD cost (0 = off). e.g. 25400."
         }
       }
     }

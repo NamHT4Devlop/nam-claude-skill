@@ -93,3 +93,7 @@ button.link { background: none; border: none; color: var(--vscode-textLink-foreg
 .follow { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
 .follow .field { flex: 1; }
 button.primary.small, .runbar button.small { margin-top: 0; padding: 3px 10px; font-size: 12px; }
+.costchip { font-size: 11px; padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  background: color-mix(in srgb, var(--vscode-charts-yellow, #d7a020) 16%, transparent);
+  color: var(--vscode-charts-yellow, #d7a020); border: 1px solid color-mix(in srgb, var(--vscode-charts-yellow, #d7a020) 38%, transparent); }
+.costchip:empty { display: none; }

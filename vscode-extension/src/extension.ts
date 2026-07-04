@@ -50,7 +50,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   private post(m: unknown) { this.view?.webview.postMessage(m); }
   private cfg() {
     const c = vscode.workspace.getConfiguration('namhtSpecUi');
-    return { claudePath: c.get<string>('claudePath', 'claude'), extraArgs: c.get<string[]>('extraArgs', ['--permission-mode', 'acceptEdits']) };
+    return { claudePath: c.get<string>('claudePath', 'claude'), extraArgs: c.get<string[]>('extraArgs', ['--permission-mode', 'acceptEdits']), usdToVnd: c.get<number>('usdToVnd', 0) };
   }
   private cwd(): string | undefined { return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath; }
 
@@ -132,7 +132,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
       if (finalText) { st.result = finalText; this.post({ type: 'result', runId, text: finalText }); }
       const report = this.findReport(seen + '\n' + finalText, cwd); st.report = report;
       this.post({ type: 'done', runId, code: code ?? 0, report });
-      this.histPatch(runId, { status: st.status, result: finalText.slice(0, 24000), report });
+      this.histPatch(runId, { status: st.status, result: finalText.slice(0, 24000), report, cost: st.cost || 0, tokens: st.usage });
     });
   }
 
@@ -154,7 +154,23 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
       for (const c of ev.message.content) if (c.type === 'tool_result') emit(`   ↳ ${c.is_error ? 'error' : 'ok'}${this.resultLen(c.content)}`);
       return undefined;
     }
-    if (ev.type === 'result') return typeof ev.result === 'string' ? ev.result : undefined;
+    if (ev.type === 'result') {
+      const u = ev.usage || {};
+      const usage = { input: u.input_tokens || 0, output: u.output_tokens || 0, cacheCreate: u.cache_creation_input_tokens || 0, cacheRead: u.cache_read_input_tokens || 0 };
+      const cost = typeof ev.total_cost_usd === 'number' ? ev.total_cost_usd : 0;
+      const st = this.state.get(runId);
+      if (st) {
+        st.usage = st.usage || { input: 0, output: 0, cacheCreate: 0, cacheRead: 0 };
+        st.usage.input += usage.input; st.usage.output += usage.output; st.usage.cacheCreate += usage.cacheCreate; st.usage.cacheRead += usage.cacheRead;
+        st.cost = (st.cost || 0) + cost;
+      }
+      const totalCost = st ? st.cost : cost;
+      const rate = this.cfg().usdToVnd || 0;
+      const vnd = rate ? Math.round(totalCost * rate) : 0;
+      if (st) st.vnd = vnd;
+      this.post({ type: 'usage', runId, cost, usage, totalCost, totalUsage: st?.usage || usage, vnd });
+      return typeof ev.result === 'string' ? ev.result : undefined;
+    }
     return undefined;
   }
 
