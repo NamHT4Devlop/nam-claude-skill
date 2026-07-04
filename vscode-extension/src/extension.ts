@@ -27,6 +27,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
   private procs = new Map<string, ChildProcess>();   // runId → process
   private sessions = new Map<string, string>();       // runId → claude session_id
+  private state = new Map<string, any>();             // runId → live state (log/result/status) — survives webview recreation
 
   constructor(private readonly ctx: vscode.ExtensionContext) {}
 
@@ -36,7 +37,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     view.webview.html = this.getHtml(view.webview);
     view.webview.onDidReceiveMessage((m: any) => {
       switch (m?.type) {
-        case 'check': this.checkClaude(); this.post({ type: 'history', items: this.history() }); break;
+        case 'check': this.checkClaude(); this.post({ type: 'history', items: this.history() }); this.post({ type: 'restore', runs: Array.from(this.state.values()) }); break;
         case 'run': this.start(m); break;
         case 'followup': this.followup(String(m.runId), String(m.text || ''), String(m.sessionId || '')); break;
         case 'cancel': this.cancel(String(m.runId)); break;
@@ -83,6 +84,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     if (!cwd) { this.post({ type: 'log', runId, text: '[open a project folder first — skills read that project]' }); this.post({ type: 'done', runId, code: 1 }); return; }
     const prompt = `/${command} ${String(m.args || '')}`.trim();
     this.histUpsert({ runId, command, title: m.title || command, values: m.values || {}, when: Date.now(), status: 'running' });
+    this.state.set(runId, { runId, command, title: String(m.title || command), log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now() });
     this.spawnClaude(runId, ['-p', prompt], cwd, `▶ ${prompt}\n(cwd: ${cwd})\n\n`);
   }
 
@@ -101,16 +103,19 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     if (this.procs.has(runId)) { this.post({ type: 'log', runId, text: '[this run is still busy — wait for it or cancel]' }); return; }
     const { claudePath, extraArgs } = this.cfg();
     const cliArgs = [...baseArgs, '--output-format', 'stream-json', '--verbose', ...extraArgs];
+    let st = this.state.get(runId);
+    if (!st) { st = { runId, command: '', title: runId, log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now() }; this.state.set(runId, st); }
+    st.status = 'running'; st.log += header;
     this.post({ type: 'running', runId });
     this.post({ type: 'log', runId, text: header });
 
     let seen = '', finalText = '', lineBuf = '';
-    const emit = (t: string) => { seen += t + '\n'; this.post({ type: 'log', runId, text: t }); };
+    const emit = (t: string) => { seen += t + '\n'; st.log += t + '\n'; this.post({ type: 'log', runId, text: t }); };
     const feed = (line: string) => { const r = this.handleLine(runId, line, emit); if (r !== undefined) finalText = r; };
 
     let proc: ChildProcess;
     try { proc = spawn(claudePath, cliArgs, { cwd, stdio: ['ignore', 'pipe', 'pipe'] }); }
-    catch (e) { this.post({ type: 'log', runId, text: `[failed to start Claude: ${String(e)}]` }); this.post({ type: 'done', runId, code: 1 }); return; }
+    catch (e) { st.status = 'error'; this.post({ type: 'log', runId, text: `[failed to start Claude: ${String(e)}]` }); this.post({ type: 'done', runId, code: 1 }); return; }
     this.procs.set(runId, proc);
 
     proc.stdout?.on('data', (d: Buffer) => {
@@ -122,10 +127,12 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     proc.on('close', (code) => {
       if (lineBuf.trim()) feed(lineBuf);
       this.procs.delete(runId);
-      if (finalText) this.post({ type: 'result', runId, text: finalText });
-      const report = this.findReport(seen + '\n' + finalText, cwd);
+      st.status = code === 0 ? 'done' : (code === 130 ? 'cancelled' : 'error');
+      st.sessionId = this.sessions.get(runId) || st.sessionId;
+      if (finalText) { st.result = finalText; this.post({ type: 'result', runId, text: finalText }); }
+      const report = this.findReport(seen + '\n' + finalText, cwd); st.report = report;
       this.post({ type: 'done', runId, code: code ?? 0, report });
-      this.histPatch(runId, { status: code === 0 ? 'done' : 'error', result: finalText.slice(0, 24000), report });
+      this.histPatch(runId, { status: st.status, result: finalText.slice(0, 24000), report });
     });
   }
 
@@ -133,7 +140,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     const s = line.trim(); if (!s) return undefined;
     let ev: any; try { ev = JSON.parse(s); } catch { emit(s); return undefined; }
     if (ev.type === 'system' && ev.subtype === 'init') {
-      if (ev.session_id) { this.sessions.set(runId, ev.session_id); this.histPatch(runId, { sessionId: ev.session_id }); this.post({ type: 'session', runId, sessionId: ev.session_id }); }
+      if (ev.session_id) { this.sessions.set(runId, ev.session_id); const st = this.state.get(runId); if (st) st.sessionId = ev.session_id; this.histPatch(runId, { sessionId: ev.session_id }); this.post({ type: 'session', runId, sessionId: ev.session_id }); }
       emit(`▸ session started · model ${ev.model || '?'} · ${(ev.tools?.length || 0)} tools available`); return undefined;
     }
     if (ev.type === 'assistant' && ev.message?.content) {
@@ -164,7 +171,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
 
   private cancel(runId: string) {
     const p = this.procs.get(runId);
-    if (p) { p.kill('SIGTERM'); this.procs.delete(runId); this.post({ type: 'log', runId, text: '\n[cancelled]' }); this.post({ type: 'done', runId, code: 130 }); this.histPatch(runId, { status: 'cancelled' }); }
+    if (p) { p.kill('SIGTERM'); this.procs.delete(runId); const st = this.state.get(runId); if (st) st.status = 'cancelled'; this.post({ type: 'log', runId, text: '\n[cancelled]' }); this.post({ type: 'done', runId, code: 130 }); this.histPatch(runId, { status: 'cancelled' }); }
   }
 
   private findReport(out: string, cwd: string): string | undefined {

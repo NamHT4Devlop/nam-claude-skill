@@ -194,6 +194,10 @@ window.addEventListener('message', ev => {
   const m = ev.data; const id = m.runId;
   if (m.type === 'status') { statusOk = m.ok; statusMsg = m.msg; if (cur.view === 'home') renderHome(); return; }
   if (m.type === 'history') { history = m.items || []; if (cur.view === 'home') renderHome(); return; }
+  if (m.type === 'restore') { // rebuild live runs (incl. logs) after a webview recreation — background runs are NOT lost
+    (m.runs || []).forEach(s => { const ex = runs[s.runId] || {}; runs[s.runId] = { cmd: s.command || ex.cmd || '', title: s.title || ex.title || s.runId, values: ex.values || {}, status: s.status || 'done', log: s.log || ex.log || '', result: s.result || ex.result || '', sessionId: s.sessionId || ex.sessionId || null, report: s.report || ex.report || null }; });
+    if (cur.view === 'home') renderHome(); return;
+  }
   if (!id || !runs[id]) { if (id && m.type !== 'status') runs[id] = { cmd: '', title: id, values: {}, status: 'running', log: '', result: '', sessionId: null, report: null }; }
   const r = runs[id]; if (!r) return;
   if (m.type === 'running') { r.status = 'running'; }
