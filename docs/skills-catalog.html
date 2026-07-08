@@ -10,6 +10,7 @@
     --text:#1c1c1a; --muted:#65635c; --brand:#4a43d1; --brand-2:#8b5cf6;
     --pill-bg:#eeedfe; --pill-text:#3c3489; --mono-bg:#f0eef8; --mono-text:#3c3489;
     --group-bg:#efeefb; --group-text:#3c3489;
+    --edit-bg:#faeeda; --edit-text:#854f0b; --safe-bg:#eaf3de; --safe-text:#3b6d11;
     --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.04);
   }
   @media (prefers-color-scheme:dark){
@@ -18,6 +19,7 @@
       --text:#e9e9ec; --muted:#9a9aa3; --brand:#a99cff; --brand-2:#c4b5fd;
       --pill-bg:#26215c; --pill-text:#cecbf6; --mono-bg:#241f4a; --mono-text:#cecbf6;
       --group-bg:#201b45; --group-text:#cecbf6;
+      --edit-bg:#3a2408; --edit-text:#fac775; --safe-bg:#16300a; --safe-text:#c0dd97;
       --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
     }
   }
@@ -26,8 +28,8 @@
   body{margin:0;background:var(--bg);color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     line-height:1.55;font-size:15px}
-  .wrap{max-width:1040px;margin:0 auto;padding:40px 20px 72px}
-  header{margin-bottom:26px}
+  .wrap{max-width:1060px;margin:0 auto;padding:40px 20px 72px}
+  header{margin-bottom:22px}
   .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
   h1{font-size:34px;line-height:1.1;margin:.25em 0 .1em;font-weight:800;letter-spacing:-.02em;
     background:linear-gradient(90deg,var(--brand),var(--brand-2));-webkit-background-clip:text;
@@ -38,9 +40,15 @@
     background:var(--surface);color:var(--muted)}
   .fact b{color:var(--text)}
 
-  .table-wrap{margin-top:24px;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+  .impact{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;
+    white-space:nowrap;letter-spacing:.03em;text-transform:uppercase;vertical-align:1px;margin-right:7px}
+  .impact.edit{background:var(--edit-bg);color:var(--edit-text)}
+  .impact.safe{background:var(--safe-bg);color:var(--safe-text)}
+  .legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:16px 0 -6px;font-size:12.5px;color:var(--muted)}
+
+  .table-wrap{margin-top:22px;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
   .scroll{overflow-x:auto}
-  table{width:100%;border-collapse:collapse;min-width:680px;font-size:14px}
+  table{width:100%;border-collapse:collapse;min-width:700px;font-size:14px}
   thead th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:11.5px;
     letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;
     padding:12px 16px;border-bottom:1px solid var(--border);white-space:nowrap}
@@ -55,7 +63,7 @@
   td.c-who{white-space:nowrap}
   .who{font-size:11px;font-weight:700;color:var(--pill-text);background:var(--pill-bg);
     padding:2px 9px;border-radius:999px;white-space:nowrap}
-  td.c-desc{color:var(--text);min-width:340px;line-height:1.6}
+  td.c-desc{color:var(--text);min-width:360px;line-height:1.6}
   tbody tr:last-child td{border-bottom:none}
 
   .how{margin-top:34px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
@@ -81,10 +89,14 @@
     <b>both technical and non-technical readers</b>, runs locally, and is protected by a git safety guard.</p>
     <div class="facts">
       <span class="fact"><b>26</b> skills</span>
+      <span class="fact"><b>6</b> edit code · <b>20</b> read-only</span>
       <span class="fact">Spec-driven</span>
       <span class="fact">Knowledge-Base grounded</span>
       <span class="fact">Dual-audience</span>
-      <span class="fact">Local &amp; git-safe</span>
+    </div>
+    <div class="legend">
+      <span><span class="impact edit">Edits code</span> changes your source code (minimal, guarded by tests)</span>
+      <span><span class="impact safe">Read-only</span> never touches your source (may still write reports, docs or the KB)</span>
     </div>
   </header>
 
@@ -95,40 +107,40 @@
     </thead>
     <tbody>
       <tr class="group"><td colspan="3"><span class="ic">📖</span>Understand — grasp the codebase</td></tr>
-      <tr><td class="c-name"><code class="name">namht-scan</code></td><td class="c-who"><span class="who">Dev / Team</span></td><td class="c-desc">Reads the whole repository once and distils it into a 16-document Knowledge Base — structure, domain, data model, flows and rules — the shared foundation every other skill quietly builds on.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-rescan</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Keeps that Knowledge Base honest as the code moves on, re-reading only what actually changed (via the git diff) so the docs stay current without paying for a full rescan.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-ask</code></td><td class="c-who"><span class="who">Everyone</span></td><td class="c-desc">Answers any question about the codebase in plain language, illustrates it with a fitting diagram, and drills down to the exact files, fields and endpoints — so business and engineering read from the same page.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-map</code></td><td class="c-who"><span class="who">Dev / Architect</span></td><td class="c-desc">Draws the codebase as a living, interactive graph in the browser — files, classes and routes wired together by their real imports and calls — so you can see, not guess, how everything connects.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-system-map</code></td><td class="c-who"><span class="who">Dev / Architect</span></td><td class="c-desc">Pulls back to the whole microservices landscape, stitching each service's contracts and events into one cross-service map and tracing the end-to-end journeys that span them.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-document</code></td><td class="c-who"><span class="who">BA / PM / Dev</span></td><td class="c-desc">Writes documentation that bridges business and code, mapping each concept to the precise field, function and rule that implements it — clear to a stakeholder and an engineer in the same read.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-scan</code></td><td class="c-who"><span class="who">Dev / Team</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Reads the whole repository once and distils it into a 16-document Knowledge Base — structure, domain, data model, flows and rules — the shared foundation every other skill quietly builds on. Writes the KB, never your source.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-rescan</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Keeps that Knowledge Base honest as the code moves on, re-reading only what actually changed (via the git diff) so the docs stay current without paying for a full rescan. Updates the KB only.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-ask</code></td><td class="c-who"><span class="who">Everyone</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Answers any question about the codebase in plain language, illustrates it with a fitting diagram, and drills down to the exact files, fields and endpoints — so business and engineering read from the same page.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-map</code></td><td class="c-who"><span class="who">Dev / Architect</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Draws the codebase as a living, interactive graph in the browser — files, classes and routes wired together by their real imports and calls — so you can see, not guess, how everything connects.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-system-map</code></td><td class="c-who"><span class="who">Dev / Architect</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Pulls back to the whole microservices landscape, stitching each service's contracts and events into one cross-service map and tracing the end-to-end journeys that span them.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-document</code></td><td class="c-who"><span class="who">BA / PM / Dev</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Writes documentation that bridges business and code, mapping each concept to the precise field, function and rule that implements it — clear to a stakeholder and an engineer in the same read.</td></tr>
 
       <tr class="group"><td colspan="3"><span class="ic">🗂️</span>Plan — shape the work</td></tr>
-      <tr><td class="c-name"><code class="name">namht-discover</code></td><td class="c-who"><span class="who">PM / PO / BA</span></td><td class="c-desc">Interrogates a fuzzy idea with sharp, forcing questions and pushes back on weak framing, turning a vague wish into a crisp, well-scoped problem statement that's genuinely ready to plan.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-plan</code></td><td class="c-who"><span class="who">PM / PO / BA</span></td><td class="c-desc">Acts as a Product Owner: breaks an Epic into features, weighs the impact on existing flows, and lays out user stories and a sprint plan — opening with a plain-language summary stakeholders can follow.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-plan-review</code></td><td class="c-who"><span class="who">Tech Lead / PM</span></td><td class="c-desc">Stress-tests a plan through several lenses — product, architecture, risk and developer experience — and lands on a clear proceed-or-revise verdict with concrete fixes, before a line of code is written.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-user-story</code></td><td class="c-who"><span class="who">PM / BA / SM</span></td><td class="c-desc">Investigates deeply — a typed requirement or an entire Slack thread it comprehends — then writes features and INVEST stories with acceptance criteria pinned down to the smallest testable detail.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-discover</code></td><td class="c-who"><span class="who">PM / PO / BA</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Interrogates a fuzzy idea with sharp, forcing questions and pushes back on weak framing, turning a vague wish into a crisp, well-scoped problem statement that's genuinely ready to plan.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-plan</code></td><td class="c-who"><span class="who">PM / PO / BA</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Acts as a Product Owner: breaks an Epic into features, weighs the impact on existing flows, and lays out user stories and a sprint plan — opening with a plain-language summary stakeholders can follow.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-plan-review</code></td><td class="c-who"><span class="who">Tech Lead / PM</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Stress-tests a plan through several lenses — product, architecture, risk and developer experience — and lands on a clear proceed-or-revise verdict with concrete fixes, before a line of code is written.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-user-story</code></td><td class="c-who"><span class="who">PM / BA / SM</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Investigates deeply — a typed requirement or an entire Slack thread it comprehends — then writes features and INVEST stories with acceptance criteria pinned down to the smallest testable detail.</td></tr>
 
       <tr class="group"><td colspan="3"><span class="ic">🛠️</span>Build &amp; Fix — write and repair code</td></tr>
-      <tr><td class="c-name"><code class="name">namht-build</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Carries a feature from idea to done through a disciplined 13-step pipeline — clarify, plan, generate code, review from several angles, then prove it with tests — always respecting the architecture already in place.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-fix-bug</code></td><td class="c-who"><span class="who">Dev / QA</span></td><td class="c-desc">Meets a bug — or a QA report — with cool method: first triages whether it's truly a code defect, then traces the real root cause and lands a minimal fix, guarded by a failing-then-passing regression test.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-migrate</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Changes a shared contract — an API, a database schema, an event shape, a library version — without breaking anyone, using the expand → migrate → contract pattern with a rollback ready at every step.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-simplify</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Untangles code so it's easier to read and change without altering what it does, one small guarded refactor at a time, with the test suite staying green from start to finish.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-perf</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Optimises on evidence rather than hunches: measures the baseline, fixes the single biggest bottleneck, then measures again to prove the win in real before-and-after numbers.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-observe</code></td><td class="c-who"><span class="who">Dev / SRE</span></td><td class="c-desc">Makes a service answerable in production — structured logs, a correlation ID that follows a request across service and queue hops, and the golden-signal metrics that let you actually see what's happening.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-build</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc"><span class="impact edit">Edits code</span>Carries a feature from idea to done through a disciplined 13-step pipeline — clarify, plan, generate code, review from several angles, then prove it with tests — always respecting the architecture already in place. Writes new code and tests.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-fix-bug</code></td><td class="c-who"><span class="who">Dev / QA</span></td><td class="c-desc"><span class="impact edit">Edits code</span>Meets a bug — or a QA report — with cool method: first triages whether it's truly a code defect, then traces the real root cause and lands a minimal, surgical fix guarded by a failing-then-passing regression test.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-migrate</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc"><span class="impact edit">Edits code</span>Changes a shared contract — an API, a database schema, an event shape, a library version — without breaking anyone, using the expand → migrate → contract pattern with a rollback ready at every step.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-simplify</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc"><span class="impact edit">Edits code</span>Untangles code so it's easier to read and change without altering what it does, one small guarded refactor at a time, with the test suite staying green from start to finish.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-perf</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc"><span class="impact edit">Edits code</span>Optimises on evidence rather than hunches: measures the baseline, changes the single biggest bottleneck, then measures again to prove the win in real before-and-after numbers.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-observe</code></td><td class="c-who"><span class="who">Dev / SRE</span></td><td class="c-desc"><span class="impact edit">Edits code</span>Makes a service answerable in production — adds structured logs, a correlation ID that follows a request across service and queue hops, and the golden-signal metrics that let you actually see what's happening.</td></tr>
 
       <tr class="group"><td colspan="3"><span class="ic">🔍</span>Review &amp; QA — verify quality</td></tr>
-      <tr><td class="c-name"><code class="name">namht-review</code></td><td class="c-who"><span class="who">Dev / Reviewer</span></td><td class="c-desc">Reviews a file, branch or PR in two passes — a rigorous quality checklist and a business-consistency check against the Knowledge Base — so nothing quietly slips through and breaks the intended behavior.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-qa</code></td><td class="c-who"><span class="who">QA</span></td><td class="c-desc">Turns a user story into an executable test plan that deliberately covers both the new behavior and the existing flows it might disturb, with every case traced back to an acceptance criterion.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-qa-integration</code></td><td class="c-who"><span class="who">QA</span></td><td class="c-desc">Drives a running application through a real browser to execute the test cases end-to-end, asserting from the live UI and reporting a clear pass or fail backed by screenshots.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-security-audit</code></td><td class="c-who"><span class="who">Dev / Security</span></td><td class="c-desc">Sweeps the whole repository for vulnerabilities category by category — injection, broken access control, secrets, data exposure — grounded in the code's real entry points and its auth model.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-design-review</code></td><td class="c-who"><span class="who">Designer / FE / PM</span></td><td class="c-desc">Examines the interface for craft and accessibility — spacing, hierarchy, responsiveness, contrast, keyboard and ARIA — catching the rough edges against the project's own design language.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-pr</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Prepares a clear, well-structured pull-request description straight from your branch, or reviews someone else's PR in two passes with a blast-radius look at everything the change touches.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-review</code></td><td class="c-who"><span class="who">Dev / Reviewer</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Reviews a file, branch or PR in two passes — a rigorous quality checklist and a business-consistency check against the Knowledge Base — reporting findings, and only touching code if you explicitly ask it to apply the fixes.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-qa</code></td><td class="c-who"><span class="who">QA</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Turns a user story into an executable test plan that deliberately covers both the new behavior and the existing flows it might disturb, with every case traced back to an acceptance criterion.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-qa-integration</code></td><td class="c-who"><span class="who">QA</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Drives a running application through a real browser to execute the test cases end-to-end, asserting from the live UI and reporting a clear pass or fail backed by screenshots — it exercises the app, not the source.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-security-audit</code></td><td class="c-who"><span class="who">Dev / Security</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Sweeps the whole repository for vulnerabilities category by category — injection, broken access control, secrets, data exposure — grounded in the code's real entry points and its auth model.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-design-review</code></td><td class="c-who"><span class="who">Designer / FE / PM</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Examines the interface for craft and accessibility — spacing, hierarchy, responsiveness, contrast, keyboard and ARIA — catching the rough edges against the project's own design language.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-pr</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Prepares a clear, well-structured pull-request description straight from your branch, or reviews someone else's PR in two passes with a blast-radius look at everything the change touches. Never pushes or merges.</td></tr>
 
       <tr class="group"><td colspan="3"><span class="ic">📊</span>Ops &amp; Docs — operate and share</td></tr>
-      <tr><td class="c-name"><code class="name">namht-splunk-report</code></td><td class="c-who"><span class="who">Dev / SRE / On-call</span></td><td class="c-desc">Queries Splunk for each application's errors over a chosen window, distils the noise into a single readable table, and delivers the digest straight to the Slack channel you point it at.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-retro</code></td><td class="c-who"><span class="who">SM / EM / Lead</span></td><td class="c-desc">Reads the team's git history over a period and turns it into an honest retrospective — what shipped, what went well or hurt, and a short list of concrete actions for next time.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-pdf</code></td><td class="c-who"><span class="who">Everyone</span></td><td class="c-desc">Turns a report or document — Markdown or HTML, diagrams and all — into a polished, shareable PDF ready to hand to anyone.</td></tr>
-      <tr><td class="c-name"><code class="name">namht-skillify</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Scaffolds a brand-new namht-* skill from a short description, wired and documented to the kit's own conventions, so the toolkit keeps growing alongside you.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-splunk-report</code></td><td class="c-who"><span class="who">Dev / SRE / On-call</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Queries Splunk for each application's errors over a chosen window, distils the noise into a single readable table, and delivers the digest straight to the Slack channel you point it at.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-retro</code></td><td class="c-who"><span class="who">SM / EM / Lead</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Reads the team's git history over a period and turns it into an honest retrospective — what shipped, what went well or hurt, and a short list of concrete actions for next time.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-pdf</code></td><td class="c-who"><span class="who">Everyone</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Turns a report or document — Markdown or HTML, diagrams and all — into a polished, shareable PDF ready to hand to anyone.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-skillify</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Scaffolds a brand-new namht-* skill from a short description, wired and documented to the kit's own conventions — it creates a new skill, not changes to your application code.</td></tr>
     </tbody>
   </table>
   </div></div>
