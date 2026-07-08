@@ -3,7 +3,7 @@ description: Port a service or chosen endpoints to another stack (e.g. Rails+Gra
 argument-hint: <what to port — source stack, target stack, and the endpoint set (all GraphQL + the specific REST APIs)>
 ---
 
-Use the **namht-port** skill to port the service below onto a new stack while preserving its contract
+Use the **namht-rails-to-spring** skill to port the service below onto a new stack while preserving its contract
 and business behavior. Default target profile: Spring Boot + MyBatis + Flyway + Camel + SQS + MySQL,
 sharing the same database. Freeze the contract (port the GraphQL schema 1:1 + the named REST APIs),
 ground the business rules in the source (`/namht-scan`), capture golden/characterization tests of the

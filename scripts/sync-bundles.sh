@@ -16,7 +16,7 @@ CHECK="${1:-}"
 # canonical-file  ->  space-separated list of skills that bundle it
 map_review="namht-build namht-review namht-scan namht-rescan namht-security-audit"
 map_kb="namht-scan namht-rescan"
-map_html="namht-ask namht-document namht-plan namht-qa namht-system-map namht-pr namht-security-audit namht-plan-review namht-retro namht-qa-integration namht-design-review namht-pdf namht-user-story namht-port"  # html-builder.js + render-html.cjs
+map_html="namht-ask namht-document namht-plan namht-qa namht-system-map namht-pr namht-security-audit namht-plan-review namht-retro namht-qa-integration namht-design-review namht-pdf namht-user-story namht-rails-to-spring"  # html-builder.js + render-html.cjs
 
 emit() { # <canonical-file> <skill-list>
   local file="$1"; shift

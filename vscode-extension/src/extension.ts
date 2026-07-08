@@ -6,7 +6,7 @@ import { spawn, ChildProcess, execFile } from 'child_process';
 const ALLOWED = new Set([
   'namht-scan', 'namht-rescan', 'namht-ask', 'namht-map', 'namht-system-map', 'namht-document',
   'namht-discover', 'namht-plan', 'namht-plan-review', 'namht-user-story',
-  'namht-build', 'namht-fix-bug', 'namht-migrate', 'namht-simplify', 'namht-perf', 'namht-observe', 'namht-port',
+  'namht-build', 'namht-fix-bug', 'namht-migrate', 'namht-simplify', 'namht-perf', 'namht-observe', 'namht-rails-to-spring',
   'namht-review', 'namht-qa', 'namht-qa-integration', 'namht-security-audit', 'namht-design-review', 'namht-pr',
   'namht-splunk-report', 'namht-retro', 'namht-pdf', 'namht-skillify',
 ]);

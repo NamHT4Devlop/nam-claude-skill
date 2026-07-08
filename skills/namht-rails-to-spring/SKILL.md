@@ -1,5 +1,5 @@
 ---
-name: namht-port
+name: namht-rails-to-spring
 description: >-
   Port a service (or a chosen set of endpoints) from one language/stack to another while
   PRESERVING its contract and business behavior — e.g. Ruby on Rails + GraphQL → Java Spring
@@ -11,7 +11,7 @@ description: >-
   resolvers/APIs". Edits code — change discipline applies.
 ---
 
-# namht-port — behavior-preserving cross-stack port (parity-verified, multi-agent)
+# namht-rails-to-spring — behavior-preserving cross-stack port (parity-verified, multi-agent)
 
 Distinct from `/namht-migrate` (which evolves a contract **in place**, same codebase). This is a
 **rewrite onto a different stack that must behave identically** — clients must not notice. Every
@@ -102,7 +102,7 @@ real failure.
 
 **Bundled harness — don't rebuild it.** `references/shadow-parity.cjs` (Node ≥18, no deps) does exactly
 this: fill a `cases.json` (copy `references/cases.example.json`), then
-`node "$HOME/.claude/skills/namht-port/references/shadow-parity.cjs" cases.json --source <rails-url>
+`node "$HOME/.claude/skills/namht-rails-to-spring/references/shadow-parity.cjs" cases.json --source <rails-url>
 --target <spring-url> [--graphql-path /graphql] [--source-token … --target-token …]`. It sends each
 case to both, canonicalizes (sorts keys, redacts `ignore` paths like `**.updatedAt`, sorts
 `sortArraysAt` arrays), diffs, prints per-field failures, and **exits non-zero if any case diverges** —

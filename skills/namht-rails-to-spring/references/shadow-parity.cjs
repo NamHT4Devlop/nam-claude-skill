@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * shadow-parity.cjs — parity oracle for namht-port.
+ * shadow-parity.cjs — parity oracle for namht-rails-to-spring.
  *
  * Sends the SAME requests to the SOURCE (e.g. Rails) and the TARGET (e.g. Spring Boot),
  * canonicalizes both responses, diffs them, and exits non-zero if any case diverges.
