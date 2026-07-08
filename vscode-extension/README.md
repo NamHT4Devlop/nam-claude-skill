@@ -39,18 +39,19 @@ tables, code); a **"Open full report"** button opens the skill's saved HTML (wit
 3. **Open the target project folder** in VS Code — skills read *that* project's `knowledge-base/`.
 
 ## Run it (development)
+Uses **Yarn** (see `packageManager` in `package.json`).
 ```bash
 cd vscode-extension
-npm install
-npm run compile
+yarn install
+yarn compile
 ```
 Then open this `vscode-extension/` folder in VS Code and press **F5** (Run → Start Debugging). A second
 VS Code window opens with the extension loaded — click the **Spec Kit** icon in the Activity Bar.
 
 ## Package + install (share with PM/SM)
 ```bash
-npm run compile
-npx @vscode/vsce package        # produces namht-spec-ui-0.1.0.vsix
+yarn compile
+npx @vscode/vsce package        # produces namht-spec-ui-<version>.vsix (vsce auto-detects yarn.lock)
 ```
 Send the `.vsix`; each person installs via **Extensions ▸ … ▸ Install from VSIX**. (They still need the
 Claude Code CLI + the skills installed on their machine.)
