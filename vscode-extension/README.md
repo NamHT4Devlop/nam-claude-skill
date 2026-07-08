@@ -1,23 +1,36 @@
 # Spec Kit UI — VS Code extension (for PM / SM)
 
-A **point-and-click** panel over the safe, read-oriented `namht-*` skills, so non-technical roles
+A **point-and-click** panel over the `namht-*` skills, so non-technical roles
 (Product Managers, Scrum Masters) can use them **without typing slash commands or opening a terminal**.
 It runs the **Claude Code CLI** under the hood — no API key of its own.
 
-## What it exposes (all 25 skills, categorized)
+**Two ways to view it:**
+- **Sidebar** — click the **Spec Kit** icon in the Activity Bar (compact, single column).
+- **App window** — click the **⧉ Open Spec Kit App** button in the sidebar's title bar (or run
+  *"Open Spec Kit App"* from the Command Palette). It opens a wide, app-like layout in the editor
+  area: a **left nav rail** (Home + categories + recent/running + status) beside a roomy content
+  area with a hero and skill cards. Both stay in sync — a run started in one shows in the other.
+
+## What it exposes (all 26 skills, categorized)
+- **General:** **ask anything** — a plain question on any topic, not tied to the repo (runs Claude with no skill)
 - **Understand:** scan · rescan · ask · map · system-map · document
-- **Plan:** discover · plan · plan-review
+- **Plan:** discover · plan · plan-review · **user-story** (requirement or a Slack thread → INVEST stories)
 - **Build & Fix:** build · fix-bug · migrate · simplify · perf · observe
 - **Review & QA:** review · qa · qa-integration · security-audit · design-review · pr
 - **Ops & Docs:** splunk-report · retro · pdf · skillify
 
-Search to filter, click a card, fill the form, **Run**. Output renders as styled Markdown (headings,
+Search to filter, click a card, fill the form, **Run** (or just press **Enter** — Shift+Enter makes a
+new line; Enter never fires mid-word while typing with an IME). Output renders as styled Markdown (headings,
 tables, code); a **"Open full report"** button opens the skill's saved HTML (with Mermaid drawn).
 
 > Skills that **change code** (build, fix-bug, migrate, simplify, perf, observe) are marked
-> **"edits code"** and run with auto-approve — review the diff in Source Control afterwards; the
-> git-guard hook still blocks dangerous git. For interactive diff-by-diff review, developers should
-> use the official Claude Code panel instead.
+> **"edits code"**. Two ways to run them:
+> - **▶ Run** — headless auto-approve. The run view shows a **Step timeline** and a **Files changed**
+>   panel: click a file to open it, or expand **diff** to see the exact old→new lines it wrote.
+>   Review the final diff in Source Control too; the git-guard hook still blocks dangerous git.
+> - **⚡ Interactive (approve each edit)** — opens a terminal running `claude` interactively, so a
+>   developer **reviews each diff and approves / rejects / redoes** it (the official-panel experience),
+>   nothing written without an OK. Runs outside the panel (no cost chip there).
 
 ## Prerequisites
 1. **Claude Code CLI** installed and signed in (`claude --version` works). The extension shells out to it.
@@ -53,16 +66,28 @@ webview (cards + form)  --run{command,args}-->  extension host
 - The **git-guard hook** and Claude Code's permission system still apply underneath.
 
 ## Cost & tokens
-Each run shows a **cost chip** — the tokens used (input→output) and the **API-equivalent cost in USD**
-for that run (summed across follow-ups), read straight from Claude's `result` event (`usage` +
+Each run shows a **cost chip** — the tokens used (`input→output`, plus **`… cached`** = KB context
+re-read from cache, which is the usual reason the number looks big) and the **API-equivalent cost in
+USD** for that run (summed across follow-ups), read straight from Claude's `result` event (`usage` +
 `total_cost_usd`). It also shows an approx **₫** figure by default (rate `namhtSpecUi.usdToVnd`,
 default 26000 — adjust to your rate, or set 0 to hide VND). Note: on a **Team/Enterprise seat you are
 not billed per token** — the number reflects usage value, not a charge.
 
+## Pick a model per run (cost lever)
+Every form has a **Model** dropdown (pre-set to `namhtSpecUi.model`) — choose **Haiku** for a cheap
+lookup, **Sonnet** for balanced Q&A/planning, **Opus** for the hardest code. Each run view shows a
+**⚙ model chip**, and the **follow-up box has its own model dropdown**: you can switch model mid-session
+(e.g. plan on Sonnet, then a cheap Haiku follow-up) and **the session keeps its full context** — the
+extension resumes the same Claude session (`--resume`), so the new model still knows what it was doing.
+
 ## Settings
 - `namhtSpecUi.claudePath` — path to the `claude` CLI (default `claude`).
-- `namhtSpecUi.extraArgs` — extra args for `claude -p` (default `--permission-mode acceptEdits`, which
-  auto-approves the report files skills save; tighten with `--allowedTools` if you prefer).
+- `namhtSpecUi.extraArgs` — extra args for `claude -p`. Default `--permission-mode bypassPermissions`
+  so skills can run the tools they need headlessly (`node` for the map/PDF, `npm`/`npx`/`jest` for
+  build & tests, `gh`, `curl`) — otherwise those commands surface as **"error"** because a headless run
+  can't answer an approval prompt. **The git-guard hook still blocks dangerous/remote git even in this
+  mode (verified).** Prefer approval prompts? Set it to `--permission-mode acceptEdits` — but then
+  map/build/test commands will fail with "error" here; use **⚡ Interactive** (a real terminal) for those.
 - `namhtSpecUi.usdToVnd` — VND rate to show đồng next to USD cost (0 = off; e.g. `25400`).
 - `namhtSpecUi.model` — model for the UI's runs (default **`sonnet`** — ~5x cheaper than Opus for
   read-only Q&A/planning; use `opus` for the hardest code tasks, `haiku` for cheap lookups, empty to inherit).

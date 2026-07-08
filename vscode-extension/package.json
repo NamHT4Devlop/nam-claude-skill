@@ -2,7 +2,7 @@
   "name": "namht-spec-ui",
   "displayName": "Spec Kit UI",
   "description": "Point-and-click UI over the namht-* Spec Kit skills for non-technical roles (PM/SM). Runs Claude Code under the hood.",
-  "version": "0.4.2",
+  "version": "0.10.1",
   "publisher": "namht",
   "private": true,
   "license": "MIT",
@@ -52,9 +52,9 @@
           },
           "default": [
             "--permission-mode",
-            "acceptEdits"
+            "bypassPermissions"
           ],
-          "description": "Extra args passed to `claude -p`. Default auto-approves file writes (skills save reports under spec-kit-sessions/); the git-guard hook still blocks dangerous git. Tighten with --allowedTools if desired."
+          "description": "Extra args passed to `claude -p`. Default `bypassPermissions` lets skills run the tools they need headlessly (node for the map/PDF, npm/npx/jest for build & tests, gh, curl) — otherwise those Bash commands show up as 'error' because a headless run can't answer an approval prompt. The git-guard hook STILL blocks dangerous/remote git even in this mode (verified). Prefer prompts? Set this to [\"--permission-mode\",\"acceptEdits\"] — but then map/build/test commands will fail with 'error' in this panel; use the ⚡ Interactive button (a real terminal) for those instead."
         },
         "namhtSpecUi.usdToVnd": {
           "type": "number",
@@ -70,9 +70,20 @@
             "opus"
           ],
           "default": "sonnet",
-          "description": "Model for the UI's runs (passed as `claude --model`). 'sonnet' is ~5x cheaper than Opus for read-only Q&A/planning at great quality; 'haiku' is cheapest for simple lookups; 'opus' for the hardest code tasks; empty = your Claude default."
+          "description": "DEFAULT model pre-selected in each form's Model dropdown (passed as `claude --model`). You can override it per run and per follow-up in the panel. 'sonnet' is ~5x cheaper than Opus for read-only Q&A/planning at great quality; 'haiku' is cheapest for simple lookups; 'opus' for the hardest code tasks; empty = your Claude default."
         }
       }
+    },
+    "commands": [
+      { "command": "namhtSpec.openApp", "title": "Open Spec Kit App", "category": "Spec Kit", "icon": "$(multiple-windows)" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "namhtSpec.openApp", "when": "view == namhtSpec.view", "group": "navigation" }
+      ],
+      "commandPalette": [
+        { "command": "namhtSpec.openApp" }
+      ]
     }
   },
   "scripts": {

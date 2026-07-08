@@ -5,7 +5,7 @@ import { spawn, ChildProcess, execFile } from 'child_process';
 // else — the host rejects any command not on this list.
 const ALLOWED = new Set([
   'namht-scan', 'namht-rescan', 'namht-ask', 'namht-map', 'namht-system-map', 'namht-document',
-  'namht-discover', 'namht-plan', 'namht-plan-review',
+  'namht-discover', 'namht-plan', 'namht-plan-review', 'namht-user-story',
   'namht-build', 'namht-fix-bug', 'namht-migrate', 'namht-simplify', 'namht-perf', 'namht-observe',
   'namht-review', 'namht-qa', 'namht-qa-integration', 'namht-security-audit', 'namht-design-review', 'namht-pr',
   'namht-splunk-report', 'namht-retro', 'namht-pdf', 'namht-skillify',
@@ -18,36 +18,54 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('namhtSpec.view', provider, {
       webviewOptions: { retainContextWhenHidden: true },
-    })
+    }),
+    vscode.commands.registerCommand('namhtSpec.openApp', () => provider.openApp())
   );
 }
 export function deactivate() {}
 
 class SpecKitViewProvider implements vscode.WebviewViewProvider {
-  private view?: vscode.WebviewView;
+  private webviews = new Set<vscode.Webview>();       // sidebar view + any app panels — kept in sync
   private procs = new Map<string, ChildProcess>();   // runId → process
   private sessions = new Map<string, string>();       // runId → claude session_id
   private state = new Map<string, any>();             // runId → live state (log/result/status) — survives webview recreation
 
   constructor(private readonly ctx: vscode.ExtensionContext) {}
 
-  resolveWebviewView(view: vscode.WebviewView) {
-    this.view = view;
-    view.webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(this.ctx.extensionUri, 'media')] };
-    view.webview.html = this.getHtml(view.webview);
-    view.webview.onDidReceiveMessage((m: any) => {
-      switch (m?.type) {
-        case 'check': this.checkClaude(); this.post({ type: 'history', items: this.history() }); this.post({ type: 'restore', runs: Array.from(this.state.values()) }); break;
-        case 'run': this.start(m); break;
-        case 'followup': this.followup(String(m.runId), String(m.text || ''), String(m.sessionId || '')); break;
-        case 'cancel': this.cancel(String(m.runId)); break;
-        case 'openReport': this.openReport(String(m.path || '')); break;
-        case 'clearHistory': this.ctx.workspaceState.update(HIST_KEY, []); this.post({ type: 'history', items: [] }); break;
-      }
-    });
+  resolveWebviewView(view: vscode.WebviewView) { this.wire(view.webview); }
+
+  // Open the full app experience in the editor area (wide two-pane layout).
+  openApp() {
+    const panel = vscode.window.createWebviewPanel(
+      'namhtSpecApp', 'Spec Kit', vscode.ViewColumn.Active,
+      { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [vscode.Uri.joinPath(this.ctx.extensionUri, 'media')] }
+    );
+    panel.iconPath = vscode.Uri.joinPath(this.ctx.extensionUri, 'media', 'icon.svg');
+    this.wire(panel.webview);
+    panel.onDidDispose(() => this.webviews.delete(panel.webview));
   }
 
-  private post(m: unknown) { this.view?.webview.postMessage(m); }
+  private wire(webview: vscode.Webview) {
+    webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(this.ctx.extensionUri, 'media')] };
+    webview.html = this.getHtml(webview);
+    webview.onDidReceiveMessage((m: any) => this.handleMessage(m));
+    this.webviews.add(webview);
+  }
+
+  private handleMessage(m: any) {
+    switch (m?.type) {
+      case 'check': this.checkClaude(); this.post({ type: 'config', defaultModel: this.cfg().model }); this.post({ type: 'history', items: this.history() }); this.post({ type: 'restore', runs: Array.from(this.state.values()) }); break;
+      case 'run': this.start(m); break;
+      case 'followup': this.followup(String(m.runId), String(m.text || ''), String(m.sessionId || ''), m.model); break;
+      case 'cancel': this.cancel(String(m.runId)); break;
+      case 'openReport': this.openReport(String(m.path || '')); break;
+      case 'interactive': this.interactive(m); break;
+      case 'open': this.openFile(String(m.path || '')); break;
+      case 'clearHistory': this.ctx.workspaceState.update(HIST_KEY, []); this.post({ type: 'history', items: [] }); break;
+    }
+  }
+
+  private post(m: unknown) { for (const w of this.webviews) w.postMessage(m); }
   private cfg() {
     const c = vscode.workspace.getConfiguration('namhtSpecUi');
     return { claudePath: c.get<string>('claudePath', 'claude'), extraArgs: c.get<string[]>('extraArgs', ['--permission-mode', 'acceptEdits']), usdToVnd: c.get<number>('usdToVnd', 26000), model: c.get<string>('model', 'sonnet') };
@@ -79,18 +97,24 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   // ---- runs ----
   private start(m: any) {
     const runId = String(m.runId); const command = String(m.command || '');
-    if (!ALLOWED.has(command)) { this.post({ type: 'log', runId, text: `[blocked: "${command}" is not allowed]` }); return; }
-    const cwd = this.cwd();
+    const isChat = command === '__chat';   // free chat: raw prompt, no skill, whitelist bypassed
+    if (!isChat && !ALLOWED.has(command)) { this.post({ type: 'log', runId, text: `[blocked: "${command}" is not allowed]` }); return; }
+    const cwd = this.cwd() || (isChat ? require('os').homedir() : undefined);
     if (!cwd) { this.post({ type: 'log', runId, text: '[open a project folder first — skills read that project]' }); this.post({ type: 'done', runId, code: 1 }); return; }
-    const prompt = `/${command} ${String(m.args || '')}`.trim();
-    this.histUpsert({ runId, command, title: m.title || command, values: m.values || {}, when: Date.now(), status: 'running' });
-    this.state.set(runId, { runId, command, title: String(m.title || command), log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now() });
-    this.spawnClaude(runId, ['-p', prompt], cwd, `▶ ${prompt}\n(cwd: ${cwd})\n\n`);
+    const prompt = isChat ? String(m.args || '').trim() : `/${command} ${String(m.args || '')}`.trim();
+    if (isChat && !prompt) { this.post({ type: 'log', runId, text: '[type a question first]' }); this.post({ type: 'done', runId, code: 1 }); return; }
+    const model = (m.model !== undefined && m.model !== null) ? String(m.model) : this.cfg().model;
+    this.histUpsert({ runId, command, title: m.title || command, values: m.values || {}, when: Date.now(), status: 'running', model });
+    this.state.set(runId, { runId, command, title: String(m.title || command), log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now(), model });
+    this.spawnClaude(runId, ['-p', prompt], cwd, `${isChat ? '💬' : '▶'} ${prompt}\n(cwd: ${cwd})\n\n`);
   }
 
-  private followup(runId: string, text: string, sessionId?: string) {
+  private followup(runId: string, text: string, sessionId?: string, model?: string) {
     if (!text.trim()) return;
     const cwd = this.cwd(); if (!cwd) return;
+    // A follow-up may pick a DIFFERENT model — the resumed session keeps its full context on disk,
+    // so switching model mid-session still "knows" what it was doing.
+    if (model !== undefined && model !== null) { const st = this.state.get(runId); if (st) st.model = String(model); }
     // Prefer the id passed from the webview (survives reload — Claude persists sessions on disk),
     // else the in-memory map, else continue the most recent session.
     const sid = (sessionId && sessionId.trim()) ? sessionId.trim() : this.sessions.get(runId);
@@ -101,12 +125,13 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
 
   private spawnClaude(runId: string, baseArgs: string[], cwd: string, header: string) {
     if (this.procs.has(runId)) { this.post({ type: 'log', runId, text: '[this run is still busy — wait for it or cancel]' }); return; }
-    const { claudePath, extraArgs, model } = this.cfg();
-    const cliArgs = [...baseArgs, '--output-format', 'stream-json', '--verbose', ...(model ? ['--model', model] : []), ...extraArgs];
+    const { claudePath, extraArgs, model: cfgModel } = this.cfg();
     let st = this.state.get(runId);
-    if (!st) { st = { runId, command: '', title: runId, log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now() }; this.state.set(runId, st); }
+    if (!st) { st = { runId, command: '', title: runId, log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now(), model: cfgModel }; this.state.set(runId, st); }
+    const model = (st.model !== undefined && st.model !== null) ? st.model : cfgModel;
+    const cliArgs = [...baseArgs, '--output-format', 'stream-json', '--verbose', ...(model ? ['--model', model] : []), ...extraArgs];
     st.status = 'running'; st.log += header;
-    this.post({ type: 'running', runId });
+    this.post({ type: 'running', runId, model });
     this.post({ type: 'log', runId, text: header });
 
     let seen = '', finalText = '', lineBuf = '';
@@ -132,7 +157,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
       if (finalText) { st.result = finalText; this.post({ type: 'result', runId, text: finalText }); }
       const report = this.findReport(seen + '\n' + finalText, cwd); st.report = report;
       this.post({ type: 'done', runId, code: code ?? 0, report });
-      this.histPatch(runId, { status: st.status, result: finalText.slice(0, 24000), report, cost: st.cost || 0, tokens: st.usage });
+      this.histPatch(runId, { status: st.status, result: finalText.slice(0, 24000), report, cost: st.cost || 0, tokens: st.usage, log: (st.log || '').slice(-40000) });
     });
   }
 
@@ -145,8 +170,8 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     }
     if (ev.type === 'assistant' && ev.message?.content) {
       for (const c of ev.message.content) {
-        if (c.type === 'text' && c.text?.trim()) emit(c.text.trim());
-        else if (c.type === 'tool_use') emit(`🔧 ${c.name}${this.shortInput(c.input)}`);
+        if (c.type === 'text' && c.text?.trim()) { emit(c.text.trim()); this.trackSteps(runId, c.text); }
+        else if (c.type === 'tool_use') { emit(`🔧 ${c.name}${this.shortInput(c.input)}`); this.trackFile(runId, c.name, c.input); }
       }
       return undefined;
     }
@@ -183,6 +208,61 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   }
   private resultLen(content: any): string {
     try { const s = typeof content === 'string' ? content : JSON.stringify(content); return s.length ? ` (${s.length} chars)` : ''; } catch { return ''; }
+  }
+
+  // ---- live-run insight: which files are being edited + which step the pipeline reached ----
+  private trackFile(runId: string, name: string, input: any) {
+    if (!input || typeof input !== 'object') return;
+    if (!['Edit', 'MultiEdit', 'Write', 'NotebookEdit'].includes(name)) return;
+    const path = input.file_path || input.notebook_path; if (!path) return;
+    const st = this.state.get(runId); if (!st) return;
+    st.files = st.files || [];
+    let e = st.files.find((f: any) => f.path === path);
+    if (!e) { e = { path, tool: name, edits: [], count: 0 }; st.files.push(e); }
+    const clip = (v: any) => { const s = String(v ?? ''); return s.length > 1200 ? s.slice(0, 1200) + '\n… (truncated)' : s; };
+    const add = (o: any, n: any) => { e.edits.push({ old: clip(o), new: clip(n) }); e.count++; };
+    if (name === 'Edit') add(input.old_string, input.new_string);
+    else if (name === 'MultiEdit' && Array.isArray(input.edits)) input.edits.forEach((x: any) => add(x.old_string, x.new_string));
+    else if (name === 'Write') { e.tool = 'Write'; add('', input.content); }
+    else if (name === 'NotebookEdit') add('', input.new_source);
+    if (e.edits.length > 40) e.edits = e.edits.slice(-40);
+    this.post({ type: 'file', runId, entry: e });
+  }
+
+  private trackSteps(runId: string, text: string) {
+    const st = this.state.get(runId); if (!st) return;
+    st.steps = st.steps || [];
+    const re = /(?:^|\n)\s*#{0,4}\s*Step\s+(\d+)\b[ \t]*(?:[—:\-–][ \t]*(.+))?/gi;
+    let m: RegExpExecArray | null, changed = false;
+    while ((m = re.exec(text))) {
+      const n = parseInt(m[1], 10); if (isNaN(n)) continue;
+      const label = (m[2] || '').split('\n')[0].replace(/[*#`]/g, '').trim().slice(0, 44);
+      const ex = st.steps.find((s: any) => s.n === n);
+      if (ex) { if (label && !ex.label) { ex.label = label; changed = true; } }
+      else { st.steps.push({ n, label }); changed = true; }
+    }
+    if (changed) { st.steps.sort((a: any, b: any) => a.n - b.n); this.post({ type: 'steps', runId, steps: st.steps }); }
+  }
+
+  // ---- interactive handoff: run the same skill in a terminal so a dev reviews each diff / approves-rejects ----
+  private interactive(m: any) {
+    const command = String(m.command || ''); if (!ALLOWED.has(command)) return;
+    const cwd = this.cwd(); if (!cwd) { vscode.window.showWarningMessage('Open a project folder first — skills read that project.'); return; }
+    const { claudePath, model: cfgModel } = this.cfg();
+    const model = (m.model !== undefined && m.model !== null) ? String(m.model) : cfgModel;
+    const prompt = `/${command} ${String(m.args || '')}`.replace(/\s*\n\s*/g, ' ').trim();
+    const q = (s: string) => `'` + s.replace(/'/g, `'\\''`) + `'`;
+    const line = `${claudePath}${model ? ' --model ' + model : ''} ${q(prompt)}`;
+    const term = vscode.window.createTerminal({ cwd, name: `Claude ⚡ ${String(m.title || command)}` });
+    term.show(true);
+    term.sendText(line, true);
+  }
+
+  private openFile(p: string) {
+    if (!p) return;
+    if (!p.startsWith('/')) { const cwd = this.cwd(); if (cwd) p = require('path').resolve(cwd, p); }
+    vscode.window.showTextDocument(vscode.Uri.file(p), { preview: true })
+      .then(undefined, (err) => vscode.window.showWarningMessage(`Cannot open ${p}: ${err}`));
   }
 
   private cancel(runId: string) {
