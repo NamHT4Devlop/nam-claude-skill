@@ -100,6 +100,15 @@ timestamps/UUIDs/volatile ids; decimal scale (Ruby `BigDecimal` ↔ Java `BigDec
 GraphQL error masking. Keep an explicit **allowed-diff list** the user signs off — anything else is a
 real failure.
 
+**Bundled harness — don't rebuild it.** `references/shadow-parity.cjs` (Node ≥18, no deps) does exactly
+this: fill a `cases.json` (copy `references/cases.example.json`), then
+`node "$HOME/.claude/skills/namht-port/references/shadow-parity.cjs" cases.json --source <rails-url>
+--target <spring-url> [--graphql-path /graphql] [--source-token … --target-token …]`. It sends each
+case to both, canonicalizes (sorts keys, redacts `ignore` paths like `**.updatedAt`, sorts
+`sortArraysAt` arrays), diffs, prints per-field failures, and **exits non-zero if any case diverges** —
+use it as the per-endpoint gate and in CI. Grow `cases.json` per endpoint (happy · boundary · invalid ·
+auth-denied · empty · large); it IS the parity oracle.
+
 ## Step 4 — Per-endpoint loop (all GraphQL resolvers + the named REST APIs)
 Independently per endpoint, so each ships and cuts over alone:
 1. **Behavior-spec** via the extraction fan-out + completeness critic (above). Make Rails' *implicit*

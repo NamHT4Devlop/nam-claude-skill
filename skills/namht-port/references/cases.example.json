@@ -1,0 +1,61 @@
+{
+  "_comment": "Parity cases for shadow-parity.cjs. Copy to cases.json and fill in. Cover per endpoint: happy, boundary, invalid input, auth-denied, empty, large.",
+  "graphqlPath": "/graphql",
+  "headers": {
+    "both": { "accept": "application/json" },
+    "source": { "x-note": "add the Rails auth header here, or use --source-token" },
+    "target": { "x-note": "add the Spring auth header here, or use --target-token" }
+  },
+  "ignore": ["**.createdAt", "**.updatedAt", "**.id", "errors.*.message"],
+  "sortArraysAt": ["data.coaches"],
+
+  "cases": [
+    {
+      "name": "coach by id — happy",
+      "type": "graphql",
+      "graphql": {
+        "query": "query($id: ID!) { coach(id: $id) { id name metrics { attendance performance } } }",
+        "variables": { "id": "1" }
+      },
+      "expectStatus": 200,
+      "ignore": ["data.coach.updatedAt"]
+    },
+    {
+      "name": "coach by id — not found",
+      "type": "graphql",
+      "graphql": {
+        "query": "query($id: ID!) { coach(id: $id) { id } }",
+        "variables": { "id": "999999" }
+      }
+    },
+    {
+      "name": "coaches list — first page",
+      "type": "graphql",
+      "graphql": {
+        "query": "query { coaches(first: 10) { edges { node { id name } cursor } pageInfo { hasNextPage endCursor } } }"
+      }
+    },
+    {
+      "name": "create task — validation error (empty title)",
+      "type": "graphql",
+      "graphql": {
+        "query": "mutation($input: CreateTaskInput!) { createTask(input: $input) { task { id } errors } }",
+        "variables": { "input": { "title": "" } }
+      }
+    },
+    {
+      "name": "list tasks — REST",
+      "type": "rest",
+      "rest": { "method": "GET", "path": "/api/tasks?status=TODO" },
+      "expectStatus": 200
+    },
+    {
+      "name": "list tasks — unauthorized",
+      "type": "rest",
+      "rest": { "method": "GET", "path": "/api/tasks" },
+      "headers": { "both": { "authorization": "" } },
+      "ignoreStatus": false,
+      "expectStatus": 401
+    }
+  ]
+}
