@@ -3,123 +3,156 @@ name: namht-port
 description: >-
   Port a service (or a chosen set of endpoints) from one language/stack to another while
   PRESERVING its contract and business behavior — e.g. Ruby on Rails + GraphQL → Java Spring
-  Boot. Works endpoint-by-endpoint (strangler): freeze the contract, extract the business
-  behavior from the source, capture golden/characterization tests of the real responses,
-  re-implement on the target stack, and verify byte-for-byte parity before cutover. Use when the
-  user says "/port", "migrate to another language", "rewrite in <language>", "Rails to Spring",
-  "port these resolvers/APIs", or is moving a service between stacks. Edits code — change
-  discipline applies.
+  Boot. Contract-first and parity-verified: freeze the contract, extract the business behavior
+  from the source with parallel multi-lens agents, capture golden/shadow tests of the real
+  responses, re-implement on the target stack, and prove byte-for-byte parity with an INDEPENDENT
+  reviewer before cutover — endpoint by endpoint (strangler). Use when the user says "/port",
+  "migrate to another language", "rewrite in <language>", "Rails to Spring", "port these
+  resolvers/APIs". Edits code — change discipline applies.
 ---
 
-# namht-port — behavior-preserving cross-stack port (contract-first, parity-verified)
+# namht-port — behavior-preserving cross-stack port (parity-verified, multi-agent)
 
 Distinct from `/namht-migrate` (which evolves a contract **in place**, same codebase). This is a
-**rewrite onto a different stack that must behave identically** — the clients must not notice. The
-whole discipline exists to answer one question per endpoint: *"does the new implementation return
-exactly what the old one did?"*
+**rewrite onto a different stack that must behave identically** — clients must not notice. Every
+endpoint answers one question: *"does the new implementation return exactly what the old one did,
+with the same side effects?"*
 
-**Default target profile (this project):** Java **Spring Boot** · **MyBatis** (SQL-first) · **Flyway**
-· **Apache Camel** · **AWS SQS** · **MySQL**, sharing the **same database** as the source. GraphQL on
-the Java side via **Spring for GraphQL** (or Netflix DGS if the user prefers). Confirm at step 0.
+**The oracle is executable, not opinion.** Correctness is decided by **golden/shadow tests** — real
+recorded source responses that the new code must reproduce. **Agents assist** (multi-lens extraction
+to not miss rules; an independent reviewer to catch divergence) but **tests decide**. Never let
+"the agents agreed" stand in for a passing parity test.
+
+**Default target profile (this project):** Spring Boot · **MyBatis** (SQL-first, not JPA) · Flyway ·
+Camel · SQS · MySQL, sharing the **same database** as the source. GraphQL on Java via **Spring for
+GraphQL** (or Netflix DGS). Confirm at step 0.
 
 ## Ground rules
-- **The contract is frozen.** Port the **GraphQL schema 1:1** and the chosen REST contracts exactly —
-  same types, fields, nullability, enums, pagination, status codes, JSON shape. **Diff proves it.**
-- **Behavior parity is the acceptance bar.** An endpoint is "done" only when **golden tests** (real
-  recorded responses of the source) pass against the new implementation — happy, edge, error and
-  auth-denied cases alike.
+- **Contract frozen.** Port the GraphQL schema 1:1 and the chosen REST contracts exactly; a **diff
+  proves** it (types, nullability, enums, pagination, status codes, JSON shape).
+- **Behavior parity is the acceptance bar.** An endpoint is done only when its **golden/shadow tests
+  pass** — happy, edge, error, and auth-denied — AND its **side effects** match.
+- **Author ≠ reviewer.** Whoever writes the Java does NOT sign off parity. A separate, adversarial
+  reviewer (agent) must try to find a divergence and fail it.
 - **The source is the spec.** Business rules come from the Ruby (models, services, callbacks,
-  validations, scopes, concerns) + the KB — **never invented**. Cite the Ruby file/line.
-- **Incremental & reversible (strangler).** One endpoint at a time; run old and new side by side;
-  cut over per endpoint; keep parity tests as the regression gate. **Never big-bang.**
-- **Shared DB by default — no data migration.** MyBatis maps the existing MySQL schema; both sides
-  read/write the same tables during transition. Replicate any DB-side effect the Ruby did (timestamps,
-  counter caches, `touch`, `dependent:`) or data will drift while both run.
-- **Minimal, conventional, no drive-by refactors** (same change discipline as `/namht-build`). The
-  human deploys and controls cutover — you don't.
+  validations, scopes, concerns) + its tests + the KB — **never invented**. Cite the Ruby file/line.
+- **Incremental & reversible (strangler); reads before writes.** One endpoint at a time; run old and
+  new side by side; **cut over read-only endpoints first, write/side-effect endpoints last**; keep
+  parity tests as the regression gate; roll back per endpoint. Never big-bang.
+- **Shared DB → side-effect parity is a HARD gate.** Both sides write the same MySQL; if the Java
+  misses a Rails DB-side effect (timestamps, `counter_cache`, `touch`, `dependent:`, callbacks that
+  write other rows) data silently drifts. Reproduce every write, or don't cut that endpoint over.
+- Minimal, conventional, no drive-by refactors. The human deploys and controls cutover.
+
+## Agent roster — where to fan out (and where NOT to)
+Spawn sub-agents (`Task`) in parallel at two stages; keep code-writing single-threaded per endpoint.
+- **Extraction (per endpoint, parallel lenses)** — different agents catch different rules:
+  1. **Resolver/controller logic** (`namht-codebase-analyzer`) — orchestration, params, branching.
+  2. **Model & data rules** — callbacks, validations, **default scopes**, associations, `dependent:`,
+     enums, STI, serialized columns.
+  3. **Tests-as-spec** — read the Ruby request/model specs & VCR cassettes; they encode intended
+     behavior and edge cases.
+  4. **Side-effects & flows** (`namht-business-flow-tracer`) — DB writes to OTHER tables, SQS
+     publishes, Camel routes, emails, `touch`/counter caches.
+  Merge into one **behavior-spec**, then run a **completeness critic** agent: *"what business rule,
+  edge case, or side effect in the Ruby is NOT yet in this spec?"* Loop until it finds nothing new.
+- **Blast radius** (`namht-impact-detector`) — who consumes this endpoint, so parity is enforced
+  where it actually matters.
+- **Verification (per endpoint, parallel, INDEPENDENT of the author)** — an adversarial panel:
+  `namht-business-consistency-reviewer` (rule parity vs source/KB), `namht-security-reviewer` (auth /
+  IDOR / role allow-deny parity), `namht-performance-reviewer` (N+1, query-count parity vs the Ruby),
+  plus a **parity auditor** that reads the Ruby and the Java side by side and lists every behavioral
+  difference. An endpoint passes only if the panel finds no unresolved divergence AND the tests are green.
+- **Scale to risk, not vanity.** Fan out on hard/high-risk endpoints; for a trivial read, one extractor
+  + the tests may be enough. More agents cost tokens — spend them where a miss is expensive.
 
 ## Step 0 — Scope & discovery
-Confirm before porting (ask what's missing; don't assume):
-- **Source** repo + stack (Rails version, `graphql-ruby`, REST framework, auth: Devise/JWT/Pundit…).
-- **Target** stack (default profile above) + GraphQL library + build (Gradle/Maven).
-- **Scope set** — the endpoints to port: **ALL GraphQL resolvers** + the **specific 3–5 REST APIs**
-  (get the exact list; everything else is explicitly OUT of scope).
-- **DB** — shared (default) vs new schema. **Async** — are there SQS producers/consumers, Camel-style
-  flows, or background jobs (Sidekiq/ActiveJob) among the ported endpoints? If yes, they port too
-  (match channel names + message schema so the Java side is drop-in on the same queues).
-- **Cutover** — strangler (default) vs another plan.
-Write a short **Scope & Parity Plan** (in-scope endpoints, out-of-scope, target profile, DB & async
-decisions, cutover) and confirm.
+Confirm (ask what's missing): source stack (Rails, `graphql-ruby`, auth: Devise/JWT/Pundit/CanCan) ·
+target profile · **the exact endpoint set** (ALL GraphQL resolvers + the specific 3–5 REST APIs;
+everything else OUT of scope) · DB (shared default) · async in scope (SQS/Camel/jobs?) · cutover
+(strangler default) · **the parity oracle available** (can the source run locally / is there a staging
+env / are there request specs or VCR cassettes to replay?). Write a short **Scope & Parity Plan** and
+confirm before porting.
 
-## Step 1 — Ground the source in its business behavior
-Run (or reuse) `/namht-scan` on the Rails repo → the KB captures business rules, flows, auth and the
-Event/Contract Catalog (`17-async-events`) for SQS/Camel. This is the shared truth the port is checked
-against. No KB → scan first; grounding a rewrite on grep alone will miss implicit rules.
+## Step 1 — Ground the source
+Run/reuse `/namht-scan` on the Rails repo → KB of business rules, flows, auth, and the Event/Contract
+Catalog (SQS/Camel). No KB → scan first; grounding a rewrite on grep alone misses implicit rules.
 
 ## Step 2 — Freeze the contract (contract-first)
-- **GraphQL:** export the source **schema SDL** (e.g. dump `graphql-ruby`'s schema). Recreate it on the
-  Java side (Spring for GraphQL schema files / DGS), then **diff the two SDLs** — they must be identical
-  (types, fields, nullability, enums, input types, interfaces/unions, directives, Relay
-  connections/pagination). Map GraphQL types → Java records/DTOs.
-- **REST (3–5):** capture each endpoint's exact contract — path, method, params, headers, status codes,
-  and response JSON shape — as an OpenAPI snapshot or fixtures. Freeze it.
+- **GraphQL:** export the source SDL, recreate it on Java, and **diff the two SDLs — must be
+  identical** (types, fields, nullability, enums, inputs, interfaces/unions, directives, custom
+  scalars, Relay connections). Map types → Java records/DTOs.
+- **REST (3–5):** capture each contract (path, method, params, headers, status codes, JSON shape) as
+  an OpenAPI/snapshot and freeze it.
 
-## Step 3 — Per-endpoint loop (repeat for every in-scope endpoint)
-Do these **independently per resolver/API** so each can ship and cut over on its own:
-1. **Behavior spec.** From the Ruby resolver/controller + its models/services/callbacks/validations/
-   scopes/concerns, write: inputs, outputs, **business rules**, **authorization** (who may call it),
-   edge cases, **error responses**, and **side effects** (DB writes, SQS publishes, emails, touches).
-   Cite Ruby files/lines; ground rules in the KB. Make Rails' *implicit* behavior **explicit**.
-2. **Golden / characterization tests.** Record the **real source responses** as the parity oracle:
-   for GraphQL, representative queries/mutations + variables → captured JSON (including the `errors`
-   array); for REST, request→response snapshots. Cover happy + boundary + invalid-input + auth-denied.
-3. **Implement on the target.** Write the Java: a GraphQL resolver (`@QueryMapping`/`@MutationMapping`/
-   `@SchemaMapping`) or REST controller; a **service** carrying the ported business rules; a **MyBatis
-   mapper** for data against the **same MySQL** (reuse the SQL semantics the ActiveRecord produced —
-   scopes/joins/ordering); **Flyway** only if a genuinely new column is required (prefer none while the
-   DB is shared); a **Camel route / SQS publish** matching the source's channel + message schema when
-   the endpoint emits one. Minimal, matches conventions.
-4. **Verify parity.** Run the golden tests against the Java endpoint — output must **match the recorded
-   source responses** (modulo diffs you explicitly document and the user accepts, e.g. volatile
-   timestamps). Fix until green. Handle **N+1** with a **BatchLoader/dataloader**. Confirm **auth parity**
-   (same allow/deny) and **error parity** (same GraphQL error shape / REST error body + status).
-5. **Record in the Parity Matrix:** `endpoint · contract identical? · golden tests pass? · business
-   rules covered? · side effects matched? · notes`.
+## Step 3 — Parity oracle (build this BEFORE writing Java)
+Prefer the strongest oracle you can get:
+1. **Shadow/replay (best):** send the **same request to both** the running Rails and the new Spring
+   endpoint and **diff canonicalized responses**. Generate cases by replaying **Rails request specs /
+   VCR cassettes** and representative real queries (happy · boundary · invalid · auth-denied · empty ·
+   large). Capture the response AND the side effects (rows written, SQS messages).
+2. **Recorded golden fixtures:** if you can't run both live, record real Rails responses once and
+   assert Spring reproduces them.
+3. **No runnable source:** say so — parity is weaker; lean harder on the extraction spec + reviewer
+   panel, and mark those endpoints higher-risk.
+**Normalize before diffing** (or you'll chase false diffs): canonical JSON key order; normalize
+timestamps/UUIDs/volatile ids; decimal scale (Ruby `BigDecimal` ↔ Java `BigDecimal`); timezone/format;
+GraphQL error masking. Keep an explicit **allowed-diff list** the user signs off — anything else is a
+real failure.
 
-## Step 4 — Cross-cutting parity (verify once, across all ported endpoints)
-- **Auth:** Devise/JWT/Pundit/CanCan → **Spring Security** (authn + method-level authz) — same tokens,
-  claims, roles, and allow/deny outcomes.
-- **Errors:** identical GraphQL `errors` structure / REST error body + HTTP status per case.
-- **Pagination:** Relay connections / cursor semantics reproduced exactly.
-- **N+1:** dataloaders/BatchLoader where `graphql-batch`/includes existed.
-- **Data layer (shared MySQL):** watch the Rails→SQL gotchas — default scopes, `dependent:`,
-  `counter_cache`, `touch`, enum-as-integer, STI, serialized/JSON columns, timezone handling,
-  `created_at/updated_at` written in Ruby. Reproduce every DB-side effect so both sides stay consistent.
-- **Async (if in scope):** SQS producers/consumers and Camel routes match the Event/Contract Catalog —
-  same queue/topic names, message schema, FIFO/DLQ/idempotency — so the Java service is interchangeable
-  with Rails on the same queues.
+## Step 4 — Per-endpoint loop (all GraphQL resolvers + the named REST APIs)
+Independently per endpoint, so each ships and cuts over alone:
+1. **Behavior-spec** via the extraction fan-out + completeness critic (above). Make Rails' *implicit*
+   behavior explicit; cite Ruby lines.
+2. **Golden/shadow cases** from step 3 for this endpoint — including side-effect assertions.
+3. **Implement on target** — GraphQL resolver (`@QueryMapping`/`@MutationMapping`/`@SchemaMapping`) or
+   REST controller; a service carrying the ported rules; a **MyBatis mapper** on the same MySQL
+   (reuse the SQL semantics ActiveRecord produced — scopes/joins/order); Flyway only for a genuinely
+   new column (avoid while DB is shared); a Camel route / SQS publish matching the source's channel +
+   message schema. Minimal, matches conventions.
+4. **Verify parity** — run the oracle; output must match (modulo the allowed-diff list). Then the
+   **independent reviewer panel** must find no unresolved divergence (rules, auth, N+1, side effects).
+   Fix until both gates are green. Use a **BatchLoader/dataloader** for N+1.
+5. **Parity Matrix row:** `endpoint · contract identical? · oracle green? · reviewer panel clear? ·
+   query-count parity? · side effects matched? · risk tier · notes`.
 
-## Step 5 — Cutover guidance + report
-- **Strangler cutover:** run both services against the shared DB; route each GraphQL operation / REST
-  endpoint to Spring one at a time (behind a gateway/proxy or feature flag); keep the golden tests as
-  the gate; roll back per endpoint if parity breaks. Because the DB is shared, both sides operate on the
-  same data — a true side-by-side.
-- **Report (dual-audience):** save to `spec-kit-sessions/port/<service>-<date>.md` and render HTML —
-  the Scope & Parity Plan, the **Parity Matrix**, per-endpoint specs, cross-cutting results, open risks,
-  and the cutover checklist. Then `/namht-scan` the new Java repo to seed its own KB. Remind the user
-  they own deploy and cutover.
+## Step 5 — Cross-cutting parity (verify once, across all ported endpoints)
+Auth (→ Spring Security: same tokens/claims/roles, same allow-deny) · error format (GraphQL `errors`
+array & masking / REST body + status) · pagination (Relay cursors reproduced) · N+1 (dataloaders) ·
+**GraphQL specifics** (nullability, custom scalars, enum coercion, input defaults, interface/union
+`__typename`, directives) · **shared-MySQL gotchas** (default scopes, `counter_cache`, `touch`, STI,
+enum-as-int, serialized/JSON columns, timezone, `created_at/updated_at` written in Ruby) · async
+(SQS/Camel channel names + message schema + FIFO/DLQ/idempotency match the Event/Contract Catalog).
+
+## Step 6 — Cutover + completeness gate + report
+- **Strangler cutover:** run both on the shared DB; route per endpoint behind a gateway/flag;
+  **reads first, writes last**; keep the parity tests as the gate; roll back per endpoint. Because the
+  DB is shared, do a **reconciliation check** on write endpoints (sample rows both would write and
+  diff) before trusting dual-run.
+- **Completeness gate (a final critic):** confirm **every** scoped endpoint has contract-diff clean +
+  oracle green + reviewer panel clear; **log anything deferred** — no silent drops. Report coverage:
+  N GraphQL resolvers + M REST APIs, X verified, Y deferred (why).
+- **Report (dual-audience):** save to `spec-kit-sessions/port/<service>-<date>.md` + render HTML — the
+  Scope & Parity Plan, the **Parity Matrix**, per-endpoint specs, cross-cutting results, risk tiers,
+  open risks, cutover checklist. Then `/namht-scan` the new Java repo to seed its KB. The human owns
+  deploy and cutover.
+
+## Risk tiering (drives how much rigor each endpoint gets)
+Score each endpoint by: source **test coverage** (low → higher risk), **business complexity**, and
+whether it **writes / has side effects** (write endpoints are riskiest on a shared DB). High-risk →
+more golden/shadow cases, the full reviewer panel, and an explicit human sign-off before cutover.
 
 ## Rails → Spring (this project) mapping cheat-sheet
-`ActiveRecord` → **MyBatis mapper on the same MySQL** (SQL-first; not JPA) · scopes / complex queries →
-mapper SQL (reuse the generated SQL semantics) · migrations → **Flyway** (only if adding) · `graphql-ruby`
-→ **Spring for GraphQL** / DGS · `graphql-batch` / dataloader → **BatchLoader** (N+1) · Devise/JWT/Pundit
-→ **Spring Security** · Sidekiq/ActiveJob → **SQS `@SqsListener`** / **Camel** · Rails validations →
-Bean Validation + service checks · callbacks (`before_save`/`after_commit`…) → explicit service/domain
-logic · serializers → response DTO mapping.
+`ActiveRecord` → **MyBatis mapper on the same MySQL** (SQL-first) · scopes/complex queries → mapper SQL
+(reuse the generated semantics) · migrations → **Flyway** (only if adding) · `graphql-ruby` → **Spring
+for GraphQL** / DGS · `graphql-batch`/dataloader → **BatchLoader** · Devise/JWT/Pundit/CanCan → **Spring
+Security** (authn + method authz) · Sidekiq/ActiveJob → **SQS `@SqsListener`** / **Camel** · validations
+→ Bean Validation + service checks · callbacks → explicit service/domain logic · serializers → response
+DTO mapping.
 
 ## Rules
-- Contract identical (proven by an SDL/contract diff); behavior parity proven by golden tests — those
-  are the two gates. No endpoint ships without both green.
-- Port **only the scoped set** (all GraphQL + the named REST APIs); list anything out of scope.
-- Never invent business rules — cite the Ruby. Never big-bang; never migrate data unless explicitly
-  asked. Edits code → change discipline (minimal, in-scope, reversible). You don't deploy or cut over.
+- Two gates per endpoint, both green: **contract identical** (SDL/contract diff) + **behavior parity**
+  (oracle) — and the **independent reviewer** signs off. No endpoint ships otherwise.
+- **Author ≠ reviewer.** Tests are the oracle; agents assist but never override a failing test.
+- Port **only the scoped set**; never invent rules (cite the Ruby); never migrate data unless asked;
+  reproduce every DB side effect; reads-before-writes on cutover; never big-bang. You don't deploy.
