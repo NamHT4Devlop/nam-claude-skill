@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- base squirrel in orange -->
+  <g fill="#cf7433">
+    <path d="M11.5 20.6 C3.3 21 1.6 11.8 3.9 6.2 C5.2 2.8 9.2 1 11.7 3.9 C12.9 5.3 12.2 6.9 10.7 7.1 C8 7.5 5.9 9.6 5.5 13 C5.1 16.4 6.2 19 9 20.2 C9.8 20.5 10.7 20.6 11.5 20.6 Z"/>
+    <ellipse cx="14" cy="20.7" rx="3.2" ry="1.5"/>
+    <ellipse cx="13.7" cy="16" rx="4.4" ry="5"/>
+    <circle cx="15" cy="8.6" r="4.3"/>
+    <ellipse cx="12.9" cy="4.5" rx="2" ry="2.7" transform="rotate(-17 12.9 4.5)"/>
+    <ellipse cx="17" cy="4.5" rx="2" ry="2.7" transform="rotate(17 17 4.5)"/>
+    <ellipse cx="18.6" cy="9.7" rx="1.6" ry="1.2"/>
+  </g>
+  <!-- lighter streak through the tail -->
+  <path d="M10 7.1 C7.5 7.8 5.9 9.9 5.6 13 C5.3 15.8 6 18.1 8 19.6" fill="none" stroke="#eaa869" stroke-width="1.7" stroke-linecap="round"/>
+  <!-- cream belly -->
+  <ellipse cx="13.9" cy="16.8" rx="2.7" ry="3.4" fill="#f4dcbb"/>
+  <!-- cream inner ears -->
+  <ellipse cx="13.1" cy="4.8" rx="0.9" ry="1.4" transform="rotate(-17 13.1 4.8)" fill="#f4dcbb"/>
+  <ellipse cx="16.8" cy="4.8" rx="0.9" ry="1.4" transform="rotate(17 16.8 4.8)" fill="#f4dcbb"/>
+  <!-- cream snout -->
+  <ellipse cx="18.2" cy="9.8" rx="1.5" ry="1.1" fill="#f4dcbb"/>
+  <!-- acorn held in the paws -->
+  <ellipse cx="18.7" cy="15.7" rx="1.7" ry="2" fill="#a06a3c"/>
+  <ellipse cx="18.7" cy="13.9" rx="2" ry="0.95" fill="#6e4a25"/>
+  <rect x="18.4" y="12.3" width="0.7" height="1.4" rx="0.35" fill="#6e4a25"/>
+  <!-- front paw over the acorn -->
+  <ellipse cx="16" cy="14.6" rx="1.4" ry="1.3" fill="#cf7433"/>
+  <!-- eye + nose -->
+  <circle cx="15.6" cy="7.9" r="1" fill="#2b1c10"/>
+  <circle cx="15.95" cy="7.55" r="0.32" fill="#ffffff"/>
+  <circle cx="19.3" cy="9.6" r="0.62" fill="#2b1c10"/>
+</svg>

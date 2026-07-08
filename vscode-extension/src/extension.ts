@@ -40,7 +40,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
       'namhtSpecApp', 'Spec Kit', vscode.ViewColumn.Active,
       { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [vscode.Uri.joinPath(this.ctx.extensionUri, 'media')] }
     );
-    panel.iconPath = vscode.Uri.joinPath(this.ctx.extensionUri, 'media', 'icon.svg');
+    panel.iconPath = vscode.Uri.joinPath(this.ctx.extensionUri, 'media', 'icon-color.svg');
     this.wire(panel.webview);
     panel.onDidDispose(() => this.webviews.delete(panel.webview));
   }
