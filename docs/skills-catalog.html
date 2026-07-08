@@ -6,16 +6,18 @@
 <title>namht Spec Kit — Skill Catalog</title>
 <style>
   :root{
-    --bg:#ffffff; --surface:#f7f7f5; --surface-2:#fbfbfa; --border:#e6e4de;
+    --bg:#ffffff; --surface:#f7f7f5; --surface-2:#fbfbfa; --border:#e6e4de; --row:#faf9f6;
     --text:#1c1c1a; --muted:#65635c; --brand:#4a43d1; --brand-2:#8b5cf6;
     --pill-bg:#eeedfe; --pill-text:#3c3489; --mono-bg:#f0eef8; --mono-text:#3c3489;
+    --group-bg:#efeefb; --group-text:#3c3489;
     --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.04);
   }
   @media (prefers-color-scheme:dark){
     :root{
-      --bg:#131316; --surface:#1b1b20; --surface-2:#202027; --border:#2c2c33;
+      --bg:#131316; --surface:#1b1b20; --surface-2:#202027; --border:#2c2c33; --row:#17171c;
       --text:#e9e9ec; --muted:#9a9aa3; --brand:#a99cff; --brand-2:#c4b5fd;
       --pill-bg:#26215c; --pill-text:#cecbf6; --mono-bg:#241f4a; --mono-text:#cecbf6;
+      --group-bg:#201b45; --group-text:#cecbf6;
       --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
     }
   }
@@ -24,38 +26,47 @@
   body{margin:0;background:var(--bg);color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     line-height:1.55;font-size:15px}
-  .wrap{max-width:960px;margin:0 auto;padding:40px 20px 72px}
-  header{margin-bottom:28px}
+  .wrap{max-width:1000px;margin:0 auto;padding:40px 20px 72px}
+  header{margin-bottom:26px}
   .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
   h1{font-size:34px;line-height:1.1;margin:.25em 0 .1em;font-weight:800;letter-spacing:-.02em;
     background:linear-gradient(90deg,var(--brand),var(--brand-2));-webkit-background-clip:text;
     background-clip:text;-webkit-text-fill-color:transparent}
-  .lede{font-size:16px;color:var(--muted);max-width:70ch;margin:.4em 0 0}
-  .facts{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 8px}
+  .lede{font-size:16px;color:var(--muted);max-width:74ch;margin:.4em 0 0}
+  .facts{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
   .fact{font-size:12.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--border);
     background:var(--surface);color:var(--muted)}
   .fact b{color:var(--text)}
-  h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
-    font-weight:700;margin:38px 0 14px;display:flex;align-items:center;gap:9px}
-  h2 .ic{font-size:17px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;
-    box-shadow:var(--shadow)}
-  .card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+
+  .table-wrap{margin-top:24px;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+  .scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:640px;font-size:14px}
+  thead th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:11.5px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;
+    padding:12px 16px;border-bottom:1px solid var(--border);white-space:nowrap}
+  tbody td{padding:11px 16px;border-bottom:1px solid var(--border);vertical-align:top}
+  tbody tr:nth-child(even):not(.group) td{background:var(--row)}
+  tr.group td{background:var(--group-bg);color:var(--group-text);font-weight:700;font-size:12px;
+    letter-spacing:.05em;text-transform:uppercase;padding:9px 16px;border-bottom:1px solid var(--border)}
+  tr.group .ic{font-style:normal;margin-right:7px}
+  td.c-name{white-space:nowrap}
   code.name{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;font-weight:600;
-    background:var(--mono-bg);color:var(--mono-text);padding:2px 8px;border-radius:6px;white-space:nowrap}
+    background:var(--mono-bg);color:var(--mono-text);padding:2px 8px;border-radius:6px}
+  td.c-who{white-space:nowrap}
   .who{font-size:11px;font-weight:700;color:var(--pill-text);background:var(--pill-bg);
     padding:2px 9px;border-radius:999px;white-space:nowrap}
-  .does{font-size:13.5px;color:var(--text);margin:0}
-  .how{margin-top:40px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
+  td.c-desc{color:var(--text);min-width:280px}
+  tbody tr:last-child td{border-bottom:none}
+
+  .how{margin-top:34px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
   .how h3{margin:0 0 10px;font-size:15px}
   .how ul{margin:0;padding-left:18px}
   .how li{margin:.35em 0;color:var(--text)}
   .how code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;
     background:var(--mono-bg);color:var(--mono-text);padding:1px 6px;border-radius:5px}
-  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px}
+  footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px}
   footer a{color:var(--brand)}
-  @media (max-width:520px){ h1{font-size:27px} .grid{grid-template-columns:1fr} }
+  @media (max-width:520px){ h1{font-size:27px} }
 </style>
 </head>
 <body>
@@ -77,61 +88,50 @@
     </div>
   </header>
 
-  <section>
-    <h2><span class="ic">📖</span> Understand — grasp the codebase</h2>
-    <div class="grid">
-      <div class="card"><div class="card-top"><code class="name">namht-scan</code><span class="who">Dev / Team</span></div><p class="does">Scan the repo and generate the Knowledge Base (16 docs) that grounds every other skill. Run once.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-rescan</code><span class="who">Dev</span></div><p class="does">Update the Knowledge Base after code changes (git-diff aware).</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-ask</code><span class="who">Everyone</span></div><p class="does">Ask about the codebase — plain-language answer + a diagram + the technical detail.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-map</code><span class="who">Dev / Architect</span></div><p class="does">Interactive HTML dependency graph of the codebase (opens in the browser).</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-system-map</code><span class="who">Dev / Architect</span></div><p class="does">Cross-service map for a microservices workspace + end-to-end flows.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-document</code><span class="who">BA / PM / Dev</span></div><p class="does">Business↔code documentation, mapped down to the field level.</p></div>
-    </div>
-  </section>
+  <div class="table-wrap"><div class="scroll">
+  <table>
+    <thead>
+      <tr><th style="width:1%">Name</th><th style="width:1%">Intended user</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr class="group"><td colspan="3"><span class="ic">📖</span>Understand — grasp the codebase</td></tr>
+      <tr><td class="c-name"><code class="name">namht-scan</code></td><td class="c-who"><span class="who">Dev / Team</span></td><td class="c-desc">Scan the repo and generate the Knowledge Base (16 docs) that grounds every other skill. Run once.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-rescan</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Update the Knowledge Base after code changes (git-diff aware).</td></tr>
+      <tr><td class="c-name"><code class="name">namht-ask</code></td><td class="c-who"><span class="who">Everyone</span></td><td class="c-desc">Ask about the codebase — plain-language answer + a diagram + the technical detail.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-map</code></td><td class="c-who"><span class="who">Dev / Architect</span></td><td class="c-desc">Interactive HTML dependency graph of the codebase (opens in the browser).</td></tr>
+      <tr><td class="c-name"><code class="name">namht-system-map</code></td><td class="c-who"><span class="who">Dev / Architect</span></td><td class="c-desc">Cross-service map for a microservices workspace + end-to-end flows.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-document</code></td><td class="c-who"><span class="who">BA / PM / Dev</span></td><td class="c-desc">Business↔code documentation, mapped down to the field level.</td></tr>
 
-  <section>
-    <h2><span class="ic">🗂️</span> Plan — shape the work</h2>
-    <div class="grid">
-      <div class="card"><div class="card-top"><code class="name">namht-discover</code><span class="who">PM / PO / BA</span></div><p class="does">Sharpen a fuzzy idea into a crisp problem brief with forcing questions.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-plan</code><span class="who">PM / PO / BA</span></div><p class="does">Turn an Epic into features → user stories → a sprint plan.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-plan-review</code><span class="who">Tech Lead / PM</span></div><p class="does">Multi-lens critique of a plan, ending with a proceed/revise verdict.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-user-story</code><span class="who">PM / BA / SM</span></div><p class="does">Deep-investigate → features + INVEST stories with granular ACs (from text or a Slack thread).</p></div>
-    </div>
-  </section>
+      <tr class="group"><td colspan="3"><span class="ic">🗂️</span>Plan — shape the work</td></tr>
+      <tr><td class="c-name"><code class="name">namht-discover</code></td><td class="c-who"><span class="who">PM / PO / BA</span></td><td class="c-desc">Sharpen a fuzzy idea into a crisp problem brief with forcing questions.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-plan</code></td><td class="c-who"><span class="who">PM / PO / BA</span></td><td class="c-desc">Turn an Epic into features → user stories → a sprint plan.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-plan-review</code></td><td class="c-who"><span class="who">Tech Lead / PM</span></td><td class="c-desc">Multi-lens critique of a plan, ending with a proceed/revise verdict.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-user-story</code></td><td class="c-who"><span class="who">PM / BA / SM</span></td><td class="c-desc">Deep-investigate → features + INVEST stories with granular ACs (from text or a Slack thread).</td></tr>
 
-  <section>
-    <h2><span class="ic">🛠️</span> Build &amp; Fix — write and repair code</h2>
-    <div class="grid">
-      <div class="card"><div class="card-top"><code class="name">namht-build</code><span class="who">Dev</span></div><p class="does">Build a feature end-to-end: plan → code → review → test (a 13-step pipeline).</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-fix-bug</code><span class="who">Dev / QA</span></div><p class="does">Triage → root cause → minimal fix with a failing-then-passing regression test → verify.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-migrate</code><span class="who">Dev</span></div><p class="does">Safe API/DB/event/library change (expand→migrate→contract, with rollback).</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-simplify</code><span class="who">Dev</span></div><p class="does">Behavior-preserving cleanup — reduce complexity while tests stay green.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-perf</code><span class="who">Dev</span></div><p class="does">Measure-first performance optimization; prove the win with before/after numbers.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-observe</code><span class="who">Dev / SRE</span></div><p class="does">Instrument code — structured logs, correlation IDs, and metrics.</p></div>
-    </div>
-  </section>
+      <tr class="group"><td colspan="3"><span class="ic">🛠️</span>Build &amp; Fix — write and repair code</td></tr>
+      <tr><td class="c-name"><code class="name">namht-build</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Build a feature end-to-end: plan → code → review → test (a 13-step pipeline).</td></tr>
+      <tr><td class="c-name"><code class="name">namht-fix-bug</code></td><td class="c-who"><span class="who">Dev / QA</span></td><td class="c-desc">Triage → root cause → minimal fix with a failing-then-passing regression test → verify.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-migrate</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Safe API/DB/event/library change (expand→migrate→contract, with rollback).</td></tr>
+      <tr><td class="c-name"><code class="name">namht-simplify</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Behavior-preserving cleanup — reduce complexity while tests stay green.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-perf</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Measure-first performance optimization; prove the win with before/after numbers.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-observe</code></td><td class="c-who"><span class="who">Dev / SRE</span></td><td class="c-desc">Instrument code — structured logs, correlation IDs, and metrics.</td></tr>
 
-  <section>
-    <h2><span class="ic">🔍</span> Review &amp; QA — verify quality</h2>
-    <div class="grid">
-      <div class="card"><div class="card-top"><code class="name">namht-review</code><span class="who">Dev / Reviewer</span></div><p class="does">Two-phase review of a file/branch/PR: quality checklist + business consistency vs the KB.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-qa</code><span class="who">QA</span></div><p class="does">Turn a user story into test cases — the new flow plus regression for the old flows.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-qa-integration</code><span class="who">QA</span></div><p class="does">Execute end-to-end tests against a running app via a real browser.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-security-audit</code><span class="who">Dev / Security</span></div><p class="does">Whole-repo vulnerability sweep (OWASP + STRIDE), grounded in the KB.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-design-review</code><span class="who">Designer / FE / PM</span></div><p class="does">UI/UX + accessibility review of a URL or frontend components.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-pr</code><span class="who">Dev</span></div><p class="does">Draft a PR description from the branch, or review a GitHub PR.</p></div>
-    </div>
-  </section>
+      <tr class="group"><td colspan="3"><span class="ic">🔍</span>Review &amp; QA — verify quality</td></tr>
+      <tr><td class="c-name"><code class="name">namht-review</code></td><td class="c-who"><span class="who">Dev / Reviewer</span></td><td class="c-desc">Two-phase review of a file/branch/PR: quality checklist + business consistency vs the KB.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-qa</code></td><td class="c-who"><span class="who">QA</span></td><td class="c-desc">Turn a user story into test cases — the new flow plus regression for the old flows.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-qa-integration</code></td><td class="c-who"><span class="who">QA</span></td><td class="c-desc">Execute end-to-end tests against a running app via a real browser.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-security-audit</code></td><td class="c-who"><span class="who">Dev / Security</span></td><td class="c-desc">Whole-repo vulnerability sweep (OWASP + STRIDE), grounded in the KB.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-design-review</code></td><td class="c-who"><span class="who">Designer / FE / PM</span></td><td class="c-desc">UI/UX + accessibility review of a URL or frontend components.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-pr</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Draft a PR description from the branch, or review a GitHub PR.</td></tr>
 
-  <section>
-    <h2><span class="ic">📊</span> Ops &amp; Docs — operate and share</h2>
-    <div class="grid">
-      <div class="card"><div class="card-top"><code class="name">namht-splunk-report</code><span class="who">Dev / SRE / On-call</span></div><p class="does">Query Splunk errors per app over a window → one table → post to Slack.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-retro</code><span class="who">SM / EM / Lead</span></div><p class="does">Retrospective from git history — what shipped + concrete action items.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-pdf</code><span class="who">Everyone</span></div><p class="does">Export a report or doc (Markdown/HTML) to PDF.</p></div>
-      <div class="card"><div class="card-top"><code class="name">namht-skillify</code><span class="who">Dev</span></div><p class="does">Scaffold a new namht-* skill from a short description (extend the kit).</p></div>
-    </div>
-  </section>
+      <tr class="group"><td colspan="3"><span class="ic">📊</span>Ops &amp; Docs — operate and share</td></tr>
+      <tr><td class="c-name"><code class="name">namht-splunk-report</code></td><td class="c-who"><span class="who">Dev / SRE / On-call</span></td><td class="c-desc">Query Splunk errors per app over a window → one table → post to Slack.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-retro</code></td><td class="c-who"><span class="who">SM / EM / Lead</span></td><td class="c-desc">Retrospective from git history — what shipped + concrete action items.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-pdf</code></td><td class="c-who"><span class="who">Everyone</span></td><td class="c-desc">Export a report or doc (Markdown/HTML) to PDF.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-skillify</code></td><td class="c-who"><span class="who">Dev</span></td><td class="c-desc">Scaffold a new namht-* skill from a short description (extend the kit).</td></tr>
+    </tbody>
+  </table>
+  </div></div>
 
   <div class="how">
     <h3>How to use</h3>
