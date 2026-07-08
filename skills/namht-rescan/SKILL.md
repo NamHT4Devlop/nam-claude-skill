@@ -14,9 +14,14 @@ A native port of Auto Spec Kit's `/rescan`. Keep `knowledge-base/` accurate with
 for a full rebuild. If there is no existing KB, fall back to a full `/namht-scan`.
 
 ## Procedure
-1. **Find what changed.** Use `git` to get changed source files since the KB was last
-   updated — e.g. `git diff --name-only` vs the last commit/branch the user names, plus
-   uncommitted changes (`git status`). If git isn't usable, ask the user which areas changed.
+1. **Confirm the branch + diff base, then find what changed.** The rescan reads the **working tree
+   of the currently checked-out branch** (it does NOT switch branches). Get the branch with
+   `git rev-parse --abbrev-ref HEAD`. Pick the **diff base**: by default the last commit the KB was
+   built from (usually `HEAD` / the most recent commit), else a **branch or commit the user names**
+   (e.g. `main`, a tag, a release branch). List changed source files with
+   `git diff --name-only <base>` **plus** uncommitted changes (`git status --short`). State it
+   plainly before proceeding: *"Rescanning branch `<X>`, changes vs `<base>` (+ N uncommitted)."*
+   If git isn't usable, ask the user which areas changed.
 2. **Map changes → KB docs.** Determine which knowledge-base files the changes affect:
    - new/changed entities or migrations → `05-domain-model.md`, `08-database-schema.md`
    - new/changed endpoints → `11-api-docs.md`, `03-entry-points.md`

@@ -20,6 +20,13 @@ This KB is the grounding for every other Spec Kit command.
 > or an explicit fresh rebuild.
 
 ## Inputs & setup
+- **Confirm the git branch first — this is what gets scanned.** The scan reads the **working tree on
+  disk**, so it captures the **currently checked-out branch plus any uncommitted changes**; it does
+  NOT switch branches. Run `git rev-parse --abbrev-ref HEAD` (branch) and `git status --short`
+  (uncommitted), then tell the user: *"I'll scan branch `<X>` as it is on disk (N uncommitted
+  changes) — OK?"* If they want a different branch, ask them to `git checkout <branch>` first (never
+  switch on their behalf if that could discard uncommitted work). Not a git repo → just scan the
+  folder and say so.
 - **Map structure with Glob/Grep/Read.** Use Glob/Grep to map the file tree, symbols and imports
   quickly, then read real source for *business intent* — the skeleton tells you where, the KB
   documents the why.
