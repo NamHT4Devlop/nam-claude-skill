@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>namht Spec Kit — Skill Catalog</title>
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f7f7f5; --surface-2:#fbfbfa; --border:#e6e4de;
+    --text:#1c1c1a; --muted:#65635c; --brand:#4a43d1; --brand-2:#8b5cf6;
+    --pill-bg:#eeedfe; --pill-text:#3c3489; --mono-bg:#f0eef8; --mono-text:#3c3489;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#131316; --surface:#1b1b20; --surface-2:#202027; --border:#2c2c33;
+      --text:#e9e9ec; --muted:#9a9aa3; --brand:#a99cff; --brand-2:#c4b5fd;
+      --pill-bg:#26215c; --pill-text:#cecbf6; --mono-bg:#241f4a; --mono-text:#cecbf6;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;font-size:15px}
+  .wrap{max-width:960px;margin:0 auto;padding:40px 20px 72px}
+  header{margin-bottom:28px}
+  .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  h1{font-size:34px;line-height:1.1;margin:.25em 0 .1em;font-weight:800;letter-spacing:-.02em;
+    background:linear-gradient(90deg,var(--brand),var(--brand-2));-webkit-background-clip:text;
+    background-clip:text;-webkit-text-fill-color:transparent}
+  .lede{font-size:16px;color:var(--muted);max-width:70ch;margin:.4em 0 0}
+  .facts{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 8px}
+  .fact{font-size:12.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--border);
+    background:var(--surface);color:var(--muted)}
+  .fact b{color:var(--text)}
+  h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+    font-weight:700;margin:38px 0 14px;display:flex;align-items:center;gap:9px}
+  h2 .ic{font-size:17px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;
+    box-shadow:var(--shadow)}
+  .card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+  code.name{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;font-weight:600;
+    background:var(--mono-bg);color:var(--mono-text);padding:2px 8px;border-radius:6px;white-space:nowrap}
+  .who{font-size:11px;font-weight:700;color:var(--pill-text);background:var(--pill-bg);
+    padding:2px 9px;border-radius:999px;white-space:nowrap}
+  .does{font-size:13.5px;color:var(--text);margin:0}
+  .how{margin-top:40px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
+  .how h3{margin:0 0 10px;font-size:15px}
+  .how ul{margin:0;padding-left:18px}
+  .how li{margin:.35em 0;color:var(--text)}
+  .how code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;
+    background:var(--mono-bg);color:var(--mono-text);padding:1px 6px;border-radius:5px}
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px}
+  footer a{color:var(--brand)}
+  @media (max-width:520px){ h1{font-size:27px} .grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">namht Spec Kit</div>
+    <h1>Skill Catalog</h1>
+    <p class="lede">A <b>spec-driven software-development assistant</b> that runs on Claude Code. It grounds
+    itself in each repo's <b>Knowledge Base</b> to understand both the business and the code, then supports the
+    <b>whole lifecycle</b> — understand → plan → build → review → QA → operate. Every output is written for
+    <b>both technical and non-technical readers</b>, runs locally, and is protected by a git safety guard.</p>
+    <div class="facts">
+      <span class="fact"><b>26</b> skills</span>
+      <span class="fact">Spec-driven</span>
+      <span class="fact">Knowledge-Base grounded</span>
+      <span class="fact">Dual-audience</span>
+      <span class="fact">Local &amp; git-safe</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="ic">📖</span> Understand — grasp the codebase</h2>
+    <div class="grid">
+      <div class="card"><div class="card-top"><code class="name">namht-scan</code><span class="who">Dev / Team</span></div><p class="does">Scan the repo and generate the Knowledge Base (16 docs) that grounds every other skill. Run once.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-rescan</code><span class="who">Dev</span></div><p class="does">Update the Knowledge Base after code changes (git-diff aware).</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-ask</code><span class="who">Everyone</span></div><p class="does">Ask about the codebase — plain-language answer + a diagram + the technical detail.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-map</code><span class="who">Dev / Architect</span></div><p class="does">Interactive HTML dependency graph of the codebase (opens in the browser).</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-system-map</code><span class="who">Dev / Architect</span></div><p class="does">Cross-service map for a microservices workspace + end-to-end flows.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-document</code><span class="who">BA / PM / Dev</span></div><p class="does">Business↔code documentation, mapped down to the field level.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="ic">🗂️</span> Plan — shape the work</h2>
+    <div class="grid">
+      <div class="card"><div class="card-top"><code class="name">namht-discover</code><span class="who">PM / PO / BA</span></div><p class="does">Sharpen a fuzzy idea into a crisp problem brief with forcing questions.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-plan</code><span class="who">PM / PO / BA</span></div><p class="does">Turn an Epic into features → user stories → a sprint plan.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-plan-review</code><span class="who">Tech Lead / PM</span></div><p class="does">Multi-lens critique of a plan, ending with a proceed/revise verdict.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-user-story</code><span class="who">PM / BA / SM</span></div><p class="does">Deep-investigate → features + INVEST stories with granular ACs (from text or a Slack thread).</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="ic">🛠️</span> Build &amp; Fix — write and repair code</h2>
+    <div class="grid">
+      <div class="card"><div class="card-top"><code class="name">namht-build</code><span class="who">Dev</span></div><p class="does">Build a feature end-to-end: plan → code → review → test (a 13-step pipeline).</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-fix-bug</code><span class="who">Dev / QA</span></div><p class="does">Triage → root cause → minimal fix with a failing-then-passing regression test → verify.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-migrate</code><span class="who">Dev</span></div><p class="does">Safe API/DB/event/library change (expand→migrate→contract, with rollback).</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-simplify</code><span class="who">Dev</span></div><p class="does">Behavior-preserving cleanup — reduce complexity while tests stay green.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-perf</code><span class="who">Dev</span></div><p class="does">Measure-first performance optimization; prove the win with before/after numbers.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-observe</code><span class="who">Dev / SRE</span></div><p class="does">Instrument code — structured logs, correlation IDs, and metrics.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="ic">🔍</span> Review &amp; QA — verify quality</h2>
+    <div class="grid">
+      <div class="card"><div class="card-top"><code class="name">namht-review</code><span class="who">Dev / Reviewer</span></div><p class="does">Two-phase review of a file/branch/PR: quality checklist + business consistency vs the KB.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-qa</code><span class="who">QA</span></div><p class="does">Turn a user story into test cases — the new flow plus regression for the old flows.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-qa-integration</code><span class="who">QA</span></div><p class="does">Execute end-to-end tests against a running app via a real browser.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-security-audit</code><span class="who">Dev / Security</span></div><p class="does">Whole-repo vulnerability sweep (OWASP + STRIDE), grounded in the KB.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-design-review</code><span class="who">Designer / FE / PM</span></div><p class="does">UI/UX + accessibility review of a URL or frontend components.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-pr</code><span class="who">Dev</span></div><p class="does">Draft a PR description from the branch, or review a GitHub PR.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="ic">📊</span> Ops &amp; Docs — operate and share</h2>
+    <div class="grid">
+      <div class="card"><div class="card-top"><code class="name">namht-splunk-report</code><span class="who">Dev / SRE / On-call</span></div><p class="does">Query Splunk errors per app over a window → one table → post to Slack.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-retro</code><span class="who">SM / EM / Lead</span></div><p class="does">Retrospective from git history — what shipped + concrete action items.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-pdf</code><span class="who">Everyone</span></div><p class="does">Export a report or doc (Markdown/HTML) to PDF.</p></div>
+      <div class="card"><div class="card-top"><code class="name">namht-skillify</code><span class="who">Dev</span></div><p class="does">Scaffold a new namht-* skill from a short description (extend the kit).</p></div>
+    </div>
+  </section>
+
+  <div class="how">
+    <h3>How to use</h3>
+    <ul>
+      <li><b>Slash command</b> — in any Claude Code session, from inside the project folder: <code>/namht-&lt;skill&gt; &lt;args&gt;</code> (e.g. <code>/namht-ask how does the payment flow work?</code>).</li>
+      <li><b>Plain English</b> — skills auto-activate: just describe the task (e.g. “create user stories for …”).</li>
+      <li><b>Point-and-click</b> — the <b>Spec Kit UI</b> VS Code extension gives PM/SM a sidebar of cards (no commands or terminal). It also has a <b>💬 Ask anything</b> card for general, non-repo questions.</li>
+      <li><b>List everything</b> — <code>/namht-help</code>.</li>
+    </ul>
+  </div>
+
+  <footer>
+    Personal toolkit · runs on Claude Code · grounded in each repo's <code style="font-family:ui-monospace,monospace">knowledge-base/</code>.
+    Source: <a href="https://github.com/NamHT4Devlop/nam-claude-skill">NamHT4Devlop/nam-claude-skill</a> · Updated 8 Jul 2026.
+  </footer>
+
+</div>
+</body>
+</html>
