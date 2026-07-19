@@ -54,6 +54,8 @@ Gather (ask 2–4 targeted questions if missing — don't guess):
 - **Traceability** — the **failing test case ID / acceptance criterion / user story** it came from, if
   QA has one (from a `/namht-qa` plan). This defines "correct".
 - Error text / **stack trace** / screenshots / logs, affected endpoint/feature/job, severity/urgency.
+Also skim `spec-kit-sessions/answers/_journal.md` if present — a past Q&A about this area may already
+name the flow/files involved (cheap: one small index).
 
 ### 2. TRIAGE — is this even a code bug? (do this BEFORE editing code)
 Classify the root cause into one of these, gathering the matching evidence:

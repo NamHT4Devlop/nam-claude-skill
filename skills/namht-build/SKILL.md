@@ -24,6 +24,8 @@ sub-agents, `Edit/Write` to apply code, and `Bash` to run tests.
 1. **Ground everything in the Knowledge Base.** Load `knowledge-base/` from the repo
    (especially `04-business-domain`, `05-domain-model`, `10-core-flows`,
    `13-business-rules`, `12-conventions`, `16-architecture-patterns`, `review-skills.md`).
+   Also skim `spec-kit-sessions/answers/_journal.md` if present — past Q&A conclusions about the
+   area you're changing often contain decisions/constraints the KB doesn't (cheap: one small index).
    If `knowledge-base/` is missing, tell the user to run `/namht-scan` first, or
    proceed with reduced confidence using direct code reading.
 2. **Do NOT break the existing design.** New code MUST follow the documented

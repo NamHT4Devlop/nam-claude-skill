@@ -15,15 +15,21 @@ A native port of Auto Spec Kit's `/ask`. Answer using **only** the project's Kno
 never invent files, APIs, fields, or behavior.
 
 ## Procedure
-0. **Ground code answers in real source.** When the question is about *how code works / where
+0. **Check the Q&A journal first (cross-session memory).** If
+   `spec-kit-sessions/answers/_journal.md` exists, read it — it is a one-line-per-question index of
+   every past answer in this repo. Use it to: (a) answer *"what did I ask before / what did we
+   conclude about X?"* directly from the journal; (b) when today's question was already answered,
+   **say so**, link the saved answer file, reuse its conclusion, and only re-derive what changed
+   since. It's a small index — reading it costs little and makes new sessions remember old ones.
+1. **Ground code answers in real source.** When the question is about *how code works / where
    something is*, use Grep/Glob/Read to ground the **Technical detail** section in real files; the
    KB supplies business meaning.
-1. **Select relevant KB context.** Map the question to topics and load just those
+2. **Select relevant KB context.** Map the question to topics and load just those
    `knowledge-base/` docs (don't dump the whole KB). If the question names a module/feature,
    load the matching `knowledge-base/modules/<module>.md` first — those deep docs are the
    richest context. Fall back to reading the actual source only if the KB lacks the answer
    (and say so).
-2. **Detect vagueness.** If the question is broad/under-specified, first state your
+3. **Detect vagueness.** If the question is broad/under-specified, first state your
    interpretation + assumptions, answer the most likely intent, then ask 2–3 clarifying
    questions.
 
@@ -72,5 +78,16 @@ Any technical term used above → a one-line everyday definition. Omit the secti
    ```
    (It prints the HTML path. Requires Node — if absent, keep the chat + `.md` and say HTML was skipped.)
 4. **Open it**: macOS `open "<path>"` · Linux `xdg-open` · Windows `start "" "<path>"`. Give the user the path.
+5. **Append ONE line to the Q&A journal** `spec-kit-sessions/answers/_journal.md` (create it with the
+   header below if missing). This is the cross-session memory step — never skip it:
+   ```markdown
+   # Q&A Journal — one line per answered question (newest last)
+   | Date | Question | Conclusion (one line) | Detail file |
+   |---|---|---|---|
+   | 2026-07-05 | how does the KPI flow work | 2 endpoints, no cache; levelOf() duplicated in 3 places | kpi-flow-2026-07-05.md |
+   ```
+   Keep the conclusion to ONE plain sentence (the TL;DR, compressed); `Detail file` is the `.md` you
+   just saved (filename only). If the journal grows past ~200 rows, note that consolidation is due —
+   don't delete rows silently.
 
 Output lands under `spec-kit-sessions/` (gitignored) — no footprint in the repo.
