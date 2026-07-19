@@ -29,13 +29,23 @@ sub-agents, `Edit/Write` to apply code, and `Bash` to run tests.
 2. **Do NOT break the existing design.** New code MUST follow the documented
    architectural style, layer/dependency rules, and the "Architecture Invariants —
    DO NOT BREAK" list in `16-architecture-patterns.md`. Copy the matching Extension Recipe.
-3. **Cite real paths and names.** No invented files, APIs, or fields.
-4. **Match the project's conventions exactly** — naming, error handling, logging, validation placement, test style.
-5. **Persist artifacts.** Create a session folder
+3. **Reuse before you create — MANDATORY.** Before designing anything new, search the repo for what
+   already does the job: existing **functions/methods, classes/services, helpers/utils, UI components,
+   hooks/middleware, DTOs/models** — search by *capability*, not just by name (grep several synonyms,
+   read the module's siblings, check `06-modules` / `16-architecture-patterns` in the KB). Also check the
+   **already-installed libraries** (`package.json` / `pom.xml` / `build.gradle` / `Gemfile` /
+   `requirements.txt`) before reaching for a new one. **If something suitable exists you MUST reuse or
+   extend it** — do not re-implement it. Create something new ONLY when nothing suitable exists, and then
+   record the one-line justification ("searched X, Y, Z — nothing fits because …"). **Never add a new
+   dependency** when an installed library already covers the need; if a new one is genuinely required,
+   say why and get the user's OK first.
+4. **Cite real paths and names.** No invented files, APIs, or fields.
+5. **Match the project's conventions exactly** — naming, error handling, logging, validation placement, test style.
+6. **Persist artifacts.** Create a session folder
    `spec-kit-sessions/<YYYY-MM-DD-HHMMSS>-<slug>/` and save each phase's output there
    (`01-plan/plan.md`, `03-code/`, `04-code-review/review.md`, `05-tests/`,
    `07-evidence/EVIDENCE.md`, `README.md`). This mirrors the original tool and gives an audit trail.
-6. **Stop and ask** before doing something destructive or ambiguous. Prefer a TodoList
+7. **Stop and ask** before doing something destructive or ambiguous. Prefer a TodoList
    (TaskCreate/TaskUpdate) so the user can follow the 13 steps.
 
 ## Change discipline (NON-NEGOTIABLE — read before editing anything)
@@ -79,7 +89,11 @@ with these sections:
 1. **Requirement Analysis** — scope (do / don't), ≥5 specific & measurable acceptance criteria, edge cases.
 2. **Impact Analysis** — files that MUST change, downstream consumers (trace the blast radius via real imports/callers), API-contract changes, DB impact/migrations, breaking changes, side effects, **cross-service impact** (if the change alters a published message / SQS topic / REST contract, list the **consumer services** from the Event/Contract Catalog — `17-async-events.md` or the workspace `system-map/` — plus async hazards: duplicate/idempotency, ordering, DLQ, schema/version skew), a risk matrix `| Risk | Likelihood | Impact | Mitigation |`.
 3. **Business Flow Mapping** — existing flows affected (before→after), new flow step-by-step, state-machine changes.
-4. **Technical Design** — modules/layers affected, files to CREATE (full paths following existing patterns), files to MODIFY, reusable components to leverage.
+4. **Technical Design** — modules/layers affected, files to MODIFY, files to CREATE (full paths following
+   existing patterns), and a mandatory **Reuse Report** that justifies every new artifact:
+   `| Capability needed | Existing candidate (real path) | Decision: reuse / extend / new | Why |`
+   Every row marked **new** must name the searches you ran and why nothing fitted; a new dependency goes
+   in this table too and needs the user's OK.
 5. **Implementation Steps** — ordered by dependency, as a checklist.
 6. **Risk Assessment** — the matrix with mitigations.
 7. **Estimate** — complexity (Simple/Medium/Complex) + rough time.
@@ -102,11 +116,12 @@ imports, types, error handling; match `12-conventions.md`. Mirror the raw output
 `03-code/` for the audit trail.
 
 ## Step 5 — Code review (multi-lens)
-Review the change through **4 lenses** (parallel sub-agents in `agents/`, or sequentially):
+Review the change through **5 lenses** (parallel sub-agents in `agents/`, or sequentially):
 - **Security** — input validation, injection, authn/authz, data exposure, crypto/secrets (use `knowledge-base/review-skills.md`; fall back to the bundled `references/review-skills-universal.md`).
 - **Architecture & pattern conformance** — does it violate any "Architecture Invariant"? same pattern as the surrounding module? forbidden dependency direction? boundary violations? Quote the specific rule broken.
 - **Performance** — N+1 queries, missing indexes, memory leaks, blocking/sequential calls, missing pagination/caching.
 - **Business consistency** — business rules intact, no logic silently removed, valid state transitions, API contract preserved, all acceptance criteria implemented.
+- **Reuse & duplication** — did this re-implement something the repo already has (a helper, service, component, validator, mapper) instead of reusing it? Did it add a dependency an installed library already covers? Check the plan's **Reuse Report** against what was actually written; flag violations `[MAJOR]` and replace the duplicate with the existing one.
 
 Produce a merged review with deduplicated issues (each: severity `[CRITICAL/MAJOR/MINOR]`,
 exact location, bad code, complete fixed code), strengths, a verdict (APPROVED /
