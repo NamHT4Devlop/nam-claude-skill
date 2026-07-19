@@ -42,6 +42,14 @@ GraphQL** (or Netflix DGS). Confirm at step 0.
 - **Shared DB → side-effect parity is a HARD gate.** Both sides write the same MySQL; if the Java
   misses a Rails DB-side effect (timestamps, `counter_cache`, `touch`, `dependent:`, callbacks that
   write other rows) data silently drifts. Reproduce every write, or don't cut that endpoint over.
+- **Reuse what the TARGET already has — MANDATORY.** The Spring side is not a blank page. Before
+  writing a new service, **MyBatis mapper**, DTO/record, validator, exception handler, Camel route,
+  SQS publisher or util, search the target project for one that already does it and **reuse or extend
+  it**, matching its conventions. Create new ONLY when nothing fits, and record why in the **Reuse
+  Report** (`| Capability needed | Existing target candidate (real path) | reuse / extend / new | Why |`)
+  alongside the Parity Matrix. **Never add a dependency** the target already covers without the user's
+  OK. This keeps the port idiomatic Java rather than a transliteration of Ruby — and stops N copies of
+  the same mapper appearing as endpoints are ported one by one.
 - Minimal, conventional, no drive-by refactors. The human deploys and controls cutover.
 
 ## Agent roster — where to fan out (and where NOT to)
@@ -62,7 +70,9 @@ Spawn sub-agents (`Task`) in parallel at two stages; keep code-writing single-th
   `namht-business-consistency-reviewer` (rule parity vs source/KB), `namht-security-reviewer` (auth /
   IDOR / role allow-deny parity), `namht-performance-reviewer` (N+1, query-count parity vs the Ruby),
   plus a **parity auditor** that reads the Ruby and the Java side by side and lists every behavioral
-  difference. An endpoint passes only if the panel finds no unresolved divergence AND the tests are green.
+  difference, plus a **reuse check** — did this endpoint add a service/mapper/DTO/util the target already
+  had? An endpoint passes only if the panel finds no unresolved divergence, no avoidable duplication,
+  AND the tests are green.
 - **Scale to risk, not vanity.** Fan out on hard/high-risk endpoints; for a trivial read, one extractor
   + the tests may be enough. More agents cost tokens — spend them where a miss is expensive.
 
@@ -114,7 +124,9 @@ Independently per endpoint, so each ships and cuts over alone:
 1. **Behavior-spec** via the extraction fan-out + completeness critic (above). Make Rails' *implicit*
    behavior explicit; cite Ruby lines.
 2. **Golden/shadow cases** from step 3 for this endpoint — including side-effect assertions.
-3. **Implement on target** — GraphQL resolver (`@QueryMapping`/`@MutationMapping`/`@SchemaMapping`) or
+3. **Implement on target — reuse first.** Search the target project and fill the **Reuse Report** before
+   writing anything: if an existing service, MyBatis mapper, DTO, validator or util already covers a
+   piece, extend it instead of adding a parallel one. Then build what's genuinely missing: GraphQL resolver (`@QueryMapping`/`@MutationMapping`/`@SchemaMapping`) or
    REST controller; a service carrying the ported rules; a **MyBatis mapper** on the same MySQL
    (reuse the SQL semantics ActiveRecord produced — scopes/joins/order); Flyway only for a genuinely
    new column (avoid while DB is shared); a Camel route / SQS publish matching the source's channel +

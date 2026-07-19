@@ -31,6 +31,13 @@ user story / acceptance criteria the bug violated.
 - **Minimal, surgical, reversible.** Smallest diff that fixes the root cause; respect the
   "Architecture Invariants — DO NOT BREAK" and conventions; no drive-by refactors (see the change
   discipline in `namht-build`). For risky fixes prefer a guard/feature-flag and note a rollback.
+- **Reuse before you create — MANDATORY.** The fix must use what the repo already has — an existing
+  validator, guard, helper, service, mapper or **installed library** — instead of a new one-off. Search
+  by *capability*, not just by name (grep synonyms, read the sibling files in the same module). Create
+  something new ONLY when nothing suitable exists, and say why; **never add a dependency** an installed
+  library already covers without the user's OK. A hotfix that duplicates logic the project already has
+  is a failed fix — and if the same defect pattern exists elsewhere (Step 6), fix it at the shared
+  source rather than patching each copy.
 - **Prove it with a test** that FAILS before the fix and PASSES after, mapped to the failing QA case.
 - **Read the code path first** — from the trace/repro, Read the failing files and grep for callers to
   get the exact code path + blast radius before changing anything.
