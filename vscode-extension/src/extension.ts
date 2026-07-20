@@ -68,7 +68,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   private post(m: unknown) { for (const w of this.webviews) w.postMessage(m); }
   private cfg() {
     const c = vscode.workspace.getConfiguration('namhtSpecUi');
-    return { claudePath: c.get<string>('claudePath', 'claude'), extraArgs: c.get<string[]>('extraArgs', ['--permission-mode', 'acceptEdits']), usdToVnd: c.get<number>('usdToVnd', 26000), model: c.get<string>('model', 'sonnet') };
+    return { claudePath: c.get<string>('claudePath', 'claude'), extraArgs: c.get<string[]>('extraArgs', ['--permission-mode', 'bypassPermissions']), usdToVnd: c.get<number>('usdToVnd', 26000), model: c.get<string>('model', 'sonnet') };
   }
   private cwd(): string | undefined { return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath; }
 
@@ -93,12 +93,21 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     const h = this.history(); const it = h.find(x => x.runId === runId);
     if (it) { Object.assign(it, patch); this.ctx.workspaceState.update(HIST_KEY, h); this.post({ type: 'history', items: h }); }
   }
+  // state/sessions would otherwise grow forever — drop the oldest finished runs beyond HIST_MAX.
+  private evict() {
+    while (this.state.size > HIST_MAX) {
+      let oldest: string | undefined, when = Infinity;
+      for (const [id, s] of this.state) { if (s.status !== 'running' && (s.when || 0) < when) { when = s.when || 0; oldest = id; } }
+      if (!oldest) break;
+      this.state.delete(oldest); this.sessions.delete(oldest);
+    }
+  }
 
   // ---- runs ----
   private start(m: any) {
     const runId = String(m.runId); const command = String(m.command || '');
     const isChat = command === '__chat';   // free chat: raw prompt, no skill, whitelist bypassed
-    if (!isChat && !ALLOWED.has(command)) { this.post({ type: 'log', runId, text: `[blocked: "${command}" is not allowed]` }); return; }
+    if (!isChat && !ALLOWED.has(command)) { this.post({ type: 'log', runId, text: `[blocked: "${command}" is not allowed]` }); this.post({ type: 'done', runId, code: 1 }); return; }
     const cwd = this.cwd() || (isChat ? require('os').homedir() : undefined);
     if (!cwd) { this.post({ type: 'log', runId, text: '[open a project folder first — skills read that project]' }); this.post({ type: 'done', runId, code: 1 }); return; }
     const prompt = isChat ? String(m.args || '').trim() : `/${command} ${String(m.args || '')}`.trim();
@@ -106,6 +115,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     const model = (m.model !== undefined && m.model !== null) ? String(m.model) : this.cfg().model;
     this.histUpsert({ runId, command, title: m.title || command, values: m.values || {}, when: Date.now(), status: 'running', model });
     this.state.set(runId, { runId, command, title: String(m.title || command), log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now(), model });
+    this.evict();
     this.spawnClaude(runId, ['-p', prompt], cwd, `${isChat ? '💬' : '▶'} ${prompt}\n(cwd: ${cwd})\n\n`);
   }
 
@@ -127,7 +137,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     if (this.procs.has(runId)) { this.post({ type: 'log', runId, text: '[this run is still busy — wait for it or cancel]' }); return; }
     const { claudePath, extraArgs, model: cfgModel } = this.cfg();
     let st = this.state.get(runId);
-    if (!st) { st = { runId, command: '', title: runId, log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now(), model: cfgModel }; this.state.set(runId, st); }
+    if (!st) { st = { runId, command: '', title: runId, log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now(), model: cfgModel }; this.state.set(runId, st); this.evict(); }
     const model = (st.model !== undefined && st.model !== null) ? st.model : cfgModel;
     const cliArgs = [...baseArgs, '--output-format', 'stream-json', '--verbose', ...(model ? ['--model', model] : []), ...extraArgs];
     st.status = 'running'; st.log += header;
@@ -135,7 +145,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     this.post({ type: 'log', runId, text: header });
 
     let seen = '', finalText = '', lineBuf = '';
-    const emit = (t: string) => { seen += t + '\n'; st.log += t + '\n'; this.post({ type: 'log', runId, text: t }); };
+    const emit = (t: string) => { seen += t + '\n'; st.log += t + '\n'; if (st.log.length > 330000) st.log = st.log.slice(-300000); this.post({ type: 'log', runId, text: t }); };
     const feed = (line: string) => { const r = this.handleLine(runId, line, emit); if (r !== undefined) finalText = r; };
 
     let proc: ChildProcess;
@@ -152,11 +162,12 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     proc.on('close', (code) => {
       if (lineBuf.trim()) feed(lineBuf);
       this.procs.delete(runId);
-      st.status = code === 0 ? 'done' : (code === 130 ? 'cancelled' : 'error');
+      const cancelled = st.status === 'cancelled';   // set by cancel() — the killed child's exit code (null/143) must not turn it into 'error'
+      st.status = cancelled ? 'cancelled' : (code === 0 ? 'done' : (code === 130 ? 'cancelled' : 'error'));
       st.sessionId = this.sessions.get(runId) || st.sessionId;
       if (finalText) { st.result = finalText; this.post({ type: 'result', runId, text: finalText }); }
-      const report = this.findReport(seen + '\n' + finalText, cwd); st.report = report;
-      this.post({ type: 'done', runId, code: code ?? 0, report });
+      const report = this.findReport(seen, finalText, cwd); st.report = report;
+      this.post({ type: 'done', runId, code: cancelled ? 130 : (code ?? 1), report });
       this.histPatch(runId, { status: st.status, result: finalText.slice(0, 24000), report, cost: st.cost || 0, tokens: st.usage, log: (st.log || '').slice(-40000) });
     });
   }
@@ -252,7 +263,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     const model = (m.model !== undefined && m.model !== null) ? String(m.model) : cfgModel;
     const prompt = `/${command} ${String(m.args || '')}`.replace(/\s*\n\s*/g, ' ').trim();
     const q = (s: string) => `'` + s.replace(/'/g, `'\\''`) + `'`;
-    const line = `${claudePath}${model ? ' --model ' + model : ''} ${q(prompt)}`;
+    const line = `${q(claudePath)}${model ? ' --model ' + model : ''} ${q(prompt)}`;
     const term = vscode.window.createTerminal({ cwd, name: `Claude ⚡ ${String(m.title || command)}` });
     term.show(true);
     term.sendText(line, true);
@@ -270,10 +281,15 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     if (p) { p.kill('SIGTERM'); this.procs.delete(runId); const st = this.state.get(runId); if (st) st.status = 'cancelled'; this.post({ type: 'log', runId, text: '\n[cancelled]' }); this.post({ type: 'done', runId, code: 130 }); this.histPatch(runId, { status: 'cancelled' }); }
   }
 
-  private findReport(out: string, cwd: string): string | undefined {
-    const m = out.match(/[\w./~-]*spec-kit-sessions[\w./-]+\.(?:html|md)/);
-    if (!m) return undefined;
-    let p = m[0]; if (!p.startsWith('/')) p = require('path').resolve(cwd, p);
+  private findReport(out: string, finalText: string, cwd: string): string | undefined {
+    // Prefer the final answer (the report the skill actually points at), else the LAST
+    // path mentioned in the log — early matches are intermediate artifacts.
+    const re = /[\w./~-]*spec-kit-sessions[\w./-]+\.(?:html|md)/g;
+    const last = (s: string) => { const all = s.match(re); return all ? all[all.length - 1] : undefined; };
+    let p = last(finalText) || last(out + '\n' + finalText);
+    if (!p) return undefined;
+    if (p.startsWith('~')) p = require('os').homedir() + p.slice(1);
+    if (!p.startsWith('/')) p = require('path').resolve(cwd, p);
     return p;
   }
   private openReport(p: string) {

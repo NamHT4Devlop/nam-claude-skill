@@ -11,19 +11,19 @@ It runs the **Claude Code CLI** under the hood — no API key of its own.
   area: a **left nav rail** (Home + categories + recent/running + status) beside a roomy content
   area with a hero and skill cards. Both stay in sync — a run started in one shows in the other.
 
-## What it exposes (all 26 skills, categorized)
+## What it exposes (all 27 skills, categorized)
 - **General:** **ask anything** — a plain question on any topic, not tied to the repo (runs Claude with no skill)
 - **Understand:** scan · rescan · ask · map · system-map · document
 - **Plan:** discover · plan · plan-review · **user-story** (requirement or a Slack thread → INVEST stories)
-- **Build & Fix:** build · fix-bug · migrate · simplify · perf · observe
+- **Build & Fix:** build · fix-bug · migrate · simplify · perf · observe · **rails-to-spring** (contract-first stack port)
 - **Review & QA:** review · qa · qa-integration · security-audit · design-review · pr
 - **Ops & Docs:** splunk-report · retro · pdf · skillify
 
 Search to filter, click a card, fill the form, **Run** (or just press **Enter** — Shift+Enter makes a
 new line; Enter never fires mid-word while typing with an IME). Output renders as styled Markdown (headings,
-tables, code); a **"Open full report"** button opens the skill's saved HTML (with Mermaid drawn).
+tables, code); a **"📄 Report"** button opens the skill's saved HTML (with Mermaid drawn).
 
-> Skills that **change code** (build, fix-bug, migrate, simplify, perf, observe) are marked
+> Skills that **change code** (build, fix-bug, migrate, simplify, perf, observe, rails-to-spring) are marked
 > **"edits code"**. Two ways to run them:
 > - **▶ Run** — headless auto-approve. The run view shows a **Step timeline** and a **Files changed**
 >   panel: click a file to open it, or expand **diff** to see the exact old→new lines it wrote.
@@ -89,7 +89,7 @@ extension resumes the same Claude session (`--resume`), so the new model still k
   can't answer an approval prompt. **The git-guard hook still blocks dangerous/remote git even in this
   mode (verified).** Prefer approval prompts? Set it to `--permission-mode acceptEdits` — but then
   map/build/test commands will fail with "error" here; use **⚡ Interactive** (a real terminal) for those.
-- `namhtSpecUi.usdToVnd` — VND rate to show đồng next to USD cost (0 = off; e.g. `25400`).
+- `namhtSpecUi.usdToVnd` — VND rate to show next to the USD cost (0 = off; e.g. `25400`).
 - `namhtSpecUi.model` — model for the UI's runs (default **`sonnet`** — ~5x cheaper than Opus for
   read-only Q&A/planning; use `opus` for the hardest code tasks, `haiku` for cheap lookups, empty to inherit).
 

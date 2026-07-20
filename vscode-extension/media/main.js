@@ -220,10 +220,13 @@ function reopen(it) {
   // Rebuild the run from persisted history if it's not live in this session. The
   // sessionId survives reloads (Claude persists sessions on disk) → follow-up resumes it.
   if (!runs[it.runId]) {
+    const q0 = it.values ? (Object.keys(it.values).filter(k => k !== '__model').map(k => it.values[k]).filter(Boolean)[0] || '') : '';
     runs[it.runId] = { cmd: it.command, title: it.title || it.command, values: it.values || {},
       status: it.status || 'done', log: it.log || '', result: it.result || '', sessionId: it.sessionId || null, report: it.report || null, files: [], steps: [],
       model: it.model != null ? it.model : (it.values && it.values.__model != null ? it.values.__model : undefined),
-      __q: it.values ? (Object.keys(it.values).filter(k => k !== '__model').map(k => it.values[k]).filter(Boolean)[0] || '') : '' };
+      __q: q0,
+      // seed turns so a follow-up doesn't hide the original Q&A (renderChat's fallback stops firing once turns is non-empty)
+      turns: it.result ? [{ q: q0, a: it.result, status: it.status || 'done' }] : [] };
   }
   openRun(it.runId);
 }
@@ -277,7 +280,7 @@ function renderForm(a, values) {
 }
 
 // ---------- run view (per runId; survives navigation) ----------
-let logEl, chatEl, thinkingEl, doneEl, toggleBtn, followRow, costEl, auxEl;
+let logEl, chatEl, thinkingEl, doneEl, toggleBtn, followRow, costEl, auxEl, cancelBtn;
 function showView(which) { const act = which === 'activity'; logEl.style.display = act ? 'block' : 'none'; chatEl.style.display = act ? 'none' : 'flex'; toggleBtn.textContent = act ? 'Result' : 'Activity'; }
 function lastRunningTurn(r) { if (!r.turns) return null; for (let i = r.turns.length - 1; i >= 0; i--) if (r.turns[i].status === 'running') return r.turns[i]; return null; }
 function openRun(id) {
@@ -286,7 +289,8 @@ function openRun(id) {
   const a = byCmd(r.cmd);
   root.appendChild(el('h2', null, (a ? a.icon + '  ' : '') + r.title));
   const bar = el('div', 'runbar');
-  const cancel = el('button', 'ghost', 'Cancel'); cancel.onclick = () => vscode.postMessage({ type: 'cancel', runId: id }); bar.appendChild(cancel);
+  cancelBtn = el('button', 'ghost', 'Cancel'); cancelBtn.onclick = () => vscode.postMessage({ type: 'cancel', runId: id });
+  cancelBtn.style.display = r.status === 'running' ? '' : 'none'; bar.appendChild(cancelBtn);
   toggleBtn = el('button', 'ghost', 'Result'); toggleBtn.onclick = () => showView(logEl.style.display === 'none' ? 'activity' : 'result'); bar.appendChild(toggleBtn);
   if (a) { const fb = el('button', 'ghost', '↻ Form'); fb.onclick = () => renderForm(a, r.values); bar.appendChild(fb); }
   doneEl = el('span', 'runstate ' + (r.status === 'running' ? '' : (r.status === 'done' ? 'ok' : 'bad')), '● ' + r.status); bar.appendChild(doneEl);
@@ -310,6 +314,7 @@ function openRun(id) {
     runs[id].turns = runs[id].turns || []; runs[id].turns.push({ q: t, a: '', status: 'running' });
     if (modelChip) { modelChip.textContent = '⚙ ' + modelLabel(mv); modelChip.className = 'modelchip m-' + modelKey(mv); }
     send.disabled = true; if (doneEl) { doneEl.className = 'runstate'; doneEl.textContent = '● running…'; }
+    if (cancelBtn) cancelBtn.style.display = '';
     renderChat(runs[id]); showView('result');
     vscode.postMessage({ type: 'followup', runId: id, text: t, sessionId: runs[id].sessionId, model: mv });
   };
@@ -410,6 +415,7 @@ window.addEventListener('message', ev => {
     const t = lastRunningTurn(r); if (t) { t.status = r.status; if (!t.a && r.status !== 'done') t.a = '_(ended without an answer — open **Activity** for details)_'; }
     if (cur.runId === id) {
       if (doneEl) { doneEl.className = 'runstate ' + (m.code === 0 ? 'ok' : 'bad'); doneEl.textContent = '● ' + r.status; }
+      if (cancelBtn) cancelBtn.style.display = 'none';
       renderChat(r); showView('result');
       if (costEl) costEl.textContent = costText(r);
       renderAux(r);
