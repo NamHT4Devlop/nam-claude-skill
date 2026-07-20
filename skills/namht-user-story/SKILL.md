@@ -87,7 +87,7 @@ yourself:
   `13-business-rules`, `11-api-docs`, `16-architecture-patterns`, `17-async-events` (if present),
   and the relevant `modules/<m>` doc. For a **multi-repo / SQS** system also consult
   `14-integrations` / any `system-map/` to find cross-service consumers.
-- No KB / no `.codegraph`: fall back to Read/Grep/Glob over the source and **say the grounding is
+- No KB: fall back to Read/Grep/Glob over the source and **say the grounding is
   weaker** (likely misses non-obvious consumers); suggest `/namht-scan`.
 
 Write an **Investigation Notes** section capturing: real entities & fields (with types), the
@@ -159,9 +159,11 @@ then in order: **Investigation Notes** → **Feature map** → **Stories** (each
 Given/When/Then) → a **manual table** (`ID · title · role · priority · points · #ACs · source`) →
 **AC coverage matrix** → **Assumptions & open questions**. Cite the Slack messages / requirement
 lines and the real files/endpoints used. Then render to a self-contained HTML (styled, Mermaid drawn)
-and open it:
+and open it. Resolve this skill's `references/` dir first (call it `$SKILL_DIR`):
+`${CLAUDE_PLUGIN_ROOT}/skills/namht-user-story/references` if `CLAUDE_PLUGIN_ROOT` is set, else the
+`references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-user-story/references`.
 ```bash
-node "$HOME/.claude/skills/namht-user-story/references/render-html.cjs" \
+node "$SKILL_DIR/render-html.cjs" \
   "<repo>/spec-kit-sessions/user-stories/<slug>-<date>.md" \
   "<repo>/spec-kit-sessions/user-stories/<slug>-<date>.html" "<title>"
 # then: open / xdg-open / start  the printed path

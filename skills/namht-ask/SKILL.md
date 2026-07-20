@@ -1,18 +1,19 @@
 ---
 name: namht-ask
 description: >-
-  Answer natural-language questions about a codebase grounded ONLY in its
-  Knowledge Base (knowledge-base/ + modules/), for a mixed business+technical
-  audience: a plain-language explanation, a fitting Mermaid diagram, and the
-  precise technical detail with real file/field/endpoint citations. Use when the
+  Answer natural-language questions about a codebase grounded in the Knowledge
+  Base (business meaning) and real source (technical detail) — never invented —
+  for a mixed business+technical audience: a plain-language explanation, a
+  fitting Mermaid diagram, and the precise technical detail with real
+  file/field/endpoint citations. Use when the
   user asks "/ask", "how does X work", "which module handles Y", "where is Z
   implemented", or any Q&A about the project.
 ---
 
 # Spec Ask — grounded codebase Q&A
 
-A native port of Auto Spec Kit's `/ask`. Answer using **only** the project's Knowledge Base;
-never invent files, APIs, fields, or behavior.
+A native port of Auto Spec Kit's `/ask`. Answer grounded in the Knowledge Base (business meaning)
+and real source (technical detail) — never invent files, APIs, fields, or behavior.
 
 ## Procedure
 0. **Check the Q&A journal first (cross-session memory).** If
@@ -70,9 +71,11 @@ Any technical term used above → a one-line everyday definition. Omit the secti
 ## Output — answer in chat, THEN save an HTML file
 1. **Answer in chat first** using the full dual-audience structure above (this is the primary output).
 2. **Save the same content** to `spec-kit-sessions/answers/<slug>-<date>.md` (slug from the question).
-3. **Render a self-contained HTML** (styled, with the Mermaid diagram drawn) using the bundled renderer:
+3. **Render a self-contained HTML** (styled, with the Mermaid diagram drawn) using the bundled renderer.
+   Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-ask/references`
+   if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-ask/references`.
    ```bash
-   node "$HOME/.claude/skills/namht-ask/references/render-html.cjs" \
+   node "$SKILL_DIR/render-html.cjs" \
      "<repo>/spec-kit-sessions/answers/<slug>-<date>.md" \
      "<repo>/spec-kit-sessions/answers/<slug>-<date>.html" "<question>"
    ```

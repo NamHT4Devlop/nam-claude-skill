@@ -63,8 +63,10 @@ the code (real endpoints/handlers). This is **test design** — it does NOT writ
    Flag any AC with no case and any touched flow with no regression as a **coverage gap**.
 
 ## Output (dual-audience; save + render HTML)
-Save to `spec-kit-sessions/qa/<story-slug>-<date>.md`, then render to HTML and open it
-(`node "$HOME/.claude/skills/namht-qa/references/render-html.cjs" <md> <html> "<story>"`).
+Save to `spec-kit-sessions/qa/<story-slug>-<date>.md`, then render to HTML and open it.
+Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-qa/references`
+if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-qa/references`.
+Then: `node "$SKILL_DIR/render-html.cjs" <md> <html> "<story>"`.
 Structure:
 ```
 # QA Test Plan — <story title>

@@ -22,9 +22,11 @@ Go, Ruby, C#, PHP and Rust, then injects the graph into `references/viewer-templ
    `all` (default — files+classes+routes+KB), `files` (lighter, import graph only), `classes`,
    `routes`, `domain` (KB only).
 2. **Run the bundled generator with Node** (Node ≥18; v20+ ideal). Resolve this skill's
-   `references/` path — for the personal install it is `~/.claude/skills/namht-map/references/`:
+   `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-map/references`
+   if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else
+   `$HOME/.claude/skills/namht-map/references`:
    ```bash
-   node "$HOME/.claude/skills/namht-map/references/build-map.cjs" "<PROJECT_ROOT>" "" all
+   node "$SKILL_DIR/build-map.cjs" "<PROJECT_ROOT>" "" all
    ```
    - Arg 1 = project root (absolute path preferred). Arg 2 = `""` lets it default the output to
      `<root>/spec-kit-sessions/maps/<name>-<date>.html` (gitignored). Arg 3 = mode.

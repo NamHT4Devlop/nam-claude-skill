@@ -12,6 +12,8 @@
  *     [--graphql-path /graphql] [--source-token "$RAILS_TOKEN"] [--target-token "$SPRING_TOKEN"] \
  *     [--max-diff 20] [--json report.json]
  *   (SOURCE_URL / TARGET_URL env vars also work.)
+ *   Tokens: prefer SOURCE_TOKEN / TARGET_TOKEN env vars over the --*-token flags for secrets
+ *   (argv is visible in ps / shell history / CI logs); env vars win over the flags.
  *
  * cases.json (see cases.example.json):
  *   {
@@ -47,8 +49,10 @@ if (!casesPath) { console.error('usage: node shadow-parity.cjs cases.json --sour
 
 const SOURCE = String(opt.source || process.env.SOURCE_URL || '').replace(/\/+$/, '');
 const TARGET = String(opt.target || process.env.TARGET_URL || '').replace(/\/+$/, '');
-if (!SOURCE || !TARGET) { console.error('error: provide --source and --target (or SOURCE_URL / TARGET_URL).'); process.exit(2); }
+const isHttpUrl = (u) => /^https?:\/\//i.test(u);
+if (!isHttpUrl(SOURCE) || !isHttpUrl(TARGET)) { console.error('error: --source and --target (or SOURCE_URL / TARGET_URL) must be http(s) URLs.'); process.exit(2); }
 const MAX_DIFF = parseInt(opt['max-diff'] || '20', 10);
+if (!Number.isFinite(MAX_DIFF) || MAX_DIFF < 1) { console.error('error: --max-diff must be a number >= 1.'); process.exit(2); }
 
 const fs = require('fs');
 let cfg;
@@ -80,7 +84,7 @@ const stable = (x) => JSON.stringify(x);
 function canonicalize(value, ignore, sortArrays, path = '') {
   if (Array.isArray(value)) {
     let arr = value.map(v => canonicalize(v, ignore, sortArrays, path ? path + '.*' : '*'));
-    if (sortArrays.some(p => p === path)) arr = [...arr].sort((a, b) => stable(a).localeCompare(stable(b)));
+    if (path && matchesAny(sortArrays, path)) arr = [...arr].sort((a, b) => stable(a).localeCompare(stable(b)));
     return arr;
   }
   if (value && typeof value === 'object') {
@@ -112,7 +116,7 @@ function diff(a, b, path, out) {
 // ---------- one request ----------
 async function call(base, c, side, headers) {
   const h = Object.assign({}, headers.both || {}, headers[side] || {});
-  const token = side === 'source' ? opt['source-token'] : opt['target-token'];
+  const token = side === 'source' ? (process.env.SOURCE_TOKEN || opt['source-token']) : (process.env.TARGET_TOKEN || opt['target-token']);
   if (token && typeof token === 'string' && !h.Authorization) h.Authorization = `Bearer ${token}`;
   let url, init;
   if (c.type === 'rest') {
@@ -152,7 +156,7 @@ const trunc = (v) => { const s = typeof v === 'string' ? v : JSON.stringify(v); 
     if (s.error || t.error) { ok = false; reasons.push(`request error — source: ${s.error || 'ok'} · target: ${t.error || 'ok'}`); }
     else {
       if (!c.ignoreStatus && s.status !== t.status) { ok = false; reasons.push(`status ${s.status} vs ${t.status}`); }
-      if (c.expectStatus != null && s.status !== c.expectStatus) reasons.push(`note: source status ${s.status} != expectStatus ${c.expectStatus}`);
+      if (c.expectStatus != null && s.status !== c.expectStatus) { ok = false; reasons.push(`source status ${s.status} != expectStatus ${c.expectStatus}`); }
       const cs = canonicalize(s.body, ignore, sortArrays);
       const ct = canonicalize(t.body, ignore, sortArrays);
       diff(cs, ct, '', diffs);

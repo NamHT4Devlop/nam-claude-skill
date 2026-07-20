@@ -48,7 +48,7 @@ That's all you need — derive the features yourself.
 6. **Sprint Planning** — assign sprints respecting dependencies; ~35 points/sprint capacity;
    P1 stories in early sprints; Sprint 1 must deliver MVP value. Note total points and
    estimated sprints (points ÷ 35).
-7. **Output** — write artifacts under `spec-kit-sessions/`:
+7. **Output** — write artifacts under `spec-kit-sessions/plans/`:
    - `user-stories-<epic>-<date>.md` (and/or JSON) — the full backlog with a sprint board.
    - `impact-analysis-<epic>-<date>.md`
    - `confirmation-<epic>-<date>.md`
@@ -57,14 +57,19 @@ That's all you need — derive the features yourself.
    (sprints), and the top risks / things to confirm — before any technical story detail.
    Then summarize: total stories, total points, estimated sprints, and the count of 🔴 must-confirm items.
 8. **Show in chat + render HTML.** Present the executive summary + backlog highlights in chat,
-   then render the backlog Markdown to a self-contained HTML (styled, Mermaid drawn) and open it:
+   then render the backlog Markdown to a self-contained HTML (styled, Mermaid drawn) and open it.
+   Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-plan/references`
+   if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-plan/references`.
    ```bash
-   node "$HOME/.claude/skills/namht-plan/references/render-html.cjs" \
-     "<repo>/spec-kit-sessions/user-stories-<epic>-<date>.md" \
-     "<repo>/spec-kit-sessions/user-stories-<epic>-<date>.html" "<epic title>"
+   node "$SKILL_DIR/render-html.cjs" \
+     "<repo>/spec-kit-sessions/plans/user-stories-<epic>-<date>.md" \
+     "<repo>/spec-kit-sessions/plans/user-stories-<epic>-<date>.html" "<epic title>"
    # then: open / xdg-open / start  the printed path
    ```
    Requires Node — if absent, keep chat + `.md` and note HTML was skipped. Give the user the path.
 
 Acceptance criteria must be specific and measurable (not vague). Every story should be
 independent, valuable, testable, and fit one sprint.
+
+Scope: this plans a whole Epic through sprints. For a SINGLE requirement needing maximally
+granular ACs (or a Slack-thread source), use `/namht-user-story` instead.

@@ -66,9 +66,11 @@ Dual-audience (plain summary + technical detail), each file Markdown:
 - `02-end-to-end-flows.md` — the cross-service flows with sequence diagrams.
 - `03-contracts-events.md` — contracts/events tables + risks.
 
-Then **render `01` and `02` to HTML** (diagrams drawn) with the bundled renderer and open them:
+Then **render `01` and `02` to HTML** (diagrams drawn) with the bundled renderer and open them.
+Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-system-map/references`
+if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-system-map/references`.
 ```bash
-node "$HOME/.claude/skills/namht-system-map/references/render-html.cjs" \
+node "$SKILL_DIR/render-html.cjs" \
   "<workspace>/system-map/02-end-to-end-flows.md" "<workspace>/system-map/02-end-to-end-flows.html" "End-to-end flows"
 # then: open / xdg-open / start  the printed path
 ```

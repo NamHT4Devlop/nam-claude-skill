@@ -12,12 +12,14 @@ description: >-
 Turn a Markdown or HTML report into a shareable PDF.
 
 ## Steps
+0. Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-pdf/references`
+   if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-pdf/references`.
 1. **Resolve the input.** If given a `.md`, first render it to a self-contained HTML with the
    bundled renderer (Mermaid drawn):
-   `node "$HOME/.claude/skills/namht-pdf/references/render-html.cjs" <in.md> <tmp.html> "<title>"`
+   `node "$SKILL_DIR/render-html.cjs" <in.md> <tmp.html> "<title>"`
    If given an `.html`, use it directly.
 2. **Convert to PDF** (best-effort, no network):
-   `bash "$HOME/.claude/skills/namht-pdf/references/html-to-pdf.sh" <in.html> <out.pdf>`
+   `bash "$SKILL_DIR/html-to-pdf.sh" <in.html> <out.pdf>`
    It prints the PDF path on success.
 3. **Open it** (`open` / `xdg-open` / `start`) and give the user the path.
 

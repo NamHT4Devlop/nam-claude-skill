@@ -69,9 +69,11 @@ migration, etc.). This is what lets a non-technical reader follow the technical 
 ## Output — show in chat, save Markdown, THEN render HTML
 1. **Present the document in chat** (the full dual-audience structure above).
 2. **Save Markdown** to `spec-kit-sessions/documents/<topic-slug>-<date>.md`.
-3. **Render a self-contained HTML** (styled, Mermaid drawn) with the bundled renderer, then open it:
+3. **Render a self-contained HTML** (styled, Mermaid drawn) with the bundled renderer, then open it.
+   Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-document/references`
+   if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-document/references`.
    ```bash
-   node "$HOME/.claude/skills/namht-document/references/render-html.cjs" \
+   node "$SKILL_DIR/render-html.cjs" \
      "<repo>/spec-kit-sessions/documents/<slug>-<date>.md" \
      "<repo>/spec-kit-sessions/documents/<slug>-<date>.html" "<topic>"
    # then: open / xdg-open / start  the printed path

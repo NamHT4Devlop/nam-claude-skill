@@ -111,9 +111,14 @@ GraphQL error masking. Keep an explicit **allowed-diff list** the user signs off
 real failure.
 
 **Bundled harness — don't rebuild it.** `references/shadow-parity.cjs` (Node ≥18, no deps) does exactly
-this: fill a `cases.json` (copy `references/cases.example.json`), then
-`node "$HOME/.claude/skills/namht-rails-to-spring/references/shadow-parity.cjs" cases.json --source <rails-url>
---target <spring-url> [--graphql-path /graphql] [--source-token … --target-token …]`. It sends each
+this: fill a `cases.json` (copy `references/cases.example.json`). Resolve this skill's `references/`
+dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-rails-to-spring/references` if
+`CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else
+`$HOME/.claude/skills/namht-rails-to-spring/references`. Then run
+`node "$SKILL_DIR/shadow-parity.cjs" cases.json --source <rails-url>
+--target <spring-url> [--graphql-path /graphql] [--source-token … --target-token …]`. For tokens,
+prefer the `SOURCE_TOKEN` / `TARGET_TOKEN` env vars (they win over the flags; argv leaks into
+`ps`/shell history/CI logs). It sends each
 case to both, canonicalizes (sorts keys, redacts `ignore` paths like `**.updatedAt`, sorts
 `sortArraysAt` arrays), diffs, prints per-field failures, and **exits non-zero if any case diverges** —
 use it as the per-endpoint gate and in CI. Grow `cases.json` per endpoint (happy · boundary · invalid ·

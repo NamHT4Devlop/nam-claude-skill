@@ -122,7 +122,7 @@ project's build/lint/typecheck. Confirm no regressions in blast-radius consumers
 green quickly, revert** and report what blocked you — never leave prod code broken.
 
 ### 11. Hotfix report + close the loop back to QA
-Save to `spec-kit-sessions/fixes/<slug>-<date>.md` (offer HTML via the render step if useful):
+Save to `spec-kit-sessions/fixes/<slug>-<date>.md` (offer a PDF/HTML export via the namht-pdf skill if useful):
 - **In plain words** (incident comms / non-tech): what broke, impact, what we changed, status.
 - **Classification** (code / config / data / flag / spec — from step 2), **root cause** (cited), **the
   fix** (diff summary), **regression test** (+ the QA case it maps to), **test results**, **blast
@@ -138,6 +138,6 @@ Save to `spec-kit-sessions/fixes/<slug>-<date>.md` (offer HTML via the render st
 Summarize in chat: the **classification** (code bug or not), root cause (1–2 lines), the fix, test
 status (mapped to the QA case), risk/rollback, how to re-verify on the env, and follow-ups + report
 path. Be honest if it's a config/spec issue (not a code fix), or if you couldn't reproduce/verify.
-```
+
 Fits the loop: `/namht-build` → `/namht-qa` (cases) → deploy → QA finds a bug → **`/namht-fix-bug`** →
 `/namht-qa-integration` (re-verify on the env) → done.
