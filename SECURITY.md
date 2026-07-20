@@ -5,12 +5,20 @@ company machine. It describes exactly what the code does, what it does **not** d
 verify it yourself.
 
 ## TL;DR
-- The executable code is **pure local** (Node `fs` / `path` / `crypto` only). **No shell exec,
-  no `eval`, no dynamic `require`, no network calls, no secrets.** Safe to copy and run locally.
-- The only external dependency is **at view-time**: generated HTML can load a JS chart library
-  (Mermaid/Cytoscape) from a CDN — and even that is **eliminated** when the bundled `vendor/`
-  libraries are present (default in this repo → fully offline, self-contained HTML).
-- It contains **no credentials**. It does not phone home. There is no telemetry in this repo.
+- The analyzer/renderer code is **pure local** (Node `fs` / `path` / `crypto` only). **No `eval`,
+  no dynamic `require`, no telemetry, no secrets.** Safe to copy and run locally.
+- Exactly **three opt-in components touch the network or a local process** — each only at the
+  user's explicit request, never in the background:
+  1. `skills/namht-rails-to-spring/references/shadow-parity.cjs` — sends HTTP requests **only to
+     the two `--source`/`--target` endpoints the user passes on the command line** (a parity test
+     harness). No other destinations, no telemetry.
+  2. The optional **VS Code extension** (`vscode-extension/`) — spawns the **local `claude` CLI**
+     (whitelisted commands only); it makes no network calls of its own.
+  3. `namht-splunk-report` (a prompt, not code) — instructs the agent to query Splunk / post to
+     Slack using credentials from env/MCP, never hardcoded.
+- Generated HTML can load Mermaid/Cytoscape from a CDN at view-time — **eliminated** when the
+  bundled `vendor/` libraries are present (default in this repo → fully offline HTML).
+- It contains **no credentials**. Nothing phones home. There is no telemetry in this repo.
 
 ## What's in the repo
 | Type | Files | Risk |
@@ -19,14 +27,19 @@ verify it yourself.
 | Static code analyzer | `skills/namht-map/references/graph-builder.js` | Reads source files, builds a graph. `fs`/`path` only |
 | HTML renderers | `skills/*/references/html-builder.js` + `render-html.cjs`, `build-map.cjs` | Markdown/graph → HTML. `fs`/`path`/`crypto` only |
 | Vendored JS libs | `vendor/mermaid.min.js`, `vendor/cytoscape.min.js` | Upstream OSS, inlined into HTML for offline render |
-| Install scripts | `scripts/personal-install.sh`, `scripts/onboard-project.sh` | Symlink into `~/.claude`; write `.gitignore`/`CLAUDE.md` |
+| Install scripts | `scripts/personal-install.sh`, `scripts/onboard-project.sh`, `scripts/sync-bundles.sh` | Symlink into `~/.claude`; write `.gitignore`/`CLAUDE.md`; copy bundled files |
+| Parity harness | `skills/namht-rails-to-spring/references/shadow-parity.cjs` | **Outbound HTTP — only to the two user-supplied `--source`/`--target` URLs** (opt-in per run) |
+| VS Code extension | `vscode-extension/` (TypeScript, proprietary) | **Spawns the local `claude` CLI** (whitelisted skill commands); no network of its own |
+| Git guard hook | `hooks/git-guard.sh` | Blocks remote-touching/destructive git; push only to the personal whitelist |
 
 ## Executable-surface audit (verify it yourself)
 ```bash
-# 1) No shell-out / eval / dynamic require / network in any JS or shell file:
+# 1) Shell-out / eval / network surface — the ONLY expected matches are:
+#      - RegExp .exec(...) string matching (not process execution)
+#      - fetch( in skills/namht-rails-to-spring/references/shadow-parity.cjs (user-supplied endpoints only)
+#      - child_process/spawn in vscode-extension/src/extension.ts (spawns the local claude CLI)
 grep -rnE "child_process|execSync|spawn|\beval\(|new Function|http\.|https\.|fetch\(|net\.|dns\." \
-  --include='*.js' --include='*.cjs' --include='*.sh' .
-#   → only matches should be RegExp.exec(...) (string matching) — not process execution.
+  --include='*.js' --include='*.cjs' --include='*.sh' --include='*.ts' .
 
 # 2) Real require()s are stdlib + local siblings only:
 grep -rnE "require\((['\"])" --include='*.js' --include='*.cjs' .   # fs, path, crypto, ./html-builder, ./graph-builder
@@ -35,9 +48,11 @@ grep -rnE "require\((['\"])" --include='*.js' --include='*.cjs' .   # fs, path, 
 grep -rniE "api[_-]?key|secret|password|BEGIN (RSA|PRIVATE)|sk-|ghp_|AKIA[0-9A-Z]{16}" .
 #   → only the WORD "secret/token" in review checklists, no actual values.
 ```
-Findings (as audited): no shell execution, no `eval`/`Function`, no dynamic `require`, no network
-calls, no hardcoded secrets. `graph-builder.js`/`html-builder.js` are readable `tsc` output (not
-minified) — provenance: the author's own `auto-spec-extension` repo.
+Findings (as audited): no `eval`/`Function`, no dynamic `require`, no hardcoded secrets, no
+telemetry. Process/network use is limited to the three opt-in components listed in the TL;DR
+(shadow-parity → user-supplied endpoints; the extension → local `claude` CLI; splunk-report →
+env/MCP credentials). `graph-builder.js`/`html-builder.js` are readable `tsc` output (not
+minified) — provenance: the author's own Auto Spec Kit project.
 
 ## Data flow & egress
 - **KB / analyzer**: 100% local. The `knowledge-base/` never leaves the machine.

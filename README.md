@@ -1,6 +1,6 @@
 # Spec Kit for Claude Code
 
-A native **Claude Code** port of the [Auto Spec Kit](../auto-spec-extension) VS Code
+A native **Claude Code** port of the private Auto Spec Kit VS Code
 extension. Same spec-driven workflow — **Requirement → Plan → Code → Review → Test →
 Evidence** — plus Knowledge Base generation, codebase Q&A, user stories, dependency mapping,
 and business↔code documentation. The difference: it runs on **Claude Code** (your own
@@ -19,8 +19,8 @@ nam-claude-skill/
 ├── .claude-plugin/
 │   ├── plugin.json          # plugin manifest
 │   └── marketplace.json     # local marketplace (for one-command install)
-├── commands/                # 26 slash commands → /namht:build (plugin) or /namht-build (personal), …
-├── skills/                  # 25 skills (the methodology — also usable standalone)
+├── commands/                # 28 slash commands → /namht:build (plugin) or /namht-build (personal), …
+├── skills/                  # 27 skills (the methodology — also usable standalone)
 │   ├── namht-build/          #   13-step pipeline   (+ bundled review checklist)
 │   ├── namht-scan/           #   KB generation       (+ bundled kb-steps spec)
 │   ├── namht-rescan/         #   incremental KB update
@@ -30,7 +30,12 @@ nam-claude-skill/
 │   ├── namht-map/            #   interactive HTML code graph (Cytoscape)
 │   └── namht-document/       #   business↔code doc
 ├── agents/                  # 7 specialist sub-agents (planning + review)
-└── resources/               # review-skills-universal.md, kb-steps.md
+├── resources/               # review-skills-universal.md, kb-steps.md
+├── hooks/                   # git-guard.sh + hooks.json (PreToolUse git guardrail)
+├── scripts/                 # personal-install.sh, onboard-project.sh, sync-bundles.sh
+├── docs/                    # HTML setup guides (personal / company / manual)
+├── tests/                   # toolkit self-tests
+└── vscode-extension/        # optional VS Code panel that drives the local claude CLI (proprietary)
 ```
 
 Commands are thin entry points; the **skills** hold the actual methodology and auto-activate
@@ -91,7 +96,7 @@ commands are typed into Claude Code, not your shell):
 After install, commands are namespaced by the plugin (type `/` to see them):
 `/namht:scan`, `/namht:rescan`, `/namht:build`, `/namht:fix-bug`, `/namht:review`, `/namht:ask`,
 `/namht:plan`, `/namht:map`, `/namht:system-map`, `/namht:document`, `/namht:help`.
-The 11 skills and 7 sub-agents load automatically (skills also activate from plain English), and the
+The 27 skills and 7 sub-agents load automatically (skills also activate from plain English), and the
 **git-guard hook ships with the plugin** (`hooks/hooks.json`) so it's active right after install.
 (The personal symlink install — Option C — exposes the same commands as `/namht-build`, etc.)
 
@@ -251,6 +256,8 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
 | `/namht-retro [window]` | Engineering retrospective from git history — shipped, pain, quality signals, action items. |
 | `/namht-skillify <name+purpose>` | Scaffold a new `namht-*` skill + command following the conventions (self-extend the kit). |
 | `/namht-splunk-report [apps + window]` | Query Splunk for per-app errors over a window (default today), aggregate into one table, and post it to Slack. Read-only on Splunk; credentials from env/MCP, never hardcoded. Needs network. |
+| `/namht-user-story <requirement or Slack link>` | Deep-investigate a requirement (or comprehend a Slack thread) → features + INVEST user stories with maximally granular Given/When/Then ACs. |
+| `/namht-rails-to-spring <endpoint set>` | Contract-first port to another stack (e.g. Rails+GraphQL → Spring Boot/MyBatis) — golden-test parity per endpoint, strangler cutover. Edits code. |
 | `/namht-observe [area]` | Instrument code for observability — structured logs, correlation/trace IDs (HTTP + SQS), metrics, error context; matches the backend field schema. Edits code. |
 | `/namht-migrate [change]` | Plan + execute a safe migration/deprecation (API, DB schema, event contract, library) — backward-compatible, staged, with a rollback per step + deprecation window. |
 | `/namht-simplify [target]` | Behavior-preserving simplification — remove dead code, flatten nesting, extract/rename, kill duplication; one refactor at a time, tests stay green. |
@@ -309,6 +316,8 @@ See **[SECURITY.md](SECURITY.md)** for the full audit. In short:
   directly and suggest running `/namht-scan`, but results are richer with a KB.
 - `build` and `review` enforce the **"Architecture Invariants — DO NOT BREAK"** list from
   `knowledge-base/16-architecture-patterns.md` and the rules in `knowledge-base/review-skills.md`.
-- Source of truth for the methodology: the original prompts in
-  `../auto-spec-extension/src/` (pipeline steps, `constants/kb-steps.ts`,
-  `resources/review-skills-universal.md`).
+- Source of truth for the methodology: the original prompts of the private Auto Spec Kit VS Code
+  extension (pipeline steps, its `kb-steps` constants, and `review-skills-universal.md`).
+- **Slash-command prefix depends on install method:** `/namht-build` (personal symlink install) vs
+  `/namht:build` (plugin install) vs `/build` (plain copy). Skills also auto-activate from plain English.
+- **Licensing:** MIT — except `vscode-extension/`, which is proprietary (see `vscode-extension/LICENSE`).

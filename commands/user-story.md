@@ -4,8 +4,8 @@ argument-hint: <requirement text, and/or a Slack thread/channel URL> (add "quick
 ---
 
 Use the **namht-user-story** skill on the input below. By default run in **deep mode**: first
-investigate the codebase (KB + the read-only analysis agents — business-flow-tracer, codebase-analyzer,
-impact-detector) to ground everything in real entities/flows/rules and the blast radius, then write
+investigate the codebase (KB + the read-only analysis agents — namht-business-flow-tracer, namht-codebase-analyzer,
+namht-impact-detector) to ground everything in real entities/flows/rules and the blast radius, then write
 **features + INVEST user stories** with **maximally granular acceptance criteria** — one atomic,
 testable assertion per AC (each field × rule, each role, each state transition, each error/edge/
 concurrency case as its own numbered Given/When/Then with concrete values) plus an AC coverage matrix.

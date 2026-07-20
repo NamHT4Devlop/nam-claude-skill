@@ -96,7 +96,7 @@
     <code>render-html.cjs</code>, <code>review-skills-universal.md</code>, <code>kb-steps.md</code>) chỉ là
     <b>bản sao</b> sinh ra từ <code>resources/</code> bằng <code>scripts/sync-bundles.sh</code>. Nên bạn chỉ
     copy <b>4 file gốc trong <code>resources/</code> một lần</b>, rồi chạy <code>sync-bundles.sh</code> để nó tự
-    nhân ra mọi skill. Bạn chỉ phải dán tay <b>~59 file</b> thay vì ~88.</p>
+    nhân ra mọi skill. Bạn chỉ phải dán tay <b>~68 file</b> thay vì ~100.</p>
   </div>
 
   <nav class="toc">
@@ -116,26 +116,31 @@
   <div class="cb"><button class="copy">Copy</button><pre><code>ROOT=~/nam-claude-skill          <span class="cmt"># ⬅ đổi thành BẤT KỲ đường dẫn nào bạn muốn</span>
 mkdir -p "$ROOT"/{commands,agents,hooks,scripts,resources}
 
-<span class="cmt"># 20 skill → mỗi skill 1 file SKILL.md</span>
+<span class="cmt"># 27 skill → mỗi skill 1 file SKILL.md</span>
 for s in namht-ask namht-build namht-design-review namht-discover \
-         namht-document namht-fix-bug namht-map namht-pdf namht-plan namht-plan-review \
-         namht-pr namht-qa namht-qa-integration namht-rescan namht-retro namht-review \
-         namht-scan namht-security-audit namht-skillify namht-system-map; do
+         namht-document namht-fix-bug namht-map namht-migrate namht-observe namht-pdf \
+         namht-perf namht-plan namht-plan-review namht-pr namht-qa namht-qa-integration \
+         namht-rails-to-spring namht-rescan namht-retro namht-review namht-scan \
+         namht-security-audit namht-simplify namht-skillify namht-splunk-report \
+         namht-system-map namht-user-story; do
   mkdir -p "$ROOT/skills/$s"; touch "$ROOT/skills/$s/SKILL.md"
 done
 
-<span class="cmt"># reference RIÊNG (không tự sync) — chỉ map &amp; pdf</span>
-mkdir -p "$ROOT/skills/namht-map/references" "$ROOT/skills/namht-pdf/references"
+<span class="cmt"># reference RIÊNG (không tự sync) — map, pdf &amp; rails-to-spring</span>
+mkdir -p "$ROOT/skills/namht-map/references" "$ROOT/skills/namht-pdf/references" \
+         "$ROOT/skills/namht-rails-to-spring/references"
 touch "$ROOT/skills/namht-map/references/"{build-map.cjs,graph-builder.js,viewer-template.html}
 touch "$ROOT/skills/namht-pdf/references/html-to-pdf.sh"
+touch "$ROOT/skills/namht-rails-to-spring/references/"{shadow-parity.cjs,cases.example.json}
 
 <span class="cmt"># 4 file gốc (sync-bundles sẽ nhân ra các skill khác)</span>
 touch "$ROOT/resources/"{html-builder.js,render-html.cjs,review-skills-universal.md,kb-steps.md}
 
-<span class="cmt"># 21 command</span>
-for c in ask build design-review discover document fix-bug help map pdf \
-         plan-review plan pr qa-integration qa rescan retro review scan security-audit \
-         skillify system-map; do touch "$ROOT/commands/$c.md"; done
+<span class="cmt"># 28 command</span>
+for c in ask build design-review discover document fix-bug help map migrate observe \
+         pdf perf plan-review plan pr qa-integration qa rails-to-spring rescan retro \
+         review scan security-audit simplify skillify splunk-report system-map \
+         user-story; do touch "$ROOT/commands/$c.md"; done
 
 <span class="cmt"># 7 agent</span>
 for a in namht-architecture-reviewer namht-business-consistency-reviewer \
@@ -154,9 +159,10 @@ echo "✅ Tạo khung xong. Danh sách file cần dán nội dung:"; find "$ROOT
   <div class="cb"><button class="copy">Copy</button><pre><code>https://raw.githubusercontent.com/NamHT4Devlop/nam-claude-skill/main/&lt;đường-dẫn&gt;</code></pre></div>
   <p class="muted">Ví dụ: <code>.../main/skills/namht-build/SKILL.md</code>, <code>.../main/commands/build.md</code>,
   <code>.../main/hooks/git-guard.sh</code>.</p>
-  <p><b>Phải dán (59 file):</b> 20 × <code>skills/*/SKILL.md</code> · 21 × <code>commands/*.md</code> ·
+  <p><b>Phải dán (68 file):</b> 27 × <code>skills/*/SKILL.md</code> · 28 × <code>commands/*.md</code> ·
   7 × <code>agents/*.md</code> · 4 × <code>resources/*</code> · <code>hooks/git-guard.sh</code> ·
-  <code>scripts/personal-install.sh</code> · <code>scripts/sync-bundles.sh</code> · 4 file riêng của map/pdf.</p>
+  <code>scripts/personal-install.sh</code> · <code>scripts/sync-bundles.sh</code> ·
+  6 file riêng của map/pdf/rails-to-spring.</p>
   <table>
     <thead><tr><th>Tùy chọn / bỏ được</th><th>Lý do</th></tr></thead>
     <tbody>
@@ -203,7 +209,7 @@ git config --global core.excludesfile ~/.gitignore_global</code></pre></div>
     đâu. Sau đó <b>restart Claude Code</b> để rào có hiệu lực.</div>
 
   <h3>6) Kiểm tra</h3>
-  <div class="cb"><button class="copy">Copy</button><pre><code>ls -la ~/.claude/skills | grep namht-     <span class="cmt"># thấy 20 skill</span>
+  <div class="cb"><button class="copy">Copy</button><pre><code>ls -la ~/.claude/skills | grep namht-     <span class="cmt"># thấy 27 skill</span>
 <span class="cmt"># rào git → phải in ra JSON "deny"</span>
 printf '{"tool_input":{"command":"git push https://github.com/some-org/x"}}' | ~/.claude/hooks/namht-git-guard.sh</code></pre></div>
   <p>Trong Claude Code gõ <span class="kbd">/</span> → thấy <code>/namht-*</code>; chạy <code>/namht-help</code>.</p>

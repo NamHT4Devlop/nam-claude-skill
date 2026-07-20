@@ -13,7 +13,7 @@ Commands (all namespaced under `/namht-`):
 | `/namht-scan` | Generate the Knowledge Base from the codebase (16 docs + review-skills + per-module). Run this first on a new repo. |
 | `/namht-rescan` | Update the KB incrementally after code changes (git-diff aware). |
 | `/namht-build <requirement>` | Full 13-step pipeline: clarify → plan → code → review → test → evidence → update KB. |
-| `/namht-fix-bug <error/stack trace>` | Production bug → root cause → failing regression test → minimal surgical fix → verify → hotfix report. |
+| `/namht-fix-bug <error or QA report>` | Triage code vs config/data/spec → root cause → regression test tied to the AC → minimal fix → verify → back to QA. |
 | `/namht-review [file\|PR#\|empty]` | Two-phase review: quality checklist + business consistency vs the KB. Empty = branch vs default (or working-tree diff); accepts a PR #/URL. |
 | `/namht-pr [review <PR#>]` | Prepare a PR description from the branch, or review a GitHub PR (two-phase + blast radius). |
 | `/namht-security-audit` | Whole-repo security audit (injection, authz/IDOR, secrets, exposure, AI) grounded in the KB. |
@@ -35,6 +35,8 @@ Commands (all namespaced under `/namht-`):
 | `/namht-migrate [change]` | Safe migration/deprecation (API/DB/event/lib) — backward-compatible, staged, rollback + deprecation window. |
 | `/namht-simplify [target]` | Behavior-preserving simplification — reduce complexity/duplication/nesting; tests stay green. |
 | `/namht-perf [area]` | Measure-first performance optimization — find the real bottleneck, fix it, prove it with before/after numbers. |
+| `/namht-user-story <requirement\|Slack link>` | Deep-investigate a requirement (or comprehend a Slack thread) → features + INVEST user stories with maximally granular Given/When/Then ACs. |
+| `/namht-rails-to-spring <endpoints>` | Contract-first port to another stack (e.g. Rails+GraphQL → Spring Boot) — golden-test parity, endpoint by endpoint (strangler). Edits code. |
 
 Recommended flow: **scan** once → **ask/map/document** to understand → **plan** to break down
 work → **build** to implement → **rescan** to keep the KB fresh. The KB lives in
