@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- The graph data comes from a scanned repository (paths, comments, route strings) and is untrusted.
+     No inline event handlers, no remote origins beyond the Cytoscape CDN (dropped entirely when
+     vendor/cytoscape.min.js is inlined), and no network egress from this page. -->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>__PROJECT__ — Code Graph</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>

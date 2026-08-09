@@ -38,9 +38,19 @@ if (data.nodes.length > 1800 && mode === 'all') {
 
 const tpl = fs.readFileSync(path.join(__dirname, 'viewer-template.html'), 'utf8');
 const projectName = data.metadata.projectName || path.basename(root);
+// The graph embeds text taken from the scanned repo (file paths, doc comments, route strings), so it
+// is untrusted. Two hazards, both handled here:
+//  1. A *string* replacement argument makes `$'`, "$`", `$&`, `$$` expand as replacement patterns —
+//     `$'` inserts everything after the match, which drags a real </script> into the data block and
+//     ends it early. Function replacers are immune, so always pass a function.
+//  2. Escaping only "</" still lets a lone "<" through into HTML context. Neutralise < and > (plus the
+//     JS line terminators U+2028/9) as \u escapes — valid JSON, inert in markup.
+const graphJson = JSON.stringify(data)
+  .replace(/</g, '\\u003c').replace(/>/g, '\\u003e')
+  .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 let html = tpl
-  .replace(/__PROJECT__/g, escapeHtml(projectName))
-  .replace('__GRAPH_DATA__', JSON.stringify(data).replace(/<\//g, '<\\/'));
+  .replace(/__PROJECT__/g, () => escapeHtml(projectName))
+  .replace('__GRAPH_DATA__', () => graphJson);
 html = inlineVendored(html, __dirname); // offline: inline Cytoscape from vendor/ if present
 
 // Default output: <root>/spec-kit-sessions/maps/<name>-<YYYY-MM-DD>.html  (gitignored)

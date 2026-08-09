@@ -85,10 +85,16 @@ minified) — provenance: the author's own Auto Spec Kit project.
 
 ## Git guardrail (hard-blocked, read/sync-in only)
 
-A **PreToolUse hook** (`hooks/git-guard.sh`) + **`permissions.deny`** rules make git commands that
-touch the **remote** or **destroy local work** *impossible* — enforced by the Claude Code harness,
-not by the model's goodwill. This holds even for chained commands (`cd x && git push`), `git -C`,
-and ignores the word "push" inside a quoted commit message.
+A **PreToolUse hook** (`hooks/git-guard.sh`) + **`permissions.deny`** rules block git commands that
+touch the **remote** or **destroy local work**, enforced by the Claude Code harness rather than the
+model's goodwill — and PreToolUse runs *before* the permission-mode check, so a `deny` still holds
+under `--permission-mode bypassPermissions`. It handles chained commands (`cd x && git push`),
+`git -C`, quoted subcommands, `GIT_DIR=`/`--git-dir` retargeting, and refuses any unknown subcommand
+(an alias can be `!<shell>`); `tests/git-guard.test.sh` pins each of those as a regression.
+
+Treat it as **best-effort defense-in-depth, not a hard boundary**: it parses shell text, so a
+sufficiently creative construction may still slip past. It is one layer — not a substitute for
+running the toolkit under an account and workspace you would trust anyway.
 
 - **Allowed** (read / sync-in): `fetch`, `pull`, `status`, `log`, `diff`, `show`, `blame`,
   `branch` (list), `add`, `commit`, `stash`, `merge`, `checkout <branch>` — **plus `push` ONLY

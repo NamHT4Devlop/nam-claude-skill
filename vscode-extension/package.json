@@ -2,7 +2,7 @@
   "name": "namht-spec-ui",
   "displayName": "Spec Kit UI",
   "description": "Point-and-click UI over the namht-* Spec Kit skills for non-technical roles (PM/SM). Runs Claude Code under the hood.",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "publisher": "namht",
   "private": true,
   "license": "UNLICENSED",
@@ -44,7 +44,8 @@
         "namhtSpecUi.claudePath": {
           "type": "string",
           "default": "claude",
-          "description": "Path to the Claude Code CLI executable."
+          "description": "Path to the Claude Code CLI executable. (machine-scoped: a workspace cannot override which binary is launched).",
+          "scope": "machine"
         },
         "namhtSpecUi.extraArgs": {
           "type": "array",
@@ -55,7 +56,8 @@
             "--permission-mode",
             "bypassPermissions"
           ],
-          "description": "Extra args passed to `claude -p`. Default `bypassPermissions` lets skills run the tools they need headlessly (node for the map/PDF, npm/npx/jest for build & tests, gh, curl) — otherwise those Bash commands show up as 'error' because a headless run can't answer an approval prompt. The git-guard hook STILL blocks dangerous/remote git even in this mode (verified). Prefer prompts? Set this to [\"--permission-mode\",\"acceptEdits\"] — but then map/build/test commands will fail with 'error' in this panel; use the ⚡ Interactive button (a real terminal) for those instead."
+          "description": "Extra args passed to `claude -p`. Default `bypassPermissions` lets skills run the tools they need headlessly (node for the map/PDF, npm/npx/jest for build & tests, gh, curl) — otherwise those Bash commands fail, because a headless run cannot answer an approval prompt. TRADE-OFF: this mode also permits any Bash command, writes outside the workspace, reading files such as .env, and network calls; Anthropic recommends it only in an isolated environment. The git-guard PreToolUse hook still blocks dangerous/remote git in this mode (hooks run before the permission check - verified), but it is defense-in-depth, not a sandbox. Prefer prompts? Set [\"--permission-mode\",\"acceptEdits\"] - then map/build/test commands fail in this panel; use the Interactive button (a real terminal) for those instead.",
+          "scope": "machine"
         },
         "namhtSpecUi.usdToVnd": {
           "type": "number",
@@ -76,14 +78,25 @@
       }
     },
     "commands": [
-      { "command": "namhtSpec.openApp", "title": "Open Spec Kit App", "category": "Spec Kit", "icon": "$(multiple-windows)" }
+      {
+        "command": "namhtSpec.openApp",
+        "title": "Open Spec Kit App",
+        "category": "Spec Kit",
+        "icon": "$(multiple-windows)"
+      }
     ],
     "menus": {
       "view/title": [
-        { "command": "namhtSpec.openApp", "when": "view == namhtSpec.view", "group": "navigation" }
+        {
+          "command": "namhtSpec.openApp",
+          "when": "view == namhtSpec.view",
+          "group": "navigation"
+        }
       ],
       "commandPalette": [
-        { "command": "namhtSpec.openApp" }
+        {
+          "command": "namhtSpec.openApp"
+        }
       ]
     }
   },

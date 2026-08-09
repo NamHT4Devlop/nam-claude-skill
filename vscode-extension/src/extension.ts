@@ -81,6 +81,17 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     });
   }
 
+  // A form field can hold a secret (the Slack webhook of namht-splunk-report). History is written to
+  // VS Code workspace storage in plaintext, so strip anything URL-shaped before persisting it.
+  private scrubValues(values: any): any {
+    if (!values || typeof values !== 'object') return values;
+    const out: any = {};
+    for (const [k, v] of Object.entries(values)) {
+      out[k] = (typeof v === 'string' && /https?:\/\/\S/i.test(v)) ? '<redacted URL — not stored>' : v;
+    }
+    return out;
+  }
+
   // ---- history (persisted per workspace so it survives reloads) ----
   private history(): any[] { return this.ctx.workspaceState.get<any[]>(HIST_KEY, []); }
   private histUpsert(item: any) {
@@ -113,7 +124,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     const prompt = isChat ? String(m.args || '').trim() : `/${command} ${String(m.args || '')}`.trim();
     if (isChat && !prompt) { this.post({ type: 'log', runId, text: '[type a question first]' }); this.post({ type: 'done', runId, code: 1 }); return; }
     const model = (m.model !== undefined && m.model !== null) ? String(m.model) : this.cfg().model;
-    this.histUpsert({ runId, command, title: m.title || command, values: m.values || {}, when: Date.now(), status: 'running', model });
+    this.histUpsert({ runId, command, title: m.title || command, values: this.scrubValues(m.values || {}), when: Date.now(), status: 'running', model });
     this.state.set(runId, { runId, command, title: String(m.title || command), log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now(), model });
     this.evict();
     this.spawnClaude(runId, ['-p', prompt], cwd, `${isChat ? '💬' : '▶'} ${prompt}\n(cwd: ${cwd})\n\n`);

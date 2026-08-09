@@ -64,7 +64,8 @@ webview (cards + form)  --run{command,args}-->  extension host
                                                    └─ detect the saved spec-kit-sessions report → "Open report"
 ```
 - **Only whitelisted commands run** — the host rejects anything not in `ALLOWED` (see `src/extension.ts`).
-- The **git-guard hook** and Claude Code's permission system still apply underneath.
+- The **git-guard hook** still applies (PreToolUse runs before the permission check). Note that the
+  default `bypassPermissions` mode skips Claude Code's own approval prompts - see `namhtSpecUi.extraArgs`.
 
 ## Cost & tokens
 Each run shows a **cost chip** — the tokens used (`input→output`, plus **`… cached`** = KB context
@@ -82,13 +83,18 @@ lookup, **Sonnet** for balanced Q&A/planning, **Opus** for the hardest code. Eac
 extension resumes the same Claude session (`--resume`), so the new model still knows what it was doing.
 
 ## Settings
-- `namhtSpecUi.claudePath` — path to the `claude` CLI (default `claude`).
-- `namhtSpecUi.extraArgs` — extra args for `claude -p`. Default `--permission-mode bypassPermissions`
-  so skills can run the tools they need headlessly (`node` for the map/PDF, `npm`/`npx`/`jest` for
-  build & tests, `gh`, `curl`) — otherwise those commands surface as **"error"** because a headless run
-  can't answer an approval prompt. **The git-guard hook still blocks dangerous/remote git even in this
-  mode (verified).** Prefer approval prompts? Set it to `--permission-mode acceptEdits` — but then
-  map/build/test commands will fail with "error" here; use **⚡ Interactive** (a real terminal) for those.
+- `namhtSpecUi.claudePath` — path to the `claude` CLI (default `claude`). **Machine-scoped**: a repo's
+  `.vscode/settings.json` cannot change which binary this extension launches.
+- `namhtSpecUi.extraArgs` — extra args for `claude -p` (**machine-scoped**, same reason). Default
+  `--permission-mode bypassPermissions` so skills can run the tools they need headlessly (`node` for
+  the map/PDF, `npm`/`npx`/`jest` for build & tests, `gh`, `curl`) — otherwise those commands surface
+  as **"error"**, because a headless run can't answer an approval prompt.
+  **Know the trade-off:** that mode also permits *any* Bash command, writes outside the workspace,
+  reading files such as `.env`, and network calls — Anthropic recommends it only in an isolated
+  environment. The git-guard hook still blocks dangerous/remote git in this mode (PreToolUse runs
+  before the permission check — verified by `tests/git-guard.test.sh`), but it is **defense-in-depth,
+  not a sandbox**. Prefer approval prompts? Set `--permission-mode acceptEdits` — then map/build/test
+  commands fail with "error" here; use **⚡ Interactive** (a real terminal) for those.
 - `namhtSpecUi.usdToVnd` — VND rate to show next to the USD cost (0 = off; e.g. `25400`).
 - `namhtSpecUi.model` — model for the UI's runs (default **`sonnet`** — ~5x cheaper than Opus for
   read-only Q&A/planning; use `opus` for the hardest code tasks, `haiku` for cheap lookups, empty to inherit).

@@ -22,12 +22,13 @@ BUDGET="${PDF_VIRTUAL_TIME_BUDGET:-15000}"
 # We work on a temp copy so the user's file is never modified. Opt out with PDF_NO_PRINT_FIX=1.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -z "${PDF_NO_PRINT_FIX:-}" ] && command -v node >/dev/null 2>&1 && [ -f "$HERE/print-fix.cjs" ]; then
-  TMPHTML="$(mktemp -t namht-pdf).html"
+  # mktemp -d, not "$(mktemp).html": appending a suffix names a file that does not exist yet, so the
+  # write is not atomic and a shared /tmp allows a symlink race. A private dir has no such window.
+  TMPDIR_D="$(mktemp -d -t namht-pdf)"
+  trap 'rm -rf "$TMPDIR_D"' EXIT
+  TMPHTML="$TMPDIR_D/print.html"
   if node "$HERE/print-fix.cjs" "$INABS" "$TMPHTML" 2>/dev/null && [ -s "$TMPHTML" ]; then
     INABS="$TMPHTML"
-    trap 'rm -f "$TMPHTML"' EXIT
-  else
-    rm -f "$TMPHTML"
   fi
 fi
 
@@ -40,7 +41,8 @@ for c in "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   if command -v "$c" >/dev/null 2>&1 || [ -x "$c" ]; then
     # --no-pdf-header-footer drops Chrome's URL/date/page-number stamps.
     # --run-all-compositor-stages-before-draw waits for layout+paint to settle before printing.
-    "$c" --headless=new --disable-gpu --no-sandbox \
+    # No --no-sandbox: this renders HTML built from repo content, so the renderer sandbox stays on.
+    "$c" --headless=new --disable-gpu \
          --virtual-time-budget="$BUDGET" --run-all-compositor-stages-before-draw \
          --no-pdf-header-footer --print-to-pdf-no-header \
          --print-to-pdf="$OUTABS" "file://$INABS" >/dev/null 2>&1 \
