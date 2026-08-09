@@ -11,6 +11,11 @@
 > 4. Priority of evidence: **test files > service layer > controller > model**.
 > 5. Magic numbers → explain their business meaning.
 > 6. Treat XML/`.properties`/YAML/SQL migrations as first-class business context.
+> 7. **Every diagram is Mermaid**, in a fenced ```mermaid block — never ASCII art or prose-only.
+>    Use the fitting type: `flowchart` for architecture/deployment, `sequenceDiagram` for a
+>    request/auth journey, `erDiagram` for data, `stateDiagram-v2` for a lifecycle. Keep labels
+>    short and real (actual service/module/table names). This keeps the KB renderable to
+>    HTML/PDF and comparable across rescans.
 
 Sections **04, 05, 10, 13, 16** are the highest-value "deep analysis" docs — spend
 the most effort there and, when possible, analyze them with parallel sub-agents
@@ -52,7 +57,13 @@ Check ALL sources: JPA `@Entity`, Prisma schema, TypeORM, Django models, ActiveR
 1. **Module Overview Table**  2. **Module Deep-Dive**  3. **Cross-Module Communication**  4. **Feature Flags / Toggles**  5. **Module Maturity Assessment**.
 
 ## 07 — `07-architecture-diagram.md` — System Architecture & Data Flow
-1. **High-Level Architecture Diagram**  2. **Request Journey (end-to-end)**  3. **Async / Background Processing**  4. **External Service Integration**  5. **Failure Points & Resilience**.
+1. **High-Level Architecture Diagram** — a ```mermaid `flowchart` showing every deployable unit and
+   the real edges between them: clients/entry points → services/modules → datastores → queues/topics
+   → external systems, each labelled with the actual name and protocol (HTTP route prefix, SQS queue,
+   DB engine). Group with `subgraph` per tier/service. This is the picture a newcomer reads first —
+   keep it current whenever the topology changes.
+2. **Request Journey (end-to-end)** — a `sequenceDiagram` for the main request.
+3. **Async / Background Processing**  4. **External Service Integration**  5. **Failure Points & Resilience**.
 
 ## 08 — `08-database-schema.md` — Database Schema & Query Patterns
 1. **Schema Overview** (JPA, Prisma, TypeORM, Django, ActiveRecord, SQL migrations, MyBatis resultMaps).

@@ -173,7 +173,11 @@ Steps. Also write the session `README.md` with quick links.
 ## Step 13 — Update the Knowledge Base
 Reflect the change back into `knowledge-base/`: update the affected docs (flows, rules,
 domain model, API, modules) and append any new project-specific rule discovered during
-review to **Section 14** of `review-skills.md`. Keep the KB accurate so the next build is smarter.
+review to **Section 14** of `review-skills.md`. If the feature changed the **topology** — a new
+service, datastore, queue/topic, external integration or entry point, or a changed edge between
+components — also update the **Mermaid high-level diagram in `07-architecture-diagram.md`** (and
+`17-async-events.md` when a message/queue was added or its shape changed). Keep the KB accurate so
+the next build is smarter.
 
 ## Final
 Summarize for the user: what changed, test status + coverage, the session folder path, and
