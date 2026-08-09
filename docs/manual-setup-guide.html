@@ -167,7 +167,7 @@ echo "✅ Tạo khung xong. Danh sách file cần dán nội dung:"; find "$ROOT
     <thead><tr><th>Tùy chọn / bỏ được</th><th>Lý do</th></tr></thead>
     <tbody>
       <tr><td><code>skills/namht-map/references/graph-builder.js</code></td><td>File lớn (compiled) — chỉ cho <code>/namht-map</code>. Không cần map thì bỏ luôn 3 file của map.</td></tr>
-      <tr><td><code>vendor/*.min.js</code></td><td>Render diagram offline. Bỏ được nếu máy có mạng (diagram tự dùng CDN). Air-gapped + cần diagram mới phải copy 2 file minified (rất to).</td></tr>
+      <tr><td><code>vendor/*.min.js</code></td><td><b>Không cần dán tay.</b> Chạy <code>scripts/fetch-vendor.sh</code> để máy tự tải (ưu tiên <b>npm</b> — dùng đúng registry nội bộ công ty đã duyệt; không có npm thì lấy từ cdnjs), rồi tự đối chiếu <code>vendor/SHA256SUMS</code>. Bỏ qua cũng được nếu máy có mạng — lúc đó diagram lấy từ CDN. Chỉ bắt buộc khi mạng chặn CDN hoặc máy air-gapped.</td></tr>
       <tr><td><code>README / SECURITY / LICENSE / docs / tests / .github / .claude-plugin / hooks.json</code></td><td>Không cần để chạy bản cài cá nhân.</td></tr>
     </tbody>
   </table>
