@@ -2,20 +2,27 @@
 name: namht-build
 description: >-
   Implement a feature or change end-to-end with a disciplined spec-driven
-  pipeline: clarify → plan (impact + business flow) → generate code → multi-lens
-  review → write tests → run tests → evidence report → update the Knowledge Base.
-  Use when the user asks to "build", "implement", "add a feature", "/build", or
-  wants a production-ready change that respects the existing architecture and
-  business rules. Reads the repo's knowledge-base/ for grounding.
+  pipeline: clarify → size → plan (impact + business flow) → safety net → generate code →
+  independent multi-lens review → tests (incl. regression) → verify against a baseline →
+  evidence report → update the Knowledge Base → hand off. Use when the user asks to "build",
+  "implement", "add a feature", "/build", or wants a production-ready change that respects the
+  existing architecture and business rules. Reads the repo's knowledge-base/ for grounding.
 ---
 
-# Spec Build — 13-step implementation pipeline
+# Spec Build — implementation pipeline
 
 A native port of Auto Spec Kit's `/build`. The goal: turn one requirement into a
 **production-ready, architecture-conformant, tested** change — not a quick draft.
 You (Claude Code) are the engine; use your own tools instead of an external model:
 `Read/Grep/Glob` to investigate, the `Task` tool to fan out parallel specialist
 sub-agents, `Edit/Write` to apply code, and `Bash` to run tests.
+
+## Inputs — reuse the kit's upstream artifacts, don't re-derive them
+Before Step 0, Glob `spec-kit-sessions/` for an artifact matching this requirement:
+`user-stories/`, `plans/`, `discovery/`, `plan-reviews/`, `qa/`. If one exists, **ask the user
+whether to build from it**, and if yes **reuse its acceptance criteria and their ids verbatim**
+(`US-F1-001` / `AC-…`) instead of inventing new ones — that traceability is the point of the kit.
+Also skim `spec-kit-sessions/builds/_journal.md` and `answers/_journal.md` (see ground rule 1).
 
 ## Ground rules (apply to every step)
 0. **Investigate with Read/Grep/Glob + the KB.** Map the relevant code with Grep/Glob/Read and the
@@ -24,8 +31,8 @@ sub-agents, `Edit/Write` to apply code, and `Bash` to run tests.
 1. **Ground everything in the Knowledge Base.** Load `knowledge-base/` from the repo
    (especially `04-business-domain`, `05-domain-model`, `10-core-flows`,
    `13-business-rules`, `12-conventions`, `16-architecture-patterns`, `review-skills.md`).
-   Also skim `spec-kit-sessions/answers/_journal.md` if present — past Q&A conclusions about the
-   area you're changing often contain decisions/constraints the KB doesn't (cheap: one small index).
+   Also skim `spec-kit-sessions/answers/_journal.md` and `builds/_journal.md` if present — past Q&A
+   conclusions and past builds in this area often carry decisions the KB doesn't (cheap: two small indexes).
    If `knowledge-base/` is missing, tell the user to run `/namht-scan` first, or
    proceed with reduced confidence using direct code reading.
 2. **Do NOT break the existing design.** New code MUST follow the documented
@@ -44,11 +51,14 @@ sub-agents, `Edit/Write` to apply code, and `Bash` to run tests.
 4. **Cite real paths and names.** No invented files, APIs, or fields.
 5. **Match the project's conventions exactly** — naming, error handling, logging, validation placement, test style.
 6. **Persist artifacts.** Create a session folder
-   `spec-kit-sessions/<YYYY-MM-DD-HHMMSS>-<slug>/` and save each phase's output there
-   (`01-plan/plan.md`, `03-code/`, `04-code-review/review.md`, `05-tests/`,
-   `07-evidence/EVIDENCE.md`, `README.md`). This mirrors the original tool and gives an audit trail.
+   `spec-kit-sessions/builds/<YYYY-MM-DD-HHMMSS>-<slug>/` and save each phase's output there
+   (`01-plan/plan.md`, `01-plan/baseline.md`, `03-code/change.diff`, `04-code-review/review.md`,
+   `05-tests/`, `07-evidence/EVIDENCE.md`, `README.md`). Keep artifacts as **pointers and diffs**, not
+   copies of file contents — the repo and git are the audit trail.
 7. **Stop and ask** before doing something destructive or ambiguous. Prefer a TodoList
-   (TaskCreate/TaskUpdate) so the user can follow the 13 steps.
+   (TaskCreate/TaskUpdate) so the user can follow the pipeline.
+8. **Scale rigor to risk, not to ceremony.** Follow the Step 0.5 size classification: spend agents and
+   artifacts where a mistake is expensive, and don't run the full apparatus for a one-line change.
 
 ## Change discipline (NON-NEGOTIABLE — read before editing anything)
 This is what keeps the tool from "breaking the project" or making rambling edits:
@@ -62,68 +72,147 @@ This is what keeps the tool from "breaking the project" or making rambling edits
   (grep for its callers) and update every caller intentionally.
 - **No structure churn.** Don't move files, change the folder layout, swap libraries, or alter
   build/config/CI unless explicitly requested. Follow the existing architecture (rule 2).
-- **Plan-approval gate.** For anything non-trivial, show the plan and get an explicit "go"
-  before writing code (Steps 2–3). Don't start editing on a vague requirement.
+- **Plan-approval gate — objective triggers.** Show the plan and get an explicit "go" before writing
+  code if ANY of these is true (don't judge "trivial" by feel):
+  a DB/schema migration · adding or upgrading a dependency · a change to a **published API / event /
+  message contract**, or any cross-service consumer found in Step 1 §2 · touching a shared symbol with
+  **>3 callers** · **>5 files** to change · the Step 1 §7 estimate is **Medium/Complex** · anything
+  touching auth/permissions or money. Below all of those, you may proceed — but still post the scope,
+  file list and ACs first.
+- **A blanket "go" has limits.** "build X, go" in the opening request authorizes the **reversible**
+  work only. It never covers migrations, dependency additions, published-contract changes, deletions,
+  or anything outward — **stop and ask for those even if the user said go.**
+- **Shared contracts & schema go through migrate discipline.** If the change touches a DB schema, a
+  published API/event shape, or any contract another deployable consumes, apply the
+  **expand → migrate → contract** pattern from `namht-migrate` (additive first, backfill, only then
+  remove/tighten; every step reversible; a deprecation window for consumers). Never do a
+  rename-in-place or a destructive migration inside a build — hand it to `/namht-migrate` if it's the
+  bulk of the work.
 - **Don't leave the tree broken.** After edits, the project must still build/lint/typecheck and
   tests must pass (Step 11). If your change makes it red and you can't fix it quickly, **revert
-  your edits** rather than leaving broken code.
-- **Confirm before irreversible/outward actions.** Deleting files, DB migrations, `git push`,
-  installing dependencies, or anything network/outbound — ask first. Respect untrusted workspaces.
+  using the Step 3.5 safety net** rather than leaving broken code.
+- **Confirm before irreversible/outward actions.** Deleting files, DB migrations, **breaking a
+  published API/event contract**, `git push`, installing dependencies, or anything network/outbound —
+  ask first. Respect untrusted workspaces.
 - **Never touch secrets.** Don't read, print, move, or commit `.env`, keys, or credentials.
 - **Git: don't push as part of a build; read/sync-in only.** Use `git` for fetch, pull, status,
-  log, diff, show, blame (and local `add`/`commit` when the user asks). Do not `push` during a
-  build, and never run destructive git (`reset --hard`, `clean -f`, `checkout --`/`.`, `restore`,
-  `rebase`, `branch -D`, `commit --amend`). A harness git-guard hook enforces this — it blocks
-  pushes to team/org repos and all destructive git regardless (only whitelisted personal remotes
-  may receive an explicit push). Don't work around it; if unsure, ask the user.
+  log, diff, show, blame, **stash**, **apply** (and local `add`/`commit` when the user asks). Do not
+  `push` during a build, and never run destructive git (`reset --hard`, `clean -f`,
+  `checkout --`/`.`, `restore`, `rebase`, `branch -D`, `commit --amend`). A harness git-guard hook
+  enforces this. Don't work around it; if unsure, ask the user.
 
 ## Step 0 — Clarify (gate)
 Assess the requirement's clarity. If it's vague or under-specified (missing acceptance
 criteria, ambiguous scope, unknown entities), ask **2–4 targeted questions** before
 building — don't build the wrong thing. Once clear, restate the final requirement.
 
+**Confirm the acceptance criteria, always.** Either reuse the ACs from the upstream artifact (see
+Inputs) or write them yourself in Given/When/Then, **numbered `AC-01…`**, and mark every one you
+*inferred* rather than were told. Show that list and get a yes — it is the pass bar for Steps 5, 7 and
+12, so an unconfirmed AC means the whole pipeline validates against your own guess. This confirmation
+is required even when the plan-approval gate is skipped or the user pre-authorized with "go".
+
+## Step 0.5 — Size the change (gate)
+Classify from the Step 0 restatement plus a quick grep — this decides how much apparatus runs:
+- **L (large/risky)** — ANY of: auth/permissions, money/billing, a DB migration, a published
+  API/event contract, a shared symbol with no test coverage, or >5 files.
+  → the full pipeline: 3 planning agents, all 6 review lenses as independent agents, all test angles.
+- **M (normal feature)** — a self-contained feature in one module, 2–5 files.
+  → plan with the sections that apply, 1–2 planning agents, the review lenses that can find something
+  (always Business consistency + Reuse), all test angles.
+- **S (small/mechanical)** — a copy/config/field change, ≤2 files, no contract or schema impact.
+  → **skip the agent fan-out and the 8-section plan**: state scope + file list + ACs in chat, make the
+  change, add/extend a test, run the gates, and write a short EVIDENCE section. Still obey the change
+  discipline and the safety net.
+Say which size you picked and why (one line). When in doubt, size **up**.
+
 ## Step 1 — Planning (multi-agent)
-Discover the relevant files (Grep/Glob + KB topic match), then fan out **3 parallel
-sub-agents** via the `Task` tool (see `agents/` — `namht-codebase-analyzer`,
-`namht-impact-detector`, `namht-business-flow-tracer`). If you don't spawn agents, do all three
-analyses yourself in sequence. Then synthesize a **comprehensive implementation plan**
-with these sections:
-1. **Requirement Analysis** — scope (do / don't), ≥5 specific & measurable acceptance criteria, edge cases.
-2. **Impact Analysis** — files that MUST change, downstream consumers (trace the blast radius via real imports/callers), API-contract changes, DB impact/migrations, breaking changes, side effects, **cross-service impact** (if the change alters a published message / SQS topic / REST contract, list the **consumer services** from the Event/Contract Catalog — `17-async-events.md` or the workspace `system-map/` — plus async hazards: duplicate/idempotency, ordering, DLQ, schema/version skew), a risk matrix `| Risk | Likelihood | Impact | Mitigation |`.
+Discover the relevant files (Grep/Glob + KB topic match), then fan out **parallel sub-agents** via the
+`Task` tool (`agents/namht-codebase-analyzer`, `namht-impact-detector`, `namht-business-flow-tracer`).
+If you don't spawn agents, do the analyses yourself in sequence.
+
+**Sub-agent hand-off contract (applies to every Task call in this skill).** Sub-agents start with no
+context and will otherwise re-discover the repo from scratch — expensive and inconsistent. Every Task
+prompt must carry: (a) the restated requirement + confirmed ACs, (b) **the exact file list you already
+found, with paths**, (c) which KB docs to read (paths, not "the KB"), (d) the precise question you want
+answered and the output shape, (e) what is out of scope. Tell them not to re-scan the whole repo.
+
+Synthesize a **comprehensive implementation plan**:
+1. **Requirement Analysis** — scope (do / don't), the confirmed ACs from Step 0, edge cases.
+2. **Impact Analysis** — files that MUST change, downstream consumers (trace the blast radius via real
+   imports/callers), API-contract changes, DB impact/migrations, breaking changes, side effects,
+   **cross-service impact** (if the change alters a published message / SQS topic / REST contract, list
+   the **consumer services** from the Event/Contract Catalog — `17-async-events.md` or the workspace
+   `system-map/` — plus async hazards: duplicate/idempotency, ordering, DLQ, schema/version skew),
+   and a risk matrix `| Risk | Likelihood | Impact | Mitigation |`.
 3. **Business Flow Mapping** — existing flows affected (before→after), new flow step-by-step, state-machine changes.
 4. **Technical Design** — modules/layers affected, files to MODIFY, files to CREATE (full paths following
    existing patterns), and a mandatory **Reuse Report** that justifies every new artifact:
    `| Capability needed | Existing candidate (real path) | Decision: reuse / extend / new | Why |`
    Every row marked **new** must name the searches you ran and why nothing fitted; a new dependency goes
    in this table too and needs the user's OK.
-5. **Implementation Steps** — ordered by dependency, as a checklist.
-6. **Risk Assessment** — the matrix with mitigations.
-7. **Estimate** — complexity (Simple/Medium/Complex) + rough time.
-8. **Architecture Conformance** — which documented pattern the target module uses; the specific "Architecture Invariants — DO NOT BREAK" that apply, and how the plan honors each.
+5. **Rollout & Reversibility** — is a feature flag needed (default value, who flips it, when it's
+   removed)? deploy order (migration ↔ code) and what breaks if only half is deployed? behavior under
+   **version skew** during a rolling deploy? how to undo in production (flag off / revert / down-migration)?
+   New config/env vars and where they're set. Data backfill, if any.
+6. **Implementation Steps** — ordered by dependency, as a checklist.
+7. **Estimate** — complexity (Simple/Medium/Complex) + rough time. (Feeds the plan-approval gate.)
+8. **Architecture Conformance** — which documented pattern the target module uses; the specific
+   "Architecture Invariants — DO NOT BREAK" that apply, and how the plan honors each.
+
+**Breaking-change gate.** If §2 lists any breaking change to a shared contract (removed/renamed/retyped
+field or endpoint, dropped/renamed column, changed published message shape), STOP: present it, apply
+expand→contract, and confirm with the user before coding — regardless of any earlier "go".
 
 Save to `01-plan/plan.md`. **Do not write code yet.**
 
 ## Steps 2–3 — Plan review & feedback
-Critically review your own plan (completeness, missing edge cases, risky assumptions,
-architecture violations). Apply the fixes and produce the final plan. For a non-trivial
-change, show the plan to the user and get a thumbs-up before coding.
+Review the plan against a fixed challenge list — delegate to `/namht-plan-review`, or spawn ONE
+adversarial sub-agent that answers: which AC is unmeasurable? which "Architecture Invariant" is at
+risk? which Reuse Report row marked `new` is unjustified? which consumer in §2 has no mitigation?
+what's missing from Rollout & Reversibility? Record the answers and the fixes in `01-plan/plan.md`
+(a "Plan review" section) — a review with no written finding and no diff is not a review.
+For a change that hit the plan-approval gate, show the final plan to the user and get a thumbs-up.
+
+## Step 3.5 — Safety net (MUST complete before the first edit)
+Both "compare against a baseline" (Step 11) and "revert" (change discipline) are impossible without
+this, and the git commands that would otherwise undo your work are blocked by the git-guard.
+1. **Clean tree.** Run `git status --porcelain`. If the user has uncommitted work, ask them to commit
+   or stash first — you must not risk their changes.
+2. **Baseline the gates.** Run the narrowest relevant gates once (typecheck/lint + the test files
+   covering the target module — not necessarily the whole suite) and record pass/fail plus **the names
+   of tests already failing** into `01-plan/baseline.md`. If the repo is already red, say so now: those
+   failures are not yours to fix.
+3. **Snapshot.** Save `git diff HEAD > 00-pre-change.patch` in the session folder and note the base
+   commit SHA.
+**How to revert later (only these are allowed):** `git stash push -u` to park everything, or
+`git apply -R 03-code/change.diff` to reverse exactly your own change. Never `git restore`,
+`git checkout .`/`--`, `git reset --hard`, `git clean -f` — the guard denies them.
 
 ## Step 4 — Code generation
 Implement the plan. For multi-module changes, split work by module/layer (optionally
-parallel sub-agents) and assemble. **Apply changes directly to the repo with Edit/Write**
-(this is the big advantage over the original tool, which only emitted code blocks).
-Rules: complete, production-ready code (no placeholders/TODOs); follow the REFERENCE
-patterns; respect layer/dependency rules and the architecture invariants; correct
-imports, types, error handling; match `12-conventions.md`. Mirror the raw output to
-`03-code/` for the audit trail.
+parallel sub-agents, using the hand-off contract) and assemble. **Apply changes directly to the repo
+with Edit/Write.** Rules: complete, production-ready code (no placeholders/TODOs); follow the REFERENCE
+patterns; respect layer/dependency rules and the architecture invariants; correct imports, types, error
+handling; match `12-conventions.md`.
 
-## Step 5 — Code review (multi-lens)
-Review the change through **5 lenses** (parallel sub-agents in `agents/`, or sequentially):
-- **Security** — input validation, injection, authn/authz, data exposure, crypto/secrets (use `knowledge-base/review-skills.md`; fall back to the bundled `references/review-skills-universal.md`).
-- **Architecture & pattern conformance** — does it violate any "Architecture Invariant"? same pattern as the surrounding module? forbidden dependency direction? boundary violations? Quote the specific rule broken.
-- **Performance** — N+1 queries, missing indexes, memory leaks, blocking/sequential calls, missing pagination/caching.
-- **Business consistency** — business rules intact, no logic silently removed, valid state transitions, API contract preserved, all acceptance criteria implemented.
-- **Reuse & duplication** — did this re-implement something the repo already has (a helper, service, component, validator, mapper) instead of reusing it? Did it add a dependency an installed library already covers? Check the plan's **Reuse Report** against what was actually written; flag violations `[MAJOR]` and replace the duplicate with the existing one.
+## Step 5 — Code review (independent, multi-lens)
+**Author ≠ reviewer.** Run the lenses as **fresh `Task` sub-agents that did not write the code**. Give
+each one only the diff (`git diff`), the KB docs it needs, and the plan's ACs + Reuse Report — **not
+your reasoning** — and instruct it adversarially: *"find where this diverges from the plan, the ACs, or
+an architecture invariant."* All lenses use `knowledge-base/review-skills.md`, falling back to the
+bundled `references/review-skills-universal.md`.
+- **Security** → `agents/namht-security-reviewer` — input validation, injection, authn/authz, data exposure, crypto/secrets.
+- **Architecture & pattern conformance** → `agents/namht-architecture-reviewer` — does it violate an "Architecture Invariant"? same pattern as the surrounding module? forbidden dependency direction? Quote the rule broken.
+- **Performance** → `agents/namht-performance-reviewer` — N+1 queries, missing indexes, memory leaks, blocking/sequential calls, missing pagination/caching.
+- **Business consistency** → `agents/namht-business-consistency-reviewer` — rules intact, no logic silently removed, valid state transitions, API contract preserved, **every AC implemented**.
+- **Reuse & duplication** — did this re-implement something the repo already has (helper, service, component, validator, mapper) instead of reusing it? Did it add a dependency an installed library already covers? Check the plan's **Reuse Report** against what was actually written; flag violations `[MAJOR]` and replace the duplicate with the existing one.
+- **Operability** — does the new path emit a structured log with the correlation id, and errors with
+  enough context to group on? Do new external/queue calls have timeout + retry/backoff, and are
+  consumers/endpoints **idempotent** under retry? Are new failure modes visible (metric/alert)? Match
+  the fields `namht-observe` and the team's log schema use. *(For UI changes also check: no hardcoded
+  user-facing strings if the repo has an i18n catalog; new interactive elements have accessible
+  names/labels, keyboard reachability, visible focus.)*
 
 Produce a merged review with deduplicated issues (each: severity `[CRITICAL/MAJOR/MINOR]`,
 exact location, bad code, complete fixed code), strengths, a verdict (APPROVED /
@@ -134,51 +223,92 @@ Apply every `[CRITICAL]` and high-risk `[MAJOR]` fix from the review. Re-verify 
 verdict is APPROVED (or remaining items are explicitly accepted by the user).
 
 ## Step 7 — Write tests (multi-angle)
-Write tests covering three angles (do them yourself, or spin up parallel general-purpose
-sub-agents — one per angle — then merge):
+Write tests covering these angles (do them yourself, or spin up parallel sub-agents — one per angle —
+then merge). **Every AC must map to ≥1 named test**; list the mapping (`AC-03 → test name`) — an AC with
+no test is an open gap, not a pass.
 - **Unit** — every public function/method; mock dependencies; happy path + return + side effects; name pattern `should [behavior] when [condition]`.
 - **Integration** — API request→response, auth (401/403), validation (400), service composition, DB, full business flows.
 - **Edge cases & security** — boundary values, null/undefined, concurrency/duplicates, error propagation, permission bypass, invalid state transitions, malicious input.
+- **Regression (old flow)** — one test per impacted caller/consumer/flow from Step 1 §2's blast radius,
+  asserting the **OLD behavior still holds**. Label `[REGRESSION]` and cite the KB flow/rule it protects
+  (e.g. BR-V2 / core-flow #3). This is what turns the impact analysis into a safety net instead of prose.
 
 Start with a coverage table, then the test files. Save to `05-tests/` and apply them to the repo.
 
 ## Steps 8–9 — Test review & feedback
-Review the tests (independent? deterministic? boundary-only mocking? meaningful assertions?),
-fix gaps, finalize.
+Review the tests against a fixed list and write the findings down: does each test **fail on the
+pre-change code** (or is it asserting nothing)? independent and deterministic? mocking only at
+boundaries? meaningful assertions? Fix the gaps, finalize.
 
 ## Step 10 — Save files
-Ensure all code + test files are written to the correct paths in the repo. Confirm the file list.
+Ensure all code + test files are written to the correct paths in the repo. Confirm the file list, and
+save the change as a diff: `git diff > 03-code/change.diff` (this is also your reverse-patch).
 
 ## Step 11 — Verify (build + lint + typecheck + tests) with rollback
-Prove you didn't break the project. Discover and run the relevant gates via `Bash`
+Prove you didn't break the project. Run the same gates you baselined in Step 3.5 via `Bash`
 (in an untrusted workspace, ask before running):
 - **Build / typecheck**: `tsc --noEmit`, `npm run build`, `go build ./...`, `mvn -q compile`, etc.
 - **Lint**: `eslint`, `ruff`, `golangci-lint`, `rubocop` — only if the project already uses it.
 - **Tests**: from `package.json` scripts, `pytest`, `go test`, `mvn/gradle`, `Gemfile`, etc.
 
-Capture pass/fail, coverage, and key failures. **Compare against a baseline** — if the gate was
-green before your change and is red after, that's a regression YOU introduced.
-- If tests/build fail: loop back → diagnose → fix code or tests → re-run (a few iterations).
-- **If you can't get it green within a few iterations, REVERT your edits** (leave the tree as you
-  found it) and report what blocked you — never hand back broken code as "done".
-Only report success when the gates you ran actually passed.
+**Compare against `01-plan/baseline.md`** — a test that was already failing before you started is not
+your regression; a gate that was green and is now red is.
+- If tests/build fail: loop back → diagnose → fix → re-run (a few iterations).
+- **A test may be changed here ONLY if the test itself is wrong** (bad fixture, wrong expected value,
+  flaky setup). **Never delete, skip, or weaken an assertion to reach green.** Any test you edit in this
+  step must be listed in the evidence report with the reason.
+- **Code changed after Step 5 gets re-reviewed** — re-run the relevant lens on the new diff; fixes made
+  under time pressure are exactly where defects hide.
+- **If you can't get it green within a few iterations, REVERT** via the Step 3.5 safety net
+  (`git stash push -u` or `git apply -R 03-code/change.diff`), verify with `git status --porcelain` +
+  a re-run of the baseline gates, and state plainly *"reverted — tree matches baseline"* or list every
+  file you could not restore. Never hand back broken code as "done".
+- **If a gate cannot be run at all** (no test script, framework missing, needs services that aren't up,
+  Bash unavailable/untrusted workspace): name the gate and why, write `NOT RUN (<reason>)` — never a
+  pass — in the evidence header, mark the change **UNVERIFIED** in both EVIDENCE.md and the chat
+  summary, and tell the user exactly what to run. Silence here is how unverified code ships.
+Only report success for gates that actually ran and passed.
 
 ## Step 12 — Evidence report
-Write `07-evidence/EVIDENCE.md` with: a header table (requirement, session, date, test
-status, coverage); Implementation Summary; Files Changed table; **Acceptance Criteria
-Verification** table (each AC → ✅/❌ → which file/function proves it); Business Flow
-Validation; Test Results; Code Quality score; Risk Assessment; Known Limitations & Next
-Steps. Also write the session `README.md` with quick links.
+Write `07-evidence/EVIDENCE.md` with: a header table (requirement, session, date, test status —
+including `NOT RUN` where applicable, coverage); Implementation Summary; Files Changed table;
+**Acceptance Criteria Verification** table (each AC → ✅/❌ → **the named test** that proves it, not
+prose); Business Flow Validation; Test Results (vs baseline); any test edited in Step 11 + why; Code
+Quality score; Risk Assessment (reference the plan's matrix — don't restate it); Rollout notes from
+plan §5; Known Limitations & Next Steps. Also write the session `README.md` with quick links.
+
+Then append ONE row to `spec-kit-sessions/builds/_journal.md` (create with this header if missing) so a
+future session — and `/namht-ask` — can find what was built and why:
+```markdown
+# Build Journal — one line per build (newest last)
+| Date | Requirement | Outcome (what changed + key decision) | Session folder |
+|---|---|---|---|
+```
 
 ## Step 13 — Update the Knowledge Base
-Reflect the change back into `knowledge-base/`: update the affected docs (flows, rules,
-domain model, API, modules) and append any new project-specific rule discovered during
-review to **Section 14** of `review-skills.md`. If the feature changed the **topology** — a new
-service, datastore, queue/topic, external integration or entry point, or a changed edge between
-components — also update the **Mermaid high-level diagram in `07-architecture-diagram.md`** (and
-`17-async-events.md` when a message/queue was added or its shape changed). Keep the KB accurate so
-the next build is smarter.
+Reflect the change back into `knowledge-base/` by running the **`/namht-rescan` procedure scoped to the
+files this session changed** (use the Step 10 file list, or the Step 3.5 base SHA as the diff base) —
+rescan owns the authoritative change→doc mapping (domain model, DB schema, entry points, API, flows,
+rules, auth, integrations, async events, structure, and the **Mermaid high-level diagram in
+`07-architecture-diagram.md`** when the topology changed) and the golden rules in `kb-steps.md`.
+Then append any new project-specific rule discovered during review to **Section 14** of
+`review-skills.md`. Keep the KB accurate so the next build is smarter.
+
+**In-repo docs the team actually reads.** The KB is personal and gitignored, so also update any doc
+that lives in the repo and that this change made stale: the committed API spec
+(`openapi.yaml` / `*.proto` / GraphQL SDL), the README section describing this feature, a CHANGELOG
+entry if the project keeps one, and `.env.example` when you added config. These are part of the change.
+
+## Step 14 — Handoff
+Name the next steps explicitly (don't dead-end):
+- `/namht-qa <story>` — turn the ACs into an executable test plan, including regression for the flows
+  named in `01-plan/plan.md` §2 (pass the session path).
+- `/namht-qa-integration <url>` — verify the feature on a running app.
+- `/namht-review` — an independent second-pass review of the whole change.
+- `/namht-pr` — draft the PR description from the branch.
+- `/namht-migrate` — if the Breaking-change gate deferred a contract/schema change.
 
 ## Final
-Summarize for the user: what changed, test status + coverage, the session folder path, and
-any follow-ups. Be honest if tests were skipped or failing — never claim success you didn't verify.
+Summarize for the user: what changed, size class, test status + coverage (or `UNVERIFIED` + why), the
+session folder path, rollout notes, and any follow-ups. Be honest if tests were skipped or failing —
+never claim success you didn't verify.
