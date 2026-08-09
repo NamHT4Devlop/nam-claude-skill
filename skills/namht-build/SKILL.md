@@ -17,12 +17,15 @@ You (Claude Code) are the engine; use your own tools instead of an external mode
 `Read/Grep/Glob` to investigate, the `Task` tool to fan out parallel specialist
 sub-agents, `Edit/Write` to apply code, and `Bash` to run tests.
 
-## Inputs — reuse the kit's upstream artifacts, don't re-derive them
-Before Step 0, Glob `spec-kit-sessions/` for an artifact matching this requirement:
-`user-stories/`, `plans/`, `discovery/`, `plan-reviews/`, `qa/`. If one exists, **ask the user
-whether to build from it**, and if yes **reuse its acceptance criteria and their ids verbatim**
-(`US-F1-001` / `AC-…`) instead of inventing new ones — that traceability is the point of the kit.
-Also skim `spec-kit-sessions/builds/_journal.md` and `answers/_journal.md` (see ground rule 1).
+## Inputs — a story/plan is the spec; read it and run
+If the user points at a story or plan — a path, a session folder, a story id (`US-F1-001`), a Jira/
+Slack/doc link, or pasted text — **read it yourself and build from it.** Its acceptance criteria are
+**already the user's decision: treat them as confirmed, reuse their ids verbatim, and do NOT ask for
+re-approval.** For a link the tools can't open (Jira/Figma/Notion), say so once and ask for the content
+— don't guess what's behind it.
+If no artifact was named, still Glob `spec-kit-sessions/{user-stories,plans,discovery,plan-reviews,qa}/`
+for one matching this requirement and offer it. Also skim `builds/_journal.md` and `answers/_journal.md`
+(ground rule 1). Only when there is genuinely no story do you author the ACs yourself (Step 0).
 
 ## Ground rules (apply to every step)
 0. **Investigate with Read/Grep/Glob + the KB.** Map the relevant code with Grep/Glob/Read and the
@@ -40,8 +43,11 @@ Also skim `spec-kit-sessions/builds/_journal.md` and `answers/_journal.md` (see 
    DO NOT BREAK" list in `16-architecture-patterns.md`. Copy the matching Extension Recipe.
 3. **Reuse before you create — MANDATORY.** Before designing anything new, search the repo for what
    already does the job: existing **functions/methods, classes/services, helpers/utils, UI components,
-   hooks/middleware, DTOs/models** — search by *capability*, not just by name (grep several synonyms,
-   read the module's siblings, check `06-modules` / `16-architecture-patterns` in the KB). Also check the
+   hooks/middleware, DTOs/models, and equally the small things that get duplicated most —
+   constants/enums, config keys, error codes, validation & user-facing messages, i18n keys, design
+   tokens/styles, test fixtures/factories** — search by *capability*, not just by name (grep several
+   synonyms, read the module's siblings, check `06-modules` / `16-architecture-patterns` in the KB).
+   Also check the
    **already-installed libraries** (`package.json` / `pom.xml` / `build.gradle` / `Gemfile` /
    `requirements.txt`) before reaching for a new one. **If something suitable exists you MUST reuse or
    extend it** — do not re-implement it. Create something new ONLY when nothing suitable exists, and then
@@ -101,16 +107,26 @@ This is what keeps the tool from "breaking the project" or making rambling edits
   `checkout --`/`.`, `restore`, `rebase`, `branch -D`, `commit --amend`). A harness git-guard hook
   enforces this. Don't work around it; if unsure, ask the user.
 
-## Step 0 — Clarify (gate)
-Assess the requirement's clarity. If it's vague or under-specified (missing acceptance
-criteria, ambiguous scope, unknown entities), ask **2–4 targeted questions** before
-building — don't build the wrong thing. Once clear, restate the final requirement.
+## Step 0 — Clarify (gate) — **answer from evidence first, ask only what's left**
+Do the homework before you spend the user's attention. For every open question, try in this order:
+**the story/plan → the KB (`04-business-domain`, `05-domain-model`, `10-core-flows`,
+`13-business-rules`, `12-conventions`, `16-architecture-patterns`) → the actual code → the journals**.
+Most "questions" are already answered there — an existing entity, an established convention, a
+documented rule. Resolve them silently and **state the answer with its source** instead of asking.
 
-**Confirm the acceptance criteria, always.** Either reuse the ACs from the upstream artifact (see
-Inputs) or write them yourself in Given/When/Then, **numbered `AC-01…`**, and mark every one you
-*inferred* rather than were told. Show that list and get a yes — it is the pass bar for Steps 5, 7 and
-12, so an unconfirmed AC means the whole pipeline validates against your own guess. This confirmation
-is required even when the plan-approval gate is skipped or the user pre-authorized with "go".
+Only ask when **all three** hold: the evidence genuinely doesn't decide it, the choice would change
+what you build (not just how you phrase it), and getting it wrong would be expensive to undo. Then ask
+**everything at once, max 2–4 questions**, each with your recommended default so a "ok, go with your
+defaults" is a valid answer. Never ask something the KB already answers.
+
+**Acceptance criteria.**
+- **From a story/plan** → already confirmed. Restate them for the record and move on; don't re-ask.
+- **Authored by you** (no story) → write them Given/When/Then, numbered `AC-01…`, mark which ones you
+  *inferred*, and get one quick yes — they are the pass bar for Steps 5, 7 and 12, so validating
+  against your own unreviewed guess is the one confirmation worth its cost. If the user pre-authorized
+  ("go"), post them and proceed unless they object — but still flag any inference you're unsure about.
+
+Then restate the final requirement and its ACs in one short block.
 
 ## Step 0.5 — Size the change (gate)
 Classify from the Step 0 restatement plus a quick grep — this decides how much apparatus runs:
@@ -196,6 +212,16 @@ with Edit/Write.** Rules: complete, production-ready code (no placeholders/TODOs
 patterns; respect layer/dependency rules and the architecture invariants; correct imports, types, error
 handling; match `12-conventions.md`.
 
+**Re-check reuse at the moment you write, not just when you planned.** Immediately before creating any
+new symbol — a method, class/service, component, DTO, **constant/enum, config key, error code,
+validation or user-facing message, i18n key, style/design token, test fixture** — do a quick grep for
+an existing one (by capability and by a couple of synonyms) and **open the nearest sibling file to copy
+its pattern**: same layer placement, naming, error-handling shape, logging, validation location,
+test style. If something suitable exists, **use or extend it — do not write a parallel version**, and
+never introduce a second constant/message/token for a value the repo already defines. If the plan's
+Reuse Report said "new" but you now find an existing candidate, follow the code, not the plan, and note
+the correction. Stay inside the planned files: no wandering edits, no speculative helpers "for later".
+
 ## Step 5 — Code review (independent, multi-lens)
 **Author ≠ reviewer.** Run the lenses as **fresh `Task` sub-agents that did not write the code**. Give
 each one only the diff (`git diff`), the KB docs it needs, and the plan's ACs + Reuse Report — **not
@@ -206,7 +232,7 @@ bundled `references/review-skills-universal.md`.
 - **Architecture & pattern conformance** → `agents/namht-architecture-reviewer` — does it violate an "Architecture Invariant"? same pattern as the surrounding module? forbidden dependency direction? Quote the rule broken.
 - **Performance** → `agents/namht-performance-reviewer` — N+1 queries, missing indexes, memory leaks, blocking/sequential calls, missing pagination/caching.
 - **Business consistency** → `agents/namht-business-consistency-reviewer` — rules intact, no logic silently removed, valid state transitions, API contract preserved, **every AC implemented**.
-- **Reuse & duplication** — did this re-implement something the repo already has (helper, service, component, validator, mapper) instead of reusing it? Did it add a dependency an installed library already covers? Check the plan's **Reuse Report** against what was actually written; flag violations `[MAJOR]` and replace the duplicate with the existing one.
+- **Reuse & duplication** — did this re-implement something the repo already has (helper, service, component, validator, mapper, **constant/enum, config key, error code, message, i18n key, style token, test fixture**) instead of reusing it? Does it follow the pattern of its sibling files, or invent a parallel style? Did it add a dependency an installed library already covers? Check the plan's **Reuse Report** against what was actually written; flag violations `[MAJOR]` and replace the duplicate with the existing one.
 - **Operability** — does the new path emit a structured log with the correlation id, and errors with
   enough context to group on? Do new external/queue calls have timeout + retry/backoff, and are
   consumers/endpoints **idempotent** under retry? Are new failure modes visible (metric/alert)? Match
