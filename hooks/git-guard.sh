@@ -40,6 +40,25 @@ Allowed: read/sync git (fetch·pull·status·log·diff·show·blame·add·commit
 
 set -f   # we word-split command text below; never glob-expand it
 
+# Known git subcommands. Anything else is treated as an ALIAS and denied: an alias
+# starting with `!` runs an arbitrary shell command, which would bypass every rule below
+# (e.g. `git -c alias.zz='!sh -c ...' zz`). Fail closed — add legitimate names here.
+GIT_SUBCOMMANDS=" add am annotate apply archive bisect blame branch bugreport bundle cat-file
+check-attr check-ignore check-mailmap checkout cherry cherry-pick citool clean clone column commit
+commit-tree config count-objects describe diff diff-files diff-index diff-tree difftool fast-export
+fast-import fetch fetch-pack filter-branch filter-repo for-each-ref format-patch fsck gc
+get-tar-commit-id grep gui hash-object help init instaweb interpret-trailers log ls-files ls-remote
+ls-tree mailinfo mailsplit maintenance merge merge-base merge-file merge-index merge-one-file
+merge-tree mergetool mktag mktree multi-pack-index mv name-rev notes p4 pack-objects pack-redundant
+pack-refs patch-id prune prune-packed pull push quiltimport range-diff read-tree rebase reflog remote
+repack replace request-pull rerere reset restore rev-list rev-parse revert rm send-email send-pack
+shortlog show show-branch show-index show-ref sparse-checkout stash status stripspace submodule svn
+switch symbolic-ref tag unpack-file unpack-objects update-index update-ref update-server-info var
+verify-commit verify-pack verify-tag version whatchanged worktree write-tree "
+
+# Hide credentials embedded in a remote URL before echoing it back into the transcript.
+redact() { printf '%s' "$1" | sed -E 's#//[^/@]*@#//***@#g'; }
+
 # Strip shell quoting/grouping chars from a token for classification
 # ("push" → push, \git → git, $(git → $git). $ is deliberately KEPT: stripping
 # it could make a hostname like gith$ub.com look whitelisted.
@@ -72,20 +91,60 @@ for seg in "${segs[@]}"; do
   done
   [ $gi -lt 0 ] && continue
 
+  # An env-var prefix (GIT_DIR=… git push) silently retargets the repo — refuse to reason about it.
+  k=0
+  while [ $k -lt $gi ]; do
+    case "$(unq "${toks[$k]}")" in
+      GIT_*=*) deny "git with a GIT_* environment override (can retarget the repository)";;
+    esac
+    k=$((k+1))
+  done
+
   # subcommand = first non-option token after git and its global options
-  sub=""; cdir=""
+  sub=""; cdir=""; redirected=0
   i=$((gi+1))
   while [ $i -lt $n ]; do
     t=$(unq "${toks[$i]}")
     case "$t" in
+      # `-c alias.x=!sh` / `--config-env=alias.x` define a shell alias → arbitrary command execution
+      -c|--config-env)
+        i=$((i+1))
+        case "$(unq "${toks[$i]:-}")" in
+          alias.*|*[[:space:]]alias.*) deny "git -c alias.* (defines an alias that can run arbitrary shell)";;
+        esac;;
+      -c=*|--config-env=*|-c*alias.*)
+        case "$t" in *alias.*) deny "git -c alias.* (defines an alias that can run arbitrary shell)";; esac;;
+      # --git-dir/--work-tree point git at another repo; both the space and = forms
+      --git-dir|--work-tree) redirected=1; i=$((i+1));;
+      --git-dir=*|--work-tree=*) redirected=1;;
       -C) i=$((i+1)); [ $i -lt $n ] && cdir=$(unq "${toks[$i]}");;
-      -c|--git-dir|--work-tree|--namespace|--super-prefix|--config-env) i=$((i+1));;
+      --namespace|--super-prefix) i=$((i+1));;
       -*) ;;
       *) sub=$t; break;;
     esac
     i=$((i+1))
   done
   [ -z "$sub" ] && continue
+
+  # Is `git` actually in command position (segment start, after env assignments/wrappers)? Prose that
+  # merely mentions git — a commit message, a doc string — must not be classified as an invocation.
+  cmdpos=1; k=0
+  while [ $k -lt $gi ]; do
+    case "$(unq "${toks[$k]}")" in
+      *=*|sudo|env|command|nohup|time|exec) ;;
+      *) cmdpos=0; break;;
+    esac
+    k=$((k+1))
+  done
+
+  # Unknown subcommand ⇒ an alias ⇒ possibly `!<shell>`. Refuse — but only for a real invocation.
+  # (the list spans several lines — collapse the newlines before matching)
+  if [ "$cmdpos" -eq 1 ]; then
+    case " ${GIT_SUBCOMMANDS//[$'\n\t']/ } " in
+      *" $sub "*) ;;
+      *) deny "unknown git subcommand '$sub' — it may be an alias running an arbitrary shell command";;
+    esac
+  fi
 
   # quote-stripped arguments after the subcommand
   args=()
@@ -94,29 +153,37 @@ for seg in "${segs[@]}"; do
 
   # ── PUSH → whitelist by target remote owner (resolved from THIS segment) ────
   if [ "$sub" = push ]; then
-    # URL only from the tokens AFTER `push` in this segment
-    url=""
+    # A redirected repo (--git-dir/--work-tree) makes the target unknowable here — refuse.
+    [ "$redirected" -eq 1 ] &&
+      deny "git push with --git-dir/--work-tree (the real push target cannot be verified)"
+
+    # The remote is the FIRST non-option token after `push` — never scan every argument
+    # (a whitelisted URL inside a trailing comment or --push-option must not authorize a push).
+    target=""
     for a in "${args[@]}"; do
-      u=$(printf '%s' "$a" | grep -oE '(https://[^ ]+|ssh://[^ ]+|git@[^ ]+)' | head -1)
-      [ -n "$u" ] && { url=$u; break; }
+      case "$a" in
+        \#*) break;;          # rest of the line is a shell comment
+        -*) continue;;
+        *) target=$a; break;;
+      esac
     done
-    if [ -z "$url" ]; then
-      # resolve working dir: segment's `git -C <dir>`, else leading `cd <dir>`, else hook cwd, else $PWD
-      dir=$cdir
-      [ -z "$dir" ] && dir=$(printf '%s' "$cmd" | sed -nE 's/.*(^|[;&|[:space:]])cd[[:space:]]+([^ &;|]+).*/\2/p' | head -1)
-      [ -z "$dir" ] && dir=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)
-      [ -z "$dir" ] && dir="$PWD"
-      dir="${dir/#\~/$HOME}"
-      # remote name = first non-option token after 'push' (default origin)
-      remote=""
-      for a in "${args[@]}"; do
-        case "$a" in -*) continue;; *) remote=$a; break;; esac
-      done
-      [ -z "$remote" ] && remote=origin
-      url=$(git -C "$dir" remote get-url "$remote" 2>/dev/null)
-    fi
+
+    url=""
+    case "$target" in
+      https://*|ssh://*|git@*|http://*|ftp*://*|file://*) url=$target;;
+      *)
+        # resolve working dir: segment's `git -C <dir>`, else a leading cd/pushd, else the hook's cwd
+        dir=$cdir
+        [ -z "$dir" ] && dir=$(printf '%s' "$cmd" | sed -nE 's/.*(^|[;&|(){}[:space:]])(pushd|cd)[[:space:]]+([^ &;|)]+).*/\3/p' | head -1)
+        [ -z "$dir" ] && dir=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)
+        [ -z "$dir" ] && dir="$PWD"
+        dir="${dir/#\~/$HOME}"
+        remote=${target:-origin}
+        url=$(git -C "$dir" remote get-url "$remote" 2>/dev/null);;
+    esac
+
     printf '%s' "$url" | grep -qE "$ALLOW_OWNER_RE" ||
-      deny "git push to a remote NOT in the personal whitelist (${url:-could not resolve remote}) — only NamHT4Devlop/* may be pushed"
+      deny "git push to a remote NOT in the personal whitelist ($(redact "${url:-could not resolve remote}")) — only NamHT4Devlop/* may be pushed"
     continue   # whitelisted push → still check the remaining segments
   fi
 
@@ -138,7 +205,14 @@ for seg in "${segs[@]}"; do
     reset)
       for a in "${args[@]}"; do [ "$a" = --hard ] && deny "git reset --hard (loses changes)"; done;;
     clean)
-      for a in "${args[@]}"; do [[ $a =~ $CLEAN_F_RE ]] && deny "git clean -f (deletes untracked files)"; done;;
+      for a in "${args[@]}"; do
+        [ "$a" = --force ] && deny "git clean --force (deletes untracked files)"
+        [[ $a =~ $CLEAN_F_RE ]] && deny "git clean -f (deletes untracked files)"
+      done;;
+    worktree)
+      case "${args[0]:-}" in
+        remove|prune) deny "git worktree ${args[0]} (deletes a worktree and its uncommitted work)";;
+      esac;;
     checkout)
       for a in "${args[@]}"; do
         case "$a" in .|--|-f|--force) deny "git checkout that discards changes";; esac
@@ -146,7 +220,11 @@ for seg in "${segs[@]}"; do
     restore) deny "git restore (loses changes)";;
     switch)
       for a in "${args[@]}"; do
-        case "$a" in -C|--discard-changes) deny "git switch -C/--discard-changes (discards changes)";; esac
+        case "$a" in
+          --discard-changes|--force) deny "git switch --force/--discard-changes (discards changes)";;
+          --*) ;;
+          -*[Cf]*) deny "git switch -C/-f (discards changes)";;
+        esac
       done;;
     stash)
       case "${args[0]:-}" in drop|clear) deny "git stash drop/clear (deletes stashed work)";; esac;;
