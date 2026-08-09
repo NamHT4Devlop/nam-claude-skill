@@ -101,8 +101,7 @@ running the toolkit under an account and workspace you would trust anyway.
   to a whitelisted personal remote** (default `github.com/NamHT4Devlop/*`; edit `ALLOW_OWNER_RE`
   in `hooks/git-guard.sh`). The guard resolves the actual target (explicit URL, `git -C <dir>`,
   leading `cd`, or the remote's configured URL) and allows the push only if its owner is whitelisted.
-- **Blocked**: `push` to **any non-whitelisted remote** (team/org repos — e.g. Agenta-AI,
-  rubyforgood), `remote add/set-url/remove/rename/set-head/set-branches/prune`, `send-email`,
+- **Blocked**: `push` to **any non-whitelisted remote** (team/org repos), `remote add/set-url/remove/rename/set-head/set-branches/prune`, `send-email`,
   `svn dcommit`, `p4 submit`, `config remote.*`; and destructive local: `reset --hard`,
   `clean -f`, `checkout -- / . / -f / --force`, `restore`, `branch -D`, `commit --amend`,
   `rebase`, `filter-branch/filter-repo`, `reflog expire`, `gc --prune`, `update-ref -d`.

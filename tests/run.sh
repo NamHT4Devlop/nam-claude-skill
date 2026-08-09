@@ -11,5 +11,17 @@ names_rc=0
 for d in skills/*/; do d=${d%/}; n=$(grep -m1 '^name:' "$d/SKILL.md" | awk '{print $2}'); [ "$n" = "$(basename "$d")" ] || { echo "  ✗ $(basename "$d") != $n"; names_rc=1; }; done
 [ "$names_rc" -eq 0 ] && echo "  ✓ skill names OK" || rc=1
 echo; echo "== consistency =="; bash tests/consistency.test.sh || rc=1
+echo; echo "== vendored libs unchanged? =="
+if [ -f vendor/SHA256SUMS ]; then
+  if (cd vendor && shasum -a 256 -c SHA256SUMS >/dev/null 2>&1); then
+    echo "  ✓ vendor bundles match their pinned hashes"
+  else
+    echo "  ✗ a vendored library differs from vendor/SHA256SUMS — see vendor/README.md before trusting it"
+    (cd vendor && shasum -a 256 -c SHA256SUMS 2>&1 | grep -v ': OK$' | sed 's/^/    /')
+    rc=1
+  fi
+else
+  echo "  ✗ vendor/SHA256SUMS missing"; rc=1
+fi
 echo; [ "$rc" -eq 0 ] && echo "✅ ALL TESTS PASSED" || echo "❌ TESTS FAILED"
 exit $rc

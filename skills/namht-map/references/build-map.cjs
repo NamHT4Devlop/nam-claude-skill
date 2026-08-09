@@ -13,7 +13,7 @@
  *
  * Examples:
  *   node build-map.cjs .                       # → ./spec-kit-sessions/maps/<name>-<date>.html
- *   node build-map.cjs ../human-essentials out.html files
+ *   node build-map.cjs ../your-project out.html files
  */
 const fs = require('fs');
 const path = require('path');
@@ -69,8 +69,17 @@ function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;
 
 /** Inline cdnjs <script src=…> from vendor/<lib>.min.js (offline) when available; else keep CDN. */
 function inlineVendored(html, dir) {
-  const vendorDir = path.resolve(dir, '..', '..', '..', 'vendor');
-  if (!fs.existsSync(vendorDir)) return html;
+  // Walk up for vendor/ rather than assuming a depth — this file is run both from the repo and from
+  // the copy symlinked into ~/.claude/skills/.
+  let vendorDir = '';
+  for (let d = dir, i = 0; i < 6; i++) {
+    const cand = path.join(d, 'vendor');
+    if (fs.existsSync(cand)) { vendorDir = cand; break; }
+    const up = path.dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  if (!vendorDir) return html;
   let out = html.replace(
     /<script\b([^>]*)\bsrc="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/([^/]+)\/[^"]+\.min\.js"([^>]*)><\/script>/gi,
     (m, pre, lib, post) => {

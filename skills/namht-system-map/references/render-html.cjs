@@ -30,8 +30,17 @@ console.log(out);
 
 /** Replace cdnjs <script src=…> with the vendored lib inline (keeping the CSP nonce). */
 function inlineVendored(html, dir) {
-  const vendorDir = path.resolve(dir, '..', '..', '..', 'vendor');
-  if (!fs.existsSync(vendorDir)) return html; // no vendor → stay on CDN (online mode)
+  // This file runs both from resources/ and from the copies in skills/<skill>/references/, which sit
+  // at different depths — walk up until a vendor/ turns up instead of assuming a fixed number of levels.
+  let vendorDir = '';
+  for (let d = dir, i = 0; i < 6; i++) {
+    const cand = path.join(d, 'vendor');
+    if (fs.existsSync(cand)) { vendorDir = cand; break; }
+    const up = path.dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  if (!vendorDir) return html; // no vendor → stay on CDN (online mode)
   let out = html.replace(
     /<script\b([^>]*)\bsrc="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/([^/]+)\/[^"]+\.min\.js"([^>]*)><\/script>/gi,
     (m, pre, lib, post) => {

@@ -11,7 +11,7 @@
 #
 # Usage:
 #   scripts/onboard-project.sh [PROJECT_DIR]      # default: current directory
-#   scripts/onboard-project.sh ~/AI-TOOL/human-essentials
+#   scripts/onboard-project.sh ~/path/to/your-project
 
 set -euo pipefail
 

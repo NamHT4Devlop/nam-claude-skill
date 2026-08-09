@@ -812,7 +812,7 @@ function buildKnowledgeGraphHtml(graph) {
 
 <div class="header">
   <span>🔭</span>
-  <h1>${projectName} — Knowledge Graph</h1>
+  <h1>${safeProjectName} — Knowledge Graph</h1>
   <input class="search-box" id="searchBox" placeholder="🔍  Search nodes…" />
   <span class="meta">Generated ${new Date(generatedAt).toLocaleDateString()} · ${nodeCount} nodes · ${edgeCount} edges</span>
 </div>
@@ -1075,7 +1075,10 @@ function selectNode(id, simNodes, simEdges) {
 }
 
 function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Must escape " as well: this value also lands inside double-quoted attributes (data-file="…"),
+  // where an unescaped quote would break out of the attribute.
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function buildLegend(nodes) {

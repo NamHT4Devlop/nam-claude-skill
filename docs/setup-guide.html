@@ -143,10 +143,10 @@
     <div class="num">1</div>
     <div class="body">
       <h3>Get the tool's source</h3>
-      <p>Clone the repo to a fixed location (already at <code>/Users/MAC/AI-TOOL/nam-claude-skill</code> on this machine).</p>
+      <p>Clone the repo to a fixed location (this guide calls it <code>~/nam-claude-skill</code>).</p>
       <div class="cb"><button class="copy">Copy</button><pre><code><span class="cmt"># SSH (recommended if your GitHub uses an SSH key)</span>
 git clone git@github.com:NamHT4Devlop/nam-claude-skill.git ~/nam-claude-skill</code></pre></div>
-      <p class="muted">Below this folder is referred to as <b>&lt;TOOL&gt;</b>. On this machine <b>&lt;TOOL&gt;</b> = <code>/Users/MAC/AI-TOOL/nam-claude-skill</code>.</p>
+      <p class="muted">Below this folder is referred to as <b>&lt;TOOL&gt;</b>. Example: <b>&lt;TOOL&gt;</b> = <code>~/nam-claude-skill</code>.</p>
     </div>
   </div>
 
@@ -156,7 +156,7 @@ git clone git@github.com:NamHT4Devlop/nam-claude-skill.git ~/nam-claude-skill</c
       <h3>Install the tool for yourself (symlink into <code>~/.claude</code>)</h3>
       <p>A single command — it symlinks the skills + agents + commands into your home folder. Commands are prefixed
       with <code>namht-</code> so they don't shadow built-ins (like <span class="kbd">/help</span>).</p>
-      <div class="cb"><button class="copy">Copy</button><pre><code>/Users/MAC/AI-TOOL/nam-claude-skill/scripts/personal-install.sh</code></pre></div>
+      <div class="cb"><button class="copy">Copy</button><pre><code>~/nam-claude-skill/scripts/personal-install.sh</code></pre></div>
       <p class="muted">Because it's symlinked → a later <code>git pull</code> in &lt;TOOL&gt; updates automatically, no reinstall.</p>
     </div>
   </div>
@@ -195,7 +195,7 @@ git config --global core.excludesfile</code></pre></div>
   <h2 id="use">▶️ 3. Daily usage</h2>
   <p><b>Important:</b> always open Claude Code <b>inside</b> the project you want to work on, so it reads that project's KB.</p>
   <div class="cb"><button class="copy">Copy</button><pre><code><span class="cmt"># 1) cd into the right project</span>
-cd /Users/MAC/AI-TOOL/human-essentials
+cd ~/path/to/your-project
 claude
 
 <span class="cmt"># 2) first time on a project: create the Knowledge Base</span>
@@ -261,17 +261,17 @@ claude
   </table>
   <div class="box ok">
     <div class="ti">✅ Conclusion</div>
-    <p style="margin:.2em 0">Running <code>/namht-scan</code> or <code>/namht-build</code> right inside a team repo (e.g. <code>agenta</code>, <code>human-essentials</code>)
+    <p style="margin:.2em 0">Running <code>/namht-scan</code> or <code>/namht-build</code> right inside a team repo (e.g. <code>your-team-repo</code>)
     leaks <b>nothing</b>. Only when you use <code>/namht-build</code> to change <b>real code</b> do you deliberately review &amp; commit — which is what you want.</p>
   </div>
 
   <!-- ============ MAINTAIN ============ -->
   <h2 id="maintain">🔄 6. Update &amp; Uninstall</h2>
   <h3>Update to the latest</h3>
-  <div class="cb"><button class="copy">Copy</button><pre><code>cd /Users/MAC/AI-TOOL/nam-claude-skill &amp;&amp; git pull</code></pre></div>
+  <div class="cb"><button class="copy">Copy</button><pre><code>cd ~/nam-claude-skill &amp;&amp; git pull</code></pre></div>
   <p class="muted">Because it's symlinked, pulling applies it immediately — no reinstall.</p>
   <h3>Clean uninstall (only removes symlinks in ~/.claude, touches no repo)</h3>
-  <div class="cb"><button class="copy">Copy</button><pre><code>/Users/MAC/AI-TOOL/nam-claude-skill/scripts/personal-install.sh uninstall</code></pre></div>
+  <div class="cb"><button class="copy">Copy</button><pre><code>~/nam-claude-skill/scripts/personal-install.sh uninstall</code></pre></div>
 
   <!-- ============ TROUBLE ============ -->
   <h2 id="trouble">🩺 7. Troubleshooting</h2>
