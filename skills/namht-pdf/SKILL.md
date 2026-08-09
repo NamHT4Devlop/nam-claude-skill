@@ -17,7 +17,9 @@ Turn a Markdown or HTML report into a shareable PDF.
 1. **Resolve the input.** If given a `.md`, first render it to a self-contained HTML with the
    bundled renderer (Mermaid drawn):
    `node "$SKILL_DIR/render-html.cjs" <in.md> <tmp.html> "<title>"`
-   If given an `.html`, use it directly.
+   If given an `.html`, use it directly — including a hand-written or third-party one: the converter
+   injects the print stylesheet into a **temp copy** (the user's file is never modified), so any HTML
+   gets the same page-break/clipping protection. Opt out with `PDF_NO_PRINT_FIX=1`.
 2. **Convert to PDF** (best-effort, no network):
    `bash "$SKILL_DIR/html-to-pdf.sh" <in.html> <out.pdf>`
    It prints the PDF path on success.
