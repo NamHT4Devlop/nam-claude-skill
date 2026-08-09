@@ -180,5 +180,10 @@ DTO mapping.
 - Two gates per endpoint, both green: **contract identical** (SDL/contract diff) + **behavior parity**
   (oracle) — and the **independent reviewer** signs off. No endpoint ships otherwise.
 - **Author ≠ reviewer.** Tests are the oracle; agents assist but never override a failing test.
+- **The allowed-diff list is frozen per endpoint.** Never add an entry to make a failing parity case
+  pass — that is this skill's version of weakening a test, and on a shared database it silently
+  legitimises data drift. A new entry needs the user's explicit sign-off, a stated reason (why the
+  difference is acceptable to clients) and a row in the Parity Matrix. Same for `cases.json`: never
+  delete or narrow a case to reach green.
 - Port **only the scoped set**; never invent rules (cite the Ruby); never migrate data unless asked;
   reproduce every DB side effect; reads-before-writes on cutover; never big-bang. You don't deploy.

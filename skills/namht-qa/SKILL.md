@@ -22,6 +22,12 @@ the code (real endpoints/handlers). This is **test design** — it does NOT writ
 - The **user story** (role / action / benefit) + its **acceptance criteria**. Accept it pasted,
   by ID, or from a `/namht-plan` output under `spec-kit-sessions/`. If ACs are missing or vague,
   derive a draft set and flag assumptions (don't silently guess).
+- A **`/namht-build` session folder** (`spec-kit-sessions/builds/<…>/`), if one exists — read
+  `01-plan/plan.md` §2 (blast radius, cross-service consumers, risk matrix) and
+  `07-evidence/EVIDENCE.md` (the AC → named-test map) and **reuse them instead of re-deriving**: the
+  build already traced the callers. Your job is then the **delta** — manual/UI cases automated tests
+  can't cover, regression targets the build's tests did NOT cover, and any AC the evidence marked ❌ or
+  untested. Say which targets came from the build plan vs your own analysis.
 - The **feature/module** it touches (infer from the story; confirm via the KB/code).
 - If the repo has no `knowledge-base/`, say so — old-flow/regression coverage will be weaker;
   suggest `/namht-scan`. Read the relevant controllers/handlers to find the exact
@@ -97,6 +103,10 @@ ACs without a case, old flows without regression, ambiguities to confirm with PO
 ```
 
 ## Rules
+- **Test data must be synthetic.** Make it concrete and executable, but never copy real customer
+  records, production credentials, tokens or PII into the plan — invent representative values
+  (`coach.test@example.com`, `+84900000001`). The plan is saved to disk, rendered to HTML/PDF and
+  shared with testers.
 - **Always include regression for the old flow** — this is the point; never produce only
   new-flow cases. If the change touches an existing flow and you wrote no regression case, that's
   a gap to call out.

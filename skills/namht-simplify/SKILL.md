@@ -53,4 +53,14 @@ reviewable. Optionally save `spec-kit-sessions/simplify/<area>-<date>.md`.
 - **Minimal diff, one refactor at a time**; tests green after each or revert.
 - **Don't over-abstract** — readable-and-slightly-repetitive beats clever-and-opaque.
 - Respect conventions and the architecture invariants; no library swaps or structure churn.
+- **Never weaken a test to reach green.** If a refactor turns a test red, **the refactor is wrong —
+  revert that step.** Do not delete, skip, relax an assertion, or "update the expected value": the test
+  IS the definition of unchanged behavior, so editing it deletes the only guarantee this skill offers.
+  The sole exception is a test already failing in your baseline; any test you touch must be listed in
+  the output with the reason.
+- **Safety net — before the first edit.** Run `git status --porcelain` (ask the user to commit or stash
+  their own work first); run the relevant gates once and record **which tests were already failing**;
+  save `git diff HEAD > <session>/00-pre-change.patch`. To undo later use ONLY `git stash push -u` or
+  `git apply -R <your diff>` — the git-guard denies `git restore`, `git checkout .`/`--`,
+  `git reset --hard`, `git clean -f`. A test that was red before you started is not your regression.
 - Change-discipline: scope-lock, verify + rollback, never touch secrets, confirm before destructive actions.

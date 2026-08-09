@@ -38,6 +38,8 @@ ensure_ignore() {
   fi
 }
 ensure_ignore "spec-kit-sessions/"
+# knowledge-base/ is a full business analysis of the codebase — it must never land in a team repo.
+ensure_ignore "knowledge-base/"
 
 # 2) starter CLAUDE.md (only if missing) --------------------------------------
 if [ -f "CLAUDE.md" ] || [ -f ".claude/CLAUDE.md" ]; then

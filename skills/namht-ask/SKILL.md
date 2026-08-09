@@ -61,6 +61,9 @@ Any technical term used above → a one-line everyday definition. Omit the secti
 ```
 
 ## Rules
+- **Never copy secrets or personal data into the saved answer or the journal.** Name the field and
+  where it lives, use synthetic example values, and mask any real credential/token/customer record —
+  these files persist on disk and get exported to HTML/PDF and shared.
 - **Same facts, two depths.** The plain sections and the technical section must not contradict —
   one is a simpler view of the other, not a different answer.
 - Ground every claim in the KB. If it doesn't contain the answer, say so explicitly.

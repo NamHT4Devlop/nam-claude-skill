@@ -69,4 +69,15 @@ and example queries/dashboards it enables.
 - **Match the downstream field names exactly** so existing queries/dashboards keep working.
 - **Signal over noise** — instrument boundaries/decisions/errors, right level, sane cardinality (no unbounded label values).
 - Logging/metrics are **side-effect-free**: they must never alter business logic or throw.
+- **Prove it fires — instrumentation without an assertion is a hope.** Add at least one test per
+  instrumented boundary: (a) an entry→exit test asserting the log line carries the correlation id and
+  the required schema fields; (b) for async, a produce→consume test asserting the id survives the SQS
+  `MessageAttributes` hop and is re-established by the consumer; (c) a redaction test asserting a
+  payload containing a secret/PII field is emitted **masked**. A correlation id that dies at a queue
+  hop or a mask that doesn't mask fails silently and only surfaces at 3am. Also confirm existing
+  log-parsing tests/dashboards still match any field name you changed.
+- **Safety net — before the first edit.** `git status --porcelain` (ask the user to commit/stash first)
+  and save `git diff HEAD > <session>/00-pre-change.patch`. To undo use ONLY `git stash push -u` or
+  `git apply -R <your diff>` — the git-guard denies `git restore`, `git checkout .`/`--`,
+  `git reset --hard`, `git clean -f`.
 - Change-discipline: minimal diff, verify + rollback, confirm outward actions, never touch secrets.

@@ -51,4 +51,15 @@ Chat + `spec-kit-sessions/perf/<area>-<date>.md`: the bottleneck, the fix, and *
   change to ordering/semantics. Behavior stays correct.
 - **Biggest bottleneck first** — one meaningful lever at a time, not a scatter of tiny tweaks.
 - Don't add caching/indexes/complexity that the measured gain doesn't pay for; respect the architecture.
+- **Baseline correctness, not just speed.** Before optimising, also run the tests covering the target
+  module and record any already-failing ones — eager-loading, caching and index changes are exactly
+  where behavior drifts silently. Re-run them after: **a faster wrong answer is a regression.**
+- **State the measurement conditions with every number** — environment, dataset size/row counts, warm
+  vs cold, how many runs. A number without them is not evidence. If you cannot measure the after-state
+  under the same conditions, write **`NOT MEASURED (<reason>)`** and mark the change **UNVERIFIED** —
+  never claim a win you didn't measure.
+- **Safety net — before the first edit.** `git status --porcelain` (ask the user to commit/stash their
+  own work first) and save `git diff HEAD > <session>/00-pre-change.patch`. To undo use ONLY
+  `git stash push -u` or `git apply -R <your diff>` — the git-guard denies `git restore`,
+  `git checkout .`/`--`, `git reset --hard`, `git clean -f`.
 - Change-discipline: scope-lock, minimal diff, verify + rollback, never touch secrets, confirm outward actions.

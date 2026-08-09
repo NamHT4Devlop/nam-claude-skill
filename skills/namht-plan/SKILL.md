@@ -25,7 +25,7 @@ notes, API endpoints, dependencies). Lead each section plain → precise.
 Ask for (or accept) the **Epic Title** and **Epic Description** (problem, goals, constraints).
 That's all you need — derive the features yourself.
 
-## 7-step pipeline
+## 8-step pipeline
 1. **KB Deep Investigation** — from the KB, gather: related entities (existing + new),
    applicable business rules (validation, authorization, state-machine, calculation,
    time-based, invariants), affected flows, integrations, and affected modules. Cite KB sources.
@@ -73,3 +73,7 @@ independent, valuable, testable, and fit one sprint.
 
 Scope: this plans a whole Epic through sprints. For a SINGLE requirement needing maximally
 granular ACs (or a Slack-thread source), use `/namht-user-story` instead.
+
+**Next steps:** `/namht-plan-review <plan path>` to critique the plan before anyone codes, then
+`/namht-build <story id or path>` per story (its ACs are already confirmed — build must not re-ask),
+and `/namht-qa <story>` for the test plan.

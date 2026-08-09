@@ -29,6 +29,13 @@ modules/entities it targets. Ground in KB (`13-business-rules`, `16-architecture
    concurrency, permissions, data states the plan ignores? Is it testable?
 4. **DevEx / Maintainability** — complexity added, duplication, naming, "will the next dev
    understand this?", premature abstraction (YAGNI).
+5. **Reuse & Rollout** (when the plan came from `/namht-build`) — check its **Reuse Report**: for every
+   row marked `new`, does the justification name real searches, and can you find an existing candidate
+   it missed (helper, service, DTO, constant/enum, config key, error code, message, i18n key, style
+   token, test fixture)? Does it add a dependency an installed library already covers? Then check
+   **Rollout & Reversibility**: feature flag (default, who flips it, when removed), deploy order
+   (migration ↔ code), behavior under version skew, how to undo in production, new config/env vars,
+   backfill. **A missing rollback plan is a ❌ blocker, not a ⚠️.**
 
 ## Output (dual-audience; chat + offer to save `spec-kit-sessions/plan-reviews/<slug>-<date>.md`)
 ```
