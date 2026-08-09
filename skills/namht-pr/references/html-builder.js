@@ -629,7 +629,13 @@ function buildDocumentHtml(topic, markdown) {
         : `default-src 'none'; style-src 'unsafe-inline'; img-src data:;`;
     const mermaidTags = hasMermaid
         ? `<script nonce="${nonce}" src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
-<script nonce="${nonce}">try{mermaid.initialize({startOnLoad:true,theme:'neutral',securityLevel:'strict'});}catch(e){}</script>`
+<script nonce="${nonce}">try{
+// startOnLoad:true — mermaid waits for DOMContentLoaded itself. This script sits in <head>, so a
+// manual run() here would find no .mermaid nodes yet (and double-render once they appear).
+// useMaxWidth keeps each diagram inside the page/container width so print never clips it.
+mermaid.initialize({startOnLoad:true,theme:'neutral',securityLevel:'strict',
+  flowchart:{useMaxWidth:true},sequence:{useMaxWidth:true},er:{useMaxWidth:true},gantt:{useMaxWidth:true}});
+}catch(e){}</script>`
         : '';
     return `<!DOCTYPE html>
 <html lang="en">
@@ -662,7 +668,26 @@ td{padding:9px 12px;border-top:1px solid #eef2f7;vertical-align:top}
 tr:nth-child(even) td{background:#f8fafc}
 .meta{color:#94a3b8;font-size:.8rem;margin-top:6px}
 .mermaid{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin:14px 0;text-align:center;overflow-x:auto}
-@media print{body{background:#fff}.doc{max-width:100%}}
+.mermaid svg{max-width:100%;height:auto}
+/* Print / PDF: keep blocks whole, never rely on scrolling (paper has none), keep colours. */
+@page{size:A4;margin:14mm 12mm}
+@media print{
+  body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .doc{max-width:100%;padding:0}
+  /* a diagram, table, code block or quote must not be split across pages */
+  .mermaid,table,pre,blockquote,figure{break-inside:avoid;page-break-inside:avoid}
+  tr,li{break-inside:avoid;page-break-inside:avoid}
+  thead{display:table-header-group}            /* repeat headers on long tables */
+  h1,h2,h3,h4{break-after:avoid;page-break-after:avoid}   /* no orphan heading at a page foot */
+  /* overflow is CUT on paper — let wide content shrink or wrap instead */
+  .mermaid{overflow:visible;padding:8px;break-inside:avoid}
+  /* Scale an oversized diagram down so it fits ONE page instead of spilling across pages.
+     A4 usable height ≈ 269mm; cap below that to leave room for the box padding/border. */
+  .mermaid svg{width:auto!important;height:auto!important;max-width:100%!important;max-height:170mm!important}
+  pre{overflow:visible;white-space:pre-wrap;word-break:break-word}
+  table{box-shadow:none}
+  a{text-decoration:none}
+}
 </style>
 </head>
 <body>

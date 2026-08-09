@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-# html-to-pdf.sh — best-effort HTML -> PDF (headless Chrome, else wkhtmltopdf).
+# html-to-pdf.sh — HTML -> PDF, preserving layout and Mermaid diagrams.
 # Usage: html-to-pdf.sh <input.html> [output.pdf]   (prints the PDF path, or NO_PDF_TOOL to stderr)
+#
+# Headless Chrome is tried FIRST and is the only engine that renders Mermaid: the diagrams are
+# drawn by JavaScript at view time. wkhtmltopdf runs an old QtWebKit engine that executes neither
+# modern JS nor modern CSS, so it silently drops every diagram and mangles the layout — it is kept
+# only as a last resort and warns when used.
 set -euo pipefail
 IN="${1:?usage: html-to-pdf.sh <input.html> [output.pdf]}"
 OUT="${2:-${IN%.*}.pdf}"
@@ -9,22 +14,39 @@ abs() { case "$1" in /*) printf '%s' "$1";; *) printf '%s/%s' "$PWD" "$1";; esac
 INABS="$(abs "$IN")"; OUTABS="$(abs "$OUT")"
 mkdir -p "$(dirname "$OUTABS")"
 
-# 1) wkhtmltopdf if available
-if command -v wkhtmltopdf >/dev/null 2>&1; then
-  wkhtmltopdf --enable-local-file-access "$INABS" "$OUTABS" >/dev/null 2>&1 && { echo "$OUTABS"; exit 0; }
-fi
+# Give Mermaid time to draw; complex diagrams need more than a second or two.
+BUDGET="${PDF_VIRTUAL_TIME_BUDGET:-15000}"
 
-# 2) headless Chrome/Chromium (covers mermaid via JS render in modern Chrome)
+# 1) Headless Chrome / Chromium / Edge — renders JS (Mermaid) and modern CSS.
 for c in "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
          "/Applications/Chromium.app/Contents/MacOS/Chromium" \
          "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" \
-         google-chrome google-chrome-stable chromium chromium-browser microsoft-edge; do
+         "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" \
+         google-chrome google-chrome-stable chromium chromium-browser microsoft-edge brave-browser; do
   if command -v "$c" >/dev/null 2>&1 || [ -x "$c" ]; then
-    "$c" --headless=new --disable-gpu --virtual-time-budget=4000 --print-to-pdf="$OUTABS" "file://$INABS" >/dev/null 2>&1 \
+    # --no-pdf-header-footer drops Chrome's URL/date/page-number stamps.
+    # --run-all-compositor-stages-before-draw waits for layout+paint to settle before printing.
+    "$c" --headless=new --disable-gpu --no-sandbox \
+         --virtual-time-budget="$BUDGET" --run-all-compositor-stages-before-draw \
+         --no-pdf-header-footer --print-to-pdf-no-header \
+         --print-to-pdf="$OUTABS" "file://$INABS" >/dev/null 2>&1 \
+      || "$c" --headless=new --disable-gpu --virtual-time-budget="$BUDGET" \
+              --print-to-pdf="$OUTABS" "file://$INABS" >/dev/null 2>&1 \
       || "$c" --headless --disable-gpu --print-to-pdf="$OUTABS" "file://$INABS" >/dev/null 2>&1 || true
     [ -s "$OUTABS" ] && { echo "$OUTABS"; exit 0; }
   fi
 done
+
+# 2) wkhtmltopdf — last resort. No JS => no Mermaid diagrams, and modern CSS degrades.
+if command -v wkhtmltopdf >/dev/null 2>&1; then
+  if grep -q 'class="mermaid"' "$INABS" 2>/dev/null; then
+    echo "WARN: falling back to wkhtmltopdf — it cannot render Mermaid diagrams (they will be missing or raw text)." >&2
+    echo "      Install Google Chrome for a faithful PDF, or open the HTML in a browser and use Print > Save as PDF." >&2
+  fi
+  wkhtmltopdf --enable-local-file-access --print-media-type \
+    --margin-top 14mm --margin-bottom 14mm --margin-left 12mm --margin-right 12mm \
+    "$INABS" "$OUTABS" >/dev/null 2>&1 && { echo "$OUTABS"; exit 0; }
+fi
 
 echo "NO_PDF_TOOL" >&2
 exit 2
