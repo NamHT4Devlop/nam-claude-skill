@@ -35,6 +35,11 @@ Turn a Markdown or HTML report into a shareable PDF.
   **scales an oversized diagram down to fit a page** instead of letting it span several. Paper has
   no scrollbars, so wide content wraps/shrinks rather than being clipped.
 - Chrome's default URL/date/page stamps are turned off (`--no-pdf-header-footer`).
+- **Colour modes** — the export defaults to a dark page (`#0f1420`), neutralising light panels from the
+  source so text never lands light-on-light. Two escape hatches, both env vars on `html-to-pdf.sh`:
+  `PDF_KEEP_COLORS=1` keeps the document's own colours **exactly** (layout fixes only — use this when
+  the source already looks right), and `PDF_LIGHT=1` forces a white page for paper. Tell the user which
+  one you used, and offer `PDF_KEEP_COLORS=1` whenever the source has its own branding.
 - Complex diagrams need render time: raise it with `PDF_VIRTUAL_TIME_BUDGET=30000` (ms) if a
   diagram comes out blank.
 
