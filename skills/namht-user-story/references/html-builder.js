@@ -670,10 +670,28 @@ tr:nth-child(even) td{background:#f8fafc}
 .mermaid{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin:14px 0;text-align:center;overflow-x:auto}
 .mermaid svg{max-width:100%;height:auto}
 /* Print / PDF: keep blocks whole, never rely on scrolling (paper has none), keep colours. */
-@page{size:A4;margin:14mm 12mm}
+@page{size:A4;margin:14mm 12mm;background:#0f1420}
 @media print{
-  body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .doc{max-width:100%;padding:0}
+  /* Dark page. print-color-adjust:exact is what stops the browser dropping backgrounds when printing. */
+  html,body{background:#0f1420!important;color:#e6e9ef!important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .doc{max-width:100%;padding:0;background:transparent}
+  h1,h2,h3,h4{color:#f2f4f8!important}
+  h1{border-bottom-color:#8b95ff!important}
+  p,li,td,em,strong,.meta{color:#e6e9ef!important}
+  em,.meta{color:#9aa3b2!important}
+  a{color:#9bb0ff!important}
+  hr{border-top-color:#2a3040!important}
+  code{background:#1b2130!important;color:#c9d2ff!important}
+  pre{background:#0b1020!important;color:#e2e8f0!important;border:1px solid #2a3040}
+  pre code{background:none!important;color:inherit!important}
+  table{border:1px solid #2a3040}
+  th{background:#4f46e5!important;color:#fff!important}
+  td{border-top-color:#2a3040!important;background:#151b29!important;color:#e6e9ef!important}
+  tr:nth-child(even) td{background:#111726!important}
+  /* The diagram stays a LIGHT card: Mermaid bakes its colours into the SVG at render time, so a light
+     panel keeps every node, label and arrow readable instead of dark strokes vanishing into the page. */
+  .mermaid{background:#fff!important;border-color:#cbd5e1!important}
   /* a diagram, table, code block or quote must not be split across pages */
   .mermaid,table,pre,blockquote,figure{break-inside:avoid;page-break-inside:avoid}
   tr,li{break-inside:avoid;page-break-inside:avoid}
