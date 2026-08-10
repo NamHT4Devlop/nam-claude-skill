@@ -507,6 +507,10 @@ const crypto = __importStar(require("crypto"));
 function mdInline(s) {
     let t = esc(s);
     t = t.replace(/`([^`]+)`/g, (_m, c) => `<code>${c}</code>`);
+    // Images ![alt](src) — before links, since the syntaxes differ only by the leading '!'.
+    // Only http(s), a relative path or a data: URI; anything else stays literal text.
+    t = t.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+|data:image\/[^\s)]+|[^\s):]+)\)/g,
+        (_m, alt, src) => `<img src="${src}" alt="${alt}">`);
     t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     // Single-asterisk italics — run AFTER ** so bold is already consumed and cannot be re-matched.
     t = t.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
@@ -639,16 +643,27 @@ function buildDocumentHtml(topic, markdown) {
     const hasMermaid = /class="mermaid"/.test(body);
     const nonce = randomNonce();
     const csp = hasMermaid
-        ? `default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data: https:; script-src 'nonce-${nonce}' https://cdnjs.cloudflare.com;`
-        : `default-src 'none'; style-src 'unsafe-inline'; img-src data:;`;
+        ? `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: file: https:; font-src data: https:; script-src 'nonce-${nonce}' https://cdnjs.cloudflare.com;`
+        : `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: file: https:;`;
     const mermaidTags = hasMermaid
         ? `<script nonce="${nonce}" src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
 <script nonce="${nonce}">try{
 // startOnLoad:true — mermaid waits for DOMContentLoaded itself. This script sits in <head>, so a
 // manual run() here would find no .mermaid nodes yet (and double-render once they appear).
 // useMaxWidth keeps each diagram inside the page/container width so print never clips it.
-mermaid.initialize({startOnLoad:true,theme:'neutral',securityLevel:'strict',
-  flowchart:{useMaxWidth:true},sequence:{useMaxWidth:true},er:{useMaxWidth:true},gantt:{useMaxWidth:true}});
+mermaid.initialize({startOnLoad:true,theme:'dark',securityLevel:'strict',
+  flowchart:{useMaxWidth:true},sequence:{useMaxWidth:true},er:{useMaxWidth:true},gantt:{useMaxWidth:true},
+  // The stock dark theme still paints sequence message labels and some edge text almost black —
+  // pin every text/line colour so nothing disappears into the page.
+  themeVariables:{background:'#141a28',mainBkg:'#1f2937',textColor:'#e6e9ef',lineColor:'#94a3b8',
+    primaryColor:'#1f2937',primaryTextColor:'#e6e9ef',primaryBorderColor:'#6366f1',
+    secondaryColor:'#312e81',tertiaryColor:'#111726',nodeBorder:'#6366f1',nodeTextColor:'#e6e9ef',
+    clusterBkg:'#141a28',clusterBorder:'#2a3040',edgeLabelBackground:'#141a28',
+    actorBkg:'#1f2937',actorBorder:'#6366f1',actorTextColor:'#e6e9ef',actorLineColor:'#94a3b8',
+    signalColor:'#cbd5e1',signalTextColor:'#e6e9ef',labelBoxBkgColor:'#1f2937',
+    labelBoxBorderColor:'#6366f1',labelTextColor:'#e6e9ef',loopTextColor:'#e6e9ef',
+    noteBkgColor:'#374151',noteTextColor:'#f9fafb',noteBorderColor:'#6b7280',
+    altBackground:'#111726',classText:'#e6e9ef',titleColor:'#f2f4f8'}});
 }catch(e){}</script>`
         : '';
     return `<!DOCTYPE html>
@@ -661,58 +676,63 @@ mermaid.initialize({startOnLoad:true,theme:'neutral',securityLevel:'strict',
 ${mermaidTags}
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1e293b;line-height:1.65;background:#f8fafc}
+/* Dark theme end to end. It has to be dark on screen too: Mermaid bakes its colours into the SVG
+   when it renders, so a diagram cannot be re-themed at print time — the page and the diagram must
+   agree from the start, which is also why the PDF matches what you see in the browser. */
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e6e9ef;line-height:1.65;background:#0f1420}
 .doc{max-width:980px;margin:0 auto;padding:40px 32px 80px}
-h1{font-size:1.9rem;font-weight:750;margin:0 0 8px;color:#0f172a;border-bottom:3px solid #6366f1;padding-bottom:12px}
-h2{font-size:1.3rem;font-weight:700;margin:30px 0 10px;color:#1e293b}
-h3{font-size:1.05rem;font-weight:650;margin:20px 0 8px;color:#334155}
-h4{font-size:.95rem;font-weight:650;margin:16px 0 6px;color:#475569}
+h1{font-size:1.9rem;font-weight:750;margin:0 0 8px;color:#f2f4f8;border-bottom:3px solid #6366f1;padding-bottom:12px}
+h2{font-size:1.3rem;font-weight:700;margin:30px 0 10px;color:#f2f4f8}
+h3{font-size:1.05rem;font-weight:650;margin:20px 0 8px;color:#dfe4ee}
+h4{font-size:.95rem;font-weight:650;margin:16px 0 6px;color:#c3cad8}
 p{margin:8px 0}
-em{color:#64748b}
-a{color:#6366f1}
-code{background:#eef2ff;color:#4338ca;padding:1px 6px;border-radius:5px;font-family:'Fira Code',ui-monospace,monospace;font-size:.86em}
-pre{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:10px;overflow-x:auto;margin:12px 0}
+em{color:#a8b0c0}
+a{color:#9bb0ff}
+code{background:#1b2130;color:#c9d2ff;padding:1px 6px;border-radius:5px;font-family:'Fira Code',ui-monospace,monospace;font-size:.86em}
+pre{background:#0b1020;color:#e2e8f0;border:1px solid #2a3040;padding:14px 16px;border-radius:10px;overflow-x:auto;margin:12px 0}
 pre code{background:none;color:inherit;padding:0}
 ul,ol{margin:8px 0 8px 26px}
 li{margin:4px 0}
-hr{border:none;border-top:1px solid #e2e8f0;margin:24px 0}
-blockquote{margin:12px 0;padding:10px 16px;border-left:3px solid #6366f1;background:#f1f5f9;border-radius:0 8px 8px 0;color:#475569}
+hr{border:none;border-top:1px solid #2a3040;margin:24px 0}
+blockquote{margin:12px 0;padding:10px 16px;border-left:3px solid #6366f1;background:#141a28;border-radius:0 8px 8px 0;color:#c3cad8}
 blockquote p{margin:.25em 0}
 del{opacity:.7}
-table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.9rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border-radius:8px;overflow:hidden}
-th{background:#6366f1;color:#fff;text-align:left;padding:9px 12px;font-weight:600;font-size:.82rem}
-td{padding:9px 12px;border-top:1px solid #eef2f7;vertical-align:top}
-tr:nth-child(even) td{background:#f8fafc}
-.meta{color:#94a3b8;font-size:.8rem;margin-top:6px}
-.mermaid{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin:14px 0;text-align:center;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.9rem;border:1px solid #2a3040;border-radius:8px;overflow:hidden}
+th{background:#4f46e5;color:#fff;text-align:left;padding:9px 12px;font-weight:600;font-size:.82rem}
+td{padding:9px 12px;border-top:1px solid #2a3040;vertical-align:top;background:#151b29}
+tr:nth-child(even) td{background:#111726}
+.meta{color:#8b94a7;font-size:.8rem;margin-top:6px}
+/* A raster diagram is usually black line-art on white or on transparency — it needs a light backing
+   or it vanishes on a dark page. Photos just gain a thin light frame, which is harmless. */
+img{max-width:100%;height:auto;background:#fff;padding:6px;border-radius:8px}
+.mermaid{background:#141a28;border:1px solid #2a3040;border-radius:10px;padding:16px;margin:14px 0;text-align:center;overflow-x:auto}
+/* Mermaid scopes its styles by the SVG id, so its own (often dark) text colours beat any theme
+   variable we pass. Pin them here with !important — this is what keeps sequence message labels,
+   actor names and edge labels readable on the dark card. */
+.mermaid svg text,.mermaid svg .messageText,.mermaid svg .labelText,.mermaid svg .loopText,
+.mermaid svg .noteText,.mermaid svg .titleText,.mermaid svg .sectionTitle,
+.mermaid svg .taskText,.mermaid svg tspan{fill:#e6e9ef!important}
+.mermaid svg .nodeLabel,.mermaid svg .edgeLabel,.mermaid svg .label{color:#e6e9ef!important;fill:#e6e9ef!important}
+.mermaid svg .edgeLabel rect,.mermaid svg .labelBkg{fill:#141a28!important;background:#141a28!important;opacity:.9}
+.mermaid svg .actor,.mermaid svg .node rect,.mermaid svg .node polygon,.mermaid svg .node circle,
+.mermaid svg .node ellipse,.mermaid svg .node path{fill:#1f2937!important;stroke:#6366f1!important}
+.mermaid svg .actor tspan,.mermaid svg .actor text{fill:#e6e9ef!important}
+.mermaid svg line,.mermaid svg .messageLine0,.mermaid svg .messageLine1,
+.mermaid svg .edgePath path,.mermaid svg .flowchart-link,.mermaid svg .actor-line{stroke:#94a3b8!important}
+.mermaid svg marker path,.mermaid svg .arrowheadPath{fill:#94a3b8!important;stroke:#94a3b8!important}
+.mermaid svg .sequenceNumber{fill:#0f1420!important}
 .mermaid svg{max-width:100%;height:auto}
 /* Print / PDF: keep blocks whole, never rely on scrolling (paper has none), keep colours. */
 @page{size:A4;margin:14mm 12mm;background:#0f1420}
 @media print{
   /* Dark page. print-color-adjust:exact is what stops the browser dropping backgrounds when printing. */
-  html,body{background:#0f1420!important;color:#e6e9ef!important;
-    -webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .doc{max-width:100%;padding:0;background:transparent}
-  h1,h2,h3,h4{color:#f2f4f8!important}
-  h1{border-bottom-color:#8b95ff!important}
-  p,li,td,em,strong,.meta{color:#e6e9ef!important}
-  em,.meta{color:#9aa3b2!important}
-  a{color:#9bb0ff!important}
-  hr{border-top-color:#2a3040!important}
-  code{background:#1b2130!important;color:#c9d2ff!important}
-  pre{background:#0b1020!important;color:#e2e8f0!important;border:1px solid #2a3040}
-  pre code{background:none!important;color:inherit!important}
-  table{border:1px solid #2a3040}
-  th{background:#4f46e5!important;color:#fff!important}
-  td{border-top-color:#2a3040!important;background:#151b29!important;color:#e6e9ef!important}
-  tr:nth-child(even) td{background:#111726!important}
-  blockquote{border-left-color:#4f46e5!important;color:#c3cad8!important;background:#141a28!important}
-  /* No white panels anywhere. Mermaid bakes its colours into the SVG when it renders, so instead of a
-     light card we invert the diagram: light node fills become dark and its dark text/strokes become
-     light. hue-rotate keeps coloured elements roughly true. */
-  .mermaid{background:#141a28!important;border-color:#2a3040!important}
-  .mermaid svg{filter:invert(1) hue-rotate(180deg)}
-  figure,img{background:transparent!important}
+  /* The document is dark already — print-color-adjust is what stops the browser discarding those
+     backgrounds when it prints. */
+  html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .doc{max-width:100%;padding:0}
+  /* Diagrams are already dark-themed (Mermaid theme:'dark'), so nothing needs recolouring here.
+     Raster images keep their light backing from the base stylesheet — black line-art on transparency
+     would otherwise disappear into the page. */
   /* a diagram, table, code block or quote must not be split across pages */
   .mermaid,table,pre,blockquote,figure{break-inside:avoid;page-break-inside:avoid}
   tr,li{break-inside:avoid;page-break-inside:avoid}
@@ -759,7 +779,7 @@ function buildKnowledgeGraphHtml(graph) {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; font-src data:; connect-src 'none'; script-src 'nonce-${nonce}' https://cdnjs.cloudflare.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data: file: https: https:; style-src 'unsafe-inline'; font-src data:; connect-src 'none'; script-src 'nonce-${nonce}' https://cdnjs.cloudflare.com;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🔭 Knowledge Graph — ${safeProjectName}</title>
 <script nonce="${nonce}" src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
