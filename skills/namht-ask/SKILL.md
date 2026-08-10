@@ -22,6 +22,9 @@ and real source (technical detail) — never invent files, APIs, fields, or beha
    conclude about X?"* directly from the journal; (b) when today's question was already answered,
    **say so**, link the saved answer file, reuse its conclusion, and only re-derive what changed
    since. It's a small index — reading it costs little and makes new sessions remember old ones.
+   **Check the conclusion isn't stale before reusing it:** the files it cited may have moved on —
+   `git log --since=<that date> -- <those files>`. If they changed, re-derive rather than repeat an
+   answer that was true last month; say which it was.
 1. **Ground code answers in real source.** When the question is about *how code works / where
    something is*, use Grep/Glob/Read to ground the **Technical detail** section in real files; the
    KB supplies business meaning.

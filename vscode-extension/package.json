@@ -2,7 +2,7 @@
   "name": "namht-spec-ui",
   "displayName": "Spec Kit UI",
   "description": "Point-and-click UI over the namht-* Spec Kit skills for non-technical roles (PM/SM). Runs Claude Code under the hood.",
-  "version": "0.12.1",
+  "version": "0.13.0",
   "publisher": "namht",
   "private": true,
   "license": "UNLICENSED",
@@ -74,6 +74,20 @@
           ],
           "default": "sonnet",
           "description": "DEFAULT model pre-selected in each form's Model dropdown (passed as `claude --model`). You can override it per run and per follow-up in the panel. 'sonnet' is ~5x cheaper than Opus for read-only Q&A/planning at great quality; 'haiku' is cheapest for simple lookups; 'opus' for the hardest code tasks; empty = your Claude default."
+        },
+        "namhtSpecUi.mode": {
+          "type": "string",
+          "enum": [
+            "full",
+            "readonly"
+          ],
+          "enumDescriptions": [
+            "Every skill, including the seven that change code.",
+            "Only skills that never touch your source — for PM/SM. The code-editing cards are hidden and the host refuses them even if requested."
+          ],
+          "default": "full",
+          "scope": "machine",
+          "description": "Which skills this panel offers. 'readonly' hides the seven code-editing skills (build, fix-bug, migrate, simplify, perf, observe, rails-to-spring) and blocks them in the extension host — use it for the .vsix you hand to non-developers."
         }
       }
     },

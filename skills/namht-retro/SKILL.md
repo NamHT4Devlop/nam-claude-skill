@@ -14,6 +14,11 @@ A periodic look-back grounded in real history.
 ## Gather (read-only git + artifacts)
 - Window: default last 7 days (or what the user names). `git log --since=<window> --stat`,
   `git shortlog -sn --since`, `git diff --stat <since>..HEAD` for churn by area.
+- **Read the journals first** — `spec-kit-sessions/answers/_journal.md` (questions asked),
+  `builds/_journal.md` (what was built + the key decision) and `fixes/_journal.md` (bugs + root
+  causes). They are one-line-per-entry indexes built for exactly this: the cheapest high-signal
+  source for *what shipped*, *what people kept having to ask*, and *what keeps breaking*. A root
+  cause or an area appearing repeatedly in the fix journal is a retro finding on its own.
 - Optional signals: `spec-kit-sessions/` reports (fixes/reviews/qa) from the window; open TODO/FIXME
   added; test coverage gaps on changed areas (test-debt trend).
 

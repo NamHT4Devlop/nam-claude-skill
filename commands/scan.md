@@ -9,5 +9,8 @@ Detect the stack first and tailor the analysis. Cite real file paths; no generic
 
 Scope (optional): $ARGUMENTS
 
+Depth: say `quick`, `standard` (default) or `deep` to trade token cost against
+thoroughness — on a large repo the skill will propose `quick` first.
+
 If a `knowledge-base/` already exists, ask whether to do a fresh rebuild or use
 `/namht-rescan` instead.

@@ -56,6 +56,14 @@ bypass). Output a small table — `| Component/flow | STRIDE category | Threat |
 
 ## Output (dual-audience; save + render HTML)
 Save to `spec-kit-sessions/security/audit-<date>.md`, then render to HTML and open it.
+Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-security-audit/references`
+if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-security-audit/references`.
+```bash
+node "$SKILL_DIR/render-html.cjs" <report.md> <report.html> "<repo> — security audit"
+# then: open / xdg-open / start  the printed path
+```
+Requires Node — if absent, keep the `.md`, say HTML was skipped, and give the user the path.
+
 ```
 # Security Audit — <project> (<date>)
 ## In plain words            ← overall risk posture, # criticals, are we safe to ship?

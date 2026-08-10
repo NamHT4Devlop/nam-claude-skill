@@ -10,6 +10,12 @@ const ALLOWED = new Set([
   'namht-review', 'namht-qa', 'namht-qa-integration', 'namht-security-audit', 'namht-design-review', 'namht-pr',
   'namht-splunk-report', 'namht-retro', 'namht-pdf', 'namht-skillify',
 ]);
+// The seven skills that modify source. In readonly mode the host refuses them outright, so hiding
+// the cards is a UI convenience rather than the actual control.
+const EDITS_CODE = new Set([
+  'namht-build', 'namht-fix-bug', 'namht-migrate', 'namht-simplify', 'namht-perf', 'namht-observe',
+  'namht-rails-to-spring',
+]);
 const HIST_KEY = 'namhtSpecUi.history';
 const HIST_MAX = 40;
 
@@ -54,7 +60,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
 
   private handleMessage(m: any) {
     switch (m?.type) {
-      case 'check': this.checkClaude(); this.post({ type: 'config', defaultModel: this.cfg().model }); this.post({ type: 'history', items: this.history() }); this.post({ type: 'restore', runs: Array.from(this.state.values()) }); break;
+      case 'check': this.checkClaude(); this.post({ type: 'config', defaultModel: this.cfg().model, mode: this.cfg().mode }); this.post({ type: 'history', items: this.history() }); this.post({ type: 'restore', runs: Array.from(this.state.values()) }); break;
       case 'run': this.start(m); break;
       case 'followup': this.followup(String(m.runId), String(m.text || ''), String(m.sessionId || ''), m.model); break;
       case 'cancel': this.cancel(String(m.runId)); break;
@@ -68,7 +74,8 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   private post(m: unknown) { for (const w of this.webviews) w.postMessage(m); }
   private cfg() {
     const c = vscode.workspace.getConfiguration('namhtSpecUi');
-    return { claudePath: c.get<string>('claudePath', 'claude'), extraArgs: c.get<string[]>('extraArgs', ['--permission-mode', 'bypassPermissions']), usdToVnd: c.get<number>('usdToVnd', 26000), model: c.get<string>('model', 'sonnet') };
+    return { claudePath: c.get<string>('claudePath', 'claude'), extraArgs: c.get<string[]>('extraArgs', ['--permission-mode', 'bypassPermissions']), usdToVnd: c.get<number>('usdToVnd', 26000), model: c.get<string>('model', 'sonnet'),
+      mode: c.get<string>('mode', 'full') };
   }
   private cwd(): string | undefined { return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath; }
 
@@ -119,6 +126,10 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     const runId = String(m.runId); const command = String(m.command || '');
     const isChat = command === '__chat';   // free chat: raw prompt, no skill, whitelist bypassed
     if (!isChat && !ALLOWED.has(command)) { this.post({ type: 'log', runId, text: `[blocked: "${command}" is not allowed]` }); this.post({ type: 'done', runId, code: 1 }); return; }
+    if (this.cfg().mode === 'readonly' && EDITS_CODE.has(command)) {
+      this.post({ type: 'log', runId, text: `[blocked: "${command}" changes code and this panel is in read-only mode]` });
+      this.post({ type: 'done', runId, code: 1 }); return;
+    }
     const cwd = this.cwd() || (isChat ? require('os').homedir() : undefined);
     if (!cwd) { this.post({ type: 'log', runId, text: '[open a project folder first — skills read that project]' }); this.post({ type: 'done', runId, code: 1 }); return; }
     const prompt = isChat ? String(m.args || '').trim() : `/${command} ${String(m.args || '')}`.trim();
@@ -269,6 +280,10 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   // ---- interactive handoff: run the same skill in a terminal so a dev reviews each diff / approves-rejects ----
   private interactive(m: any) {
     const command = String(m.command || ''); if (!ALLOWED.has(command)) return;
+    if (this.cfg().mode === 'readonly' && EDITS_CODE.has(command)) {
+      vscode.window.showWarningMessage('This panel is in read-only mode — skills that change code are disabled.');
+      return;
+    }
     const cwd = this.cwd(); if (!cwd) { vscode.window.showWarningMessage('Open a project folder first — skills read that project.'); return; }
     const { claudePath, model: cfgModel } = this.cfg();
     const model = (m.model !== undefined && m.model !== null) ? String(m.model) : cfgModel;

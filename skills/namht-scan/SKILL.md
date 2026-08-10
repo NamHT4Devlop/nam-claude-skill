@@ -27,6 +27,17 @@ This KB is the grounding for every other Spec Kit command.
   changes) — OK?"* If they want a different branch, ask them to `git checkout <branch>` first (never
   switch on their behalf if that could discard uncommitted work). Not a git repo → just scan the
   folder and say so.
+- **Pick a depth (this is the cost dial — say which you used).** A full scan of a large repo is the
+  most expensive thing in the kit, so match the effort to the need. If the user names one, obey it;
+  otherwise choose from the repo size and say so in one line.
+  - **quick** — entry points, models/schema and tests only, sampled; the 5 deep docs written from that
+    sample; module docs for the ~5 largest modules; everything sampled is marked as such in
+    `_coverage-report.md`. Good for a first look or a repo you'll scan properly later.
+  - **standard** (default) — the full 16 docs, with per-layer sampling once a layer exceeds ~40 files.
+  - **deep** — exhaustive, no sampling, module docs for every module. For a repo you're about to
+    migrate or audit.
+  Above ~1500 source files, propose **quick** first and let the user upgrade — don't silently spend an
+  hour of tokens. State the depth at the top of `_coverage-report.md`.
 - **Map structure with Glob/Grep/Read.** Use Glob/Grep to map the file tree, symbols and imports
   quickly, then read real source for *business intent* — the skeleton tells you where, the KB
   documents the why.

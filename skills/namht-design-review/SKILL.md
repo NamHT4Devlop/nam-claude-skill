@@ -31,6 +31,14 @@ have. Works on a **live URL** (preferred — real screenshots) or on **frontend 
 6. **Interaction** — hover/focus/disabled states; destructive actions confirmed; feedback on action.
 
 ## Output (dual-audience; save `spec-kit-sessions/design/<app>-<date>.md`; render HTML; keep screenshots)
+Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-design-review/references`
+if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-design-review/references`.
+```bash
+node "$SKILL_DIR/render-html.cjs" <report.md> <report.html> "<app> — design review"
+# then: open / xdg-open / start  the printed path
+```
+Requires Node — if absent, keep the `.md`, say HTML was skipped, and give the user the path.
+
 ```
 ## In plain words            ← overall: is the UI ready? top 3 things to fix
 ## Screens reviewed          ← list + screenshot refs (desktop/mobile)

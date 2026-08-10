@@ -81,7 +81,24 @@ Confirm (ask what's missing): source stack (Rails, `graphql-ruby`, auth: Devise/
 target profile · **the exact endpoint set** (ALL GraphQL resolvers + the specific 3–5 REST APIs;
 everything else OUT of scope) · DB (shared default) · async in scope (SQS/Camel/jobs?) · cutover
 (strangler default) · **the parity oracle available** (can the source run locally / is there a staging
-env / are there request specs or VCR cassettes to replay?). Write a short **Scope & Parity Plan** and
+env / are there request specs or VCR cassettes to replay?).
+
+**Resume first — a port spans weeks and many sessions.** Before anything else, read
+`spec-kit-sessions/port/_progress.md`. If it exists, **continue from it**: report where the port
+stands (how many endpoints at each stage), pick the next endpoint, and do NOT redo finished work.
+If it doesn't exist, create it after the scope is agreed, one row per in-scope endpoint:
+```markdown
+# Port progress — <source> → <target>   (single source of truth; update it as each endpoint moves)
+| Endpoint | Type | Risk | Spec | Impl | Parity | Reviewed | Cutover | Session | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| coach(id) | graphql query | M | ✅ | ✅ | ✅ | ✅ | ⬜ | 2026-07-20-… | |
+| POST /api/tasks | rest | H | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | | writes — cut over last |
+```
+Stages: `⬜` not started · `🔄` in progress · `✅` done · `⚠️` blocked (say why in Notes).
+**Update the row the moment a stage changes** — a stage marked done that was never verified is worse
+than one left open. This file, not the chat, is what the next session trusts.
+
+Write a short **Scope & Parity Plan** and
 confirm before porting.
 
 ## Step 1 — Ground the source
@@ -139,7 +156,9 @@ Independently per endpoint, so each ships and cuts over alone:
 4. **Verify parity** — run the oracle; output must match (modulo the allowed-diff list). Then the
    **independent reviewer panel** must find no unresolved divergence (rules, auth, N+1, side effects).
    Fix until both gates are green. Use a **BatchLoader/dataloader** for N+1.
-5. **Parity Matrix row:** `endpoint · contract identical? · oracle green? · reviewer panel clear? ·
+5. **Update `_progress.md` immediately** — flip this endpoint's Spec/Impl/Parity/Reviewed cells and
+   record the session folder, so an interrupted port resumes exactly here.
+6. **Parity Matrix row:** `endpoint · contract identical? · oracle green? · reviewer panel clear? ·
    query-count parity? · side effects matched? · risk tier · notes`.
 
 ## Step 5 — Cross-cutting parity (verify once, across all ported endpoints)
@@ -156,9 +175,13 @@ enum-as-int, serialized/JSON columns, timezone, `created_at/updated_at` written 
   DB is shared, do a **reconciliation check** on write endpoints (sample rows both would write and
   diff) before trusting dual-run.
 - **Completeness gate (a final critic):** confirm **every** scoped endpoint has contract-diff clean +
-  oracle green + reviewer panel clear; **log anything deferred** — no silent drops. Report coverage:
-  N GraphQL resolvers + M REST APIs, X verified, Y deferred (why).
-- **Report (dual-audience):** save to `spec-kit-sessions/port/<service>-<date>.md` + render HTML — the
+  oracle green + reviewer panel clear; **log anything deferred** — no silent drops. Read
+  `_progress.md` for this: a row with an open stage IS the deferred list. Report coverage: N GraphQL
+  resolvers + M REST APIs, X verified, Y deferred (why), and tick the **Cutover** cell for each
+  endpoint the user actually switches over.
+- **Report (dual-audience):** save to `spec-kit-sessions/port/<service>-<date>.md`, then render it with
+  `node "$SKILL_DIR/render-html.cjs" <report.md> <report.html> "<service> — port report"` ($SKILL_DIR
+  resolved as in the harness paragraph above) — the
   Scope & Parity Plan, the **Parity Matrix**, per-endpoint specs, cross-cutting results, risk tiers,
   open risks, cutover checklist. Then `/namht-scan` the new Java repo to seed its KB. The human owns
   deploy and cutover.

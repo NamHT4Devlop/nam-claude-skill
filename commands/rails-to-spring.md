@@ -11,6 +11,9 @@ real responses, then re-implement endpoint-by-endpoint and verify byte-for-byte 
 (strangler). Port ONLY the scoped set — all GraphQL resolvers + the specific 3–5 REST APIs — and list
 anything out of scope.
 
+A port runs across many sessions: if `spec-kit-sessions/port/_progress.md` exists, **read it first and
+continue from where it stopped** rather than restarting; otherwise create it once the scope is agreed.
+
 What to port (source stack, target stack, endpoint list, DB & async decisions):
 $ARGUMENTS
 

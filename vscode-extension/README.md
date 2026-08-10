@@ -95,6 +95,9 @@ extension resumes the same Claude session (`--resume`), so the new model still k
   before the permission check — verified by `tests/git-guard.test.sh`), but it is **defense-in-depth,
   not a sandbox**. Prefer approval prompts? Set `--permission-mode acceptEdits` — then map/build/test
   commands fail with "error" here; use **⚡ Interactive** (a real terminal) for those.
+- `namhtSpecUi.mode` — `full` (default) or `readonly`. In **readonly** the seven code-editing skills
+  are hidden AND refused by the extension host, so a PM/SM build cannot change source even if the
+  command is sent by hand. Package a separate `.vsix` with this default flipped and hand that one out.
 - `namhtSpecUi.usdToVnd` — VND rate to show next to the USD cost (0 = off; e.g. `25400`).
 - `namhtSpecUi.model` — model for the UI's runs (default **`sonnet`** — ~5x cheaper than Opus for
   read-only Q&A/planning; use `opus` for the hardest code tasks, `haiku` for cheap lookups, empty to inherit).

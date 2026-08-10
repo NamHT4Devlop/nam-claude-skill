@@ -40,6 +40,14 @@ Where `/namht-qa` *designs* test cases, this one
    visible; don't stop — continue the suite.
 
 ## Output (save `spec-kit-sessions/qa-runs/<app>-<date>.md`; render HTML; screenshots alongside)
+Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-qa-integration/references`
+if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-qa-integration/references`.
+```bash
+node "$SKILL_DIR/render-html.cjs" <report.md> <report.html> "<app> — E2E QA run"
+# then: open / xdg-open / start  the printed path
+```
+Requires Node — if absent, keep the `.md`, say HTML was skipped, and give the user the path.
+
 ```
 ## In plain words            ← passed X/Y; what's broken; safe to ship?
 ## Environment               ← URL, browser, test account, date

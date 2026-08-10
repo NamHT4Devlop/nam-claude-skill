@@ -90,6 +90,7 @@ const MODELS = [
   { id: '', label: 'Default', hint: 'your Claude default' },
 ];
 let defaultModel = 'sonnet';
+let uiMode = 'full';   // 'readonly' hides the code-editing cards (the host blocks them regardless)
 function modelLabel(id) { if (id == null) id = defaultModel; const m = MODELS.find(x => x.id === id); return m ? m.label : (id || 'Default'); }
 function modelKey(id) { if (id == null) id = defaultModel; return id || 'default'; }
 function modelSelect(selected) {
@@ -202,7 +203,7 @@ function renderGridsInto(wrap) {
   const cats = catFilter ? CATS.filter(c => c.key === catFilter) : CATS;
   let any = false;
   cats.forEach(cat => {
-    const items = ACTIONS.filter(a => a.cat === cat.key && (!filter || (a.title + ' ' + a.desc + ' ' + a.cmd).toLowerCase().includes(filter)));
+    const items = ACTIONS.filter(a => a.cat === cat.key && !(uiMode === 'readonly' && a.edits) && (!filter || (a.title + ' ' + a.desc + ' ' + a.cmd).toLowerCase().includes(filter)));
     if (!items.length) return; any = true;
     wrap.appendChild(el('div', 'cat', cat.icon + '  ' + cat.name));
     const grid = el('div', 'grid');
@@ -395,7 +396,7 @@ function renderChat(r) {
 window.addEventListener('message', ev => {
   const m = ev.data; const id = m.runId;
   if (m.type === 'status') { statusOk = m.ok; statusMsg = m.msg; if (cur.view === 'home') renderHome(); return; }
-  if (m.type === 'config') { if (m.defaultModel !== undefined) defaultModel = m.defaultModel; return; }
+  if (m.type === 'config') { if (m.defaultModel !== undefined) defaultModel = m.defaultModel; if (m.mode) uiMode = m.mode; if (cur.view === 'home') renderHome(); return; }
   if (m.type === 'history') { history = m.items || []; if (cur.view === 'home') renderHome(); return; }
   if (m.type === 'restore') { // rebuild live runs (incl. logs) after a webview recreation — background runs are NOT lost
     (m.runs || []).forEach(s => { const ex = runs[s.runId] || {}; runs[s.runId] = { cmd: s.command || ex.cmd || '', title: s.title || ex.title || s.runId, values: ex.values || {}, status: s.status || 'done', log: s.log || ex.log || '', result: s.result || ex.result || '', sessionId: s.sessionId || ex.sessionId || null, report: s.report || ex.report || null, cost: s.cost != null ? s.cost : ex.cost, usage: s.usage || ex.usage, vnd: s.vnd != null ? s.vnd : ex.vnd, files: s.files || ex.files || [], steps: s.steps || ex.steps || [], model: s.model != null ? s.model : ex.model }; });
