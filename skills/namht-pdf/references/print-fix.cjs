@@ -33,10 +33,13 @@ const CSS = `
   table{border:1px solid #2a3040}
   th{background:#4f46e5!important;color:#fff!important}
   td{background:#151b29!important;color:#e6e9ef!important;border-color:#2a3040!important}
-  /* Diagrams and raster images keep a light panel: Mermaid bakes its colours into the SVG at render
-     time, so a dark panel would swallow its strokes and labels. */
-  .mermaid,figure,img{background:#fff!important}
-  .mermaid{border-color:#cbd5e1!important;padding:8px}
+  blockquote{border-left:3px solid #4f46e5!important;background:#141a28!important;color:#c3cad8!important}
+  /* No white panels. Mermaid bakes its colours into the SVG when it renders, so rather than leaving a
+     light card we invert the diagram — light fills go dark, dark text/strokes go light; hue-rotate
+     keeps coloured elements roughly true. Photos are left alone (inverting a photo looks wrong). */
+  .mermaid{background:#141a28!important;border-color:#2a3040!important;padding:8px}
+  .mermaid svg{filter:invert(1) hue-rotate(180deg)}
+  figure{background:transparent!important}
   /* a diagram, table, code block, image or quote must never be split across pages */
   .mermaid,table,pre,blockquote,figure,img,svg{break-inside:avoid!important;page-break-inside:avoid!important}
   tr,li{break-inside:avoid;page-break-inside:avoid}

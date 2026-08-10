@@ -508,7 +508,10 @@ function mdInline(s) {
     let t = esc(s);
     t = t.replace(/`([^`]+)`/g, (_m, c) => `<code>${c}</code>`);
     t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // Single-asterisk italics — run AFTER ** so bold is already consumed and cannot be re-matched.
+    t = t.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
     t = t.replace(/(^|[^_])_([^_]+)_(?!_)/g, '$1<em>$2</em>');
+    t = t.replace(/~~([^~]+)~~/g, '<del>$1</del>');
     // Only allow http(s) links; everything else stays literal text.
     t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_m, txt, url) => `<a href="${url}" rel="noopener noreferrer" target="_blank">${txt}</a>`);
     return t;
@@ -579,6 +582,17 @@ function markdownToHtml(md) {
             closeList();
             out.push('<hr>');
             i++;
+            continue;
+        }
+        // Blockquote — consume the whole run of `> ` lines so it renders as one quote
+        if (/^\s*>\s?/.test(line)) {
+            closeList();
+            const buf = [];
+            while (i < lines.length && /^\s*>\s?/.test(lines[i])) {
+                buf.push(lines[i].replace(/^\s*>\s?/, ''));
+                i++;
+            }
+            out.push(`<blockquote>${markdownToHtml(buf.join('\n'))}</blockquote>`);
             continue;
         }
         // Unordered list
@@ -662,6 +676,9 @@ pre code{background:none;color:inherit;padding:0}
 ul,ol{margin:8px 0 8px 26px}
 li{margin:4px 0}
 hr{border:none;border-top:1px solid #e2e8f0;margin:24px 0}
+blockquote{margin:12px 0;padding:10px 16px;border-left:3px solid #6366f1;background:#f1f5f9;border-radius:0 8px 8px 0;color:#475569}
+blockquote p{margin:.25em 0}
+del{opacity:.7}
 table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.9rem;box-shadow:0 1px 3px rgba(0,0,0,.06);border-radius:8px;overflow:hidden}
 th{background:#6366f1;color:#fff;text-align:left;padding:9px 12px;font-weight:600;font-size:.82rem}
 td{padding:9px 12px;border-top:1px solid #eef2f7;vertical-align:top}
@@ -689,9 +706,13 @@ tr:nth-child(even) td{background:#f8fafc}
   th{background:#4f46e5!important;color:#fff!important}
   td{border-top-color:#2a3040!important;background:#151b29!important;color:#e6e9ef!important}
   tr:nth-child(even) td{background:#111726!important}
-  /* The diagram stays a LIGHT card: Mermaid bakes its colours into the SVG at render time, so a light
-     panel keeps every node, label and arrow readable instead of dark strokes vanishing into the page. */
-  .mermaid{background:#fff!important;border-color:#cbd5e1!important}
+  blockquote{border-left-color:#4f46e5!important;color:#c3cad8!important;background:#141a28!important}
+  /* No white panels anywhere. Mermaid bakes its colours into the SVG when it renders, so instead of a
+     light card we invert the diagram: light node fills become dark and its dark text/strokes become
+     light. hue-rotate keeps coloured elements roughly true. */
+  .mermaid{background:#141a28!important;border-color:#2a3040!important}
+  .mermaid svg{filter:invert(1) hue-rotate(180deg)}
+  figure,img{background:transparent!important}
   /* a diagram, table, code block or quote must not be split across pages */
   .mermaid,table,pre,blockquote,figure{break-inside:avoid;page-break-inside:avoid}
   tr,li{break-inside:avoid;page-break-inside:avoid}
