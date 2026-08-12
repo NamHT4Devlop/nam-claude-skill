@@ -116,7 +116,7 @@
   <div class="cb"><button class="copy">Copy</button><pre><code>ROOT=~/nam-claude-skill          <span class="cmt"># ⬅ đổi thành BẤT KỲ đường dẫn nào bạn muốn</span>
 mkdir -p "$ROOT"/{commands,agents,hooks,scripts,resources}
 
-<span class="cmt"># 29 skill → mỗi skill 1 file SKILL.md</span>
+<span class="cmt"># 30 skill → mỗi skill 1 file SKILL.md</span>
 for s in namht-ask namht-build namht-design-review namht-discover \
          namht-document namht-fix-bug namht-map namht-migrate namht-observe namht-pdf \
          namht-perf namht-plan namht-plan-review namht-pr namht-qa namht-qa-integration \
@@ -136,7 +136,7 @@ touch "$ROOT/skills/namht-rails-to-spring/references/"{shadow-parity.cjs,cases.e
 <span class="cmt"># 4 file gốc (sync-bundles sẽ nhân ra các skill khác)</span>
 touch "$ROOT/resources/"{html-builder.js,render-html.cjs,review-skills-universal.md,kb-steps.md}
 
-<span class="cmt"># 30 command</span>
+<span class="cmt"># 31 command</span>
 for c in ask build design-review discover document fix-bug help map migrate observe \
          pdf perf plan-review plan pr qa-integration qa rails-to-spring rescan retro \
          review scan security-audit simplify skillify splunk-report system-map \
@@ -209,7 +209,7 @@ git config --global core.excludesfile ~/.gitignore_global</code></pre></div>
     đâu. Sau đó <b>restart Claude Code</b> để rào có hiệu lực.</div>
 
   <h3>6) Kiểm tra</h3>
-  <div class="cb"><button class="copy">Copy</button><pre><code>ls -la ~/.claude/skills | grep namht-     <span class="cmt"># thấy 29 skill</span>
+  <div class="cb"><button class="copy">Copy</button><pre><code>ls -la ~/.claude/skills | grep namht-     <span class="cmt"># thấy 30 skill</span>
 <span class="cmt"># rào git → phải in ra JSON "deny"</span>
 printf '{"tool_input":{"command":"git push https://github.com/some-org/x"}}' | ~/.claude/hooks/namht-git-guard.sh</code></pre></div>
   <p>Trong Claude Code gõ <span class="kbd">/</span> → thấy <code>/namht-*</code>; chạy <code>/namht-help</code>.</p>

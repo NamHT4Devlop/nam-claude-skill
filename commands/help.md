@@ -30,6 +30,7 @@ Commands (all namespaced under `/namht-`):
 | `/namht-qa-integration <url>` | Run E2E QA against a RUNNING app via a real browser; pass/fail + screenshots. |
 | `/namht-design-review <url\|path>` | UI/UX + accessibility review (browser screenshots / frontend code). |
 | `/namht-pdf <file>` | Export a Markdown/HTML report to PDF (Mermaid drawn). |
+| `/namht-runbook [service]` | Operational runbook from the KB + real deploy/CI config: health checks, deploy/rollback, incident playbooks, alerts→action, escalation. Never invents a command or an owner. |
 | `/namht-retro [window]` | Engineering retrospective from git history — shipped, pain, action items. |
 | `/namht-skillify <name+purpose>` | Scaffold a new namht-* skill + command (self-extend the kit). |
 | `/namht-splunk-report [apps+window]` | Query Splunk for per-app errors (default today) → one table → post to Slack. Read-only; creds from env. |

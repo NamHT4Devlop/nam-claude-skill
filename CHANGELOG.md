@@ -14,6 +14,37 @@ noted per release when it changed.
 
 ---
 
+## [2.2.0] — 2026-08-13
+
+### Added
+
+- **`/namht-runbook`** — the KB explains how a system works; this writes the other document, the one
+  read while something is on fire. Health checks, deploy and rollback (including **what a rollback
+  does not undo** — migrations, consumed messages, sent mail), one playbook per failure the system
+  can genuinely have (Symptom → Confirm → Contain → Diagnose → Fix → Verify → Escalate), alerts →
+  action, and data recovery. Grounded in the KB **and** the repo's real CI/deploy config and error
+  handling, with file citations. Anything only a human knows — owners, on-call, SLAs — is left as an
+  explicit `❓` rather than invented, because a fabricated escalation path is worse than none. It
+  writes the document and never operates anything.
+- **KB identity (`knowledge-base/_meta.yml`)** — every scan/rescan now stamps the KB with project,
+  repo, branch, **commit**, date, depth and modules. The folder is called `knowledge-base/` in every
+  repo, which is fine inside one repo and useless once several sit side by side; `rescan` refreshes
+  the commit so a stale KB stops passing as current.
+- **`scripts/kb-export.sh` / `scripts/kb-import.sh`** — collect the KBs of many repos into one hub
+  repo under `projects/<project>/`, with an index table, then drop one into a teammate's checkout.
+  Snapshots, not mirrors. Export refuses to write into a repo it can see is **public** (a KB is a
+  readable distillation of your source) and never commits or pushes; import refuses to overwrite an
+  existing KB without `--force`, keeps a timestamped backup when it does, and warns when the
+  snapshot's commit is not in that checkout.
+
+### Changed
+
+- The folder name stays `knowledge-base/` on purpose — renaming it per project would break existing
+  KBs, the machine-wide ignore and every skill's lookup path at once. Identity lives *inside* the
+  KB, and the namespace is applied at collection time.
+
+---
+
 ## [2.1.0] — 2026-08-13
 
 ### Added

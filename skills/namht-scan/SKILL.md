@@ -102,6 +102,11 @@ Angles to split across sub-agents (then merge, deduplicate, keep every cited ite
    large modules, analyze in chunks then merge (deduplicate, preserve every flow/rule).
 3. **`_coverage-report.md`** — files discovered vs analyzed; note that all files are also
    covered by the global section docs.
+3b. **`_meta.yml`** — the KB's identity (project · repo · branch · commit · date · depth · modules ·
+   files analyzed), per `references/kb-steps.md`. Write it every run. Without it a KB is anonymous —
+   the folder is named `knowledge-base/` in every repo, so once KBs from several projects sit side by
+   side nobody can tell which is which or how stale each one is. Also stamp the project/branch/commit
+   line at the top of `01-project-structure.md`.
 4. **`17-async-events.md` (only if the service uses messaging/events)** — a per-service **Event/Contract
    Catalog**: one row per channel — `channel (queue/topic/event) · role (produce/consume) · message schema ·
    trigger · FIFO? · DLQ? · idempotency key` — plus Camel routes and outbound HTTP/gRPC targets. This is the

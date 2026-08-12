@@ -45,5 +45,10 @@ for a full rebuild. If there is no existing KB, fall back to a full `/namht-scan
    business depth; tests > services > controllers > models).
 
 ## Finish
+**Always refresh `knowledge-base/_meta.yml`** — at minimum `commit`, `branch` and `generated`. A KB
+whose meta still points at a three-month-old commit will be trusted as current by the next person;
+that is the whole reason the file exists. If it doesn't exist yet (a KB from before `_meta.yml`),
+create it from git.
+
 Report which KB files were updated and why (the change that triggered each). Suggest
 `/namht-build` for the next feature, now grounded on the refreshed KB.

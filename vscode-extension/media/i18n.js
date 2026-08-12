@@ -42,6 +42,7 @@ const I18N_VI = {
   'Prepare / review PR': 'Chuẩn bị / review PR',
   'Docs vs reality check': 'Đối chiếu tài liệu với code',
   'Splunk error digest': 'Tổng hợp lỗi từ Splunk',
+  'Operational runbook': 'Runbook vận hành',
   'Export to PDF': 'Xuất ra PDF',
   'Create a new skill': 'Tạo skill mới',
 
@@ -102,6 +103,8 @@ const I18N_VI = {
     'Lỗi theo từng app → bảng → gửi Slack.',
   'What shipped + action items from git history.':
     'Đã ship gì + việc cần làm, lấy từ lịch sử git.',
+  'Health checks, deploy/rollback and incident playbooks a teammate can follow at 2am.':
+    'Kiểm tra sức khoẻ hệ thống, deploy/rollback và kịch bản xử lý sự cố — đọc lúc 2 giờ sáng vẫn làm theo được.',
   'Turn a report/doc into a PDF.':
     'Chuyển báo cáo/tài liệu thành PDF.',
   'Scaffold a new namht-* skill (for devs).':
@@ -137,6 +140,7 @@ const I18N_VI = {
   'Also refresh the stale docs it finds (--fix-docs)': 'Cập nhật luôn tài liệu đã lỗi thời (--fix-docs)',
   'index / env / app / window / Slack URL (blank = it asks)': 'index / môi trường / app / khoảng thời gian / URL Slack (bỏ trống = sẽ hỏi)',
   'Time window': 'Khoảng thời gian',
+  'Service / scope (blank = it asks)': 'Service / phạm vi (bỏ trống = sẽ hỏi)',
   'File to export (.md/.html)': 'File cần xuất (.md/.html)',
   'Name + purpose': 'Tên + mục đích',
   'Model  ·  cheaper = fewer tokens / lower cost': 'Model  ·  rẻ hơn = ít token / chi phí thấp hơn',

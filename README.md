@@ -19,8 +19,8 @@ nam-claude-skill/
 ├── .claude-plugin/
 │   ├── plugin.json          # plugin manifest
 │   └── marketplace.json     # local marketplace (for one-command install)
-├── commands/                # 30 slash commands → /namht:build (plugin) or /namht-build (personal), …
-├── skills/                  # 29 skills (the methodology — also usable standalone)
+├── commands/                # 31 slash commands → /namht:build (plugin) or /namht-build (personal), …
+├── skills/                  # 30 skills (the methodology — also usable standalone)
 │   ├── namht-build/          #   13-step pipeline   (+ bundled review checklist)
 │   ├── namht-scan/           #   KB generation       (+ bundled kb-steps spec)
 │   ├── namht-rescan/         #   incremental KB update
@@ -103,7 +103,7 @@ commands are typed into Claude Code, not your shell):
 After install, commands are namespaced by the plugin (type `/` to see them):
 `/namht:scan`, `/namht:rescan`, `/namht:build`, `/namht:fix-bug`, `/namht:review`, `/namht:ask`,
 `/namht:plan`, `/namht:map`, `/namht:system-map`, `/namht:document`, `/namht:help`.
-The 29 skills and 7 sub-agents load automatically (skills also activate from plain English), and the
+The 30 skills and 7 sub-agents load automatically (skills also activate from plain English), and the
 **git-guard hook ships with the plugin** (`hooks/hooks.json`) so it's active right after install.
 (The personal symlink install — Option C — exposes the same commands as `/namht-build`, etc.)
 
@@ -283,6 +283,7 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
 | `/namht-design-review <url\|path>` | UI/UX + accessibility review via browser screenshots / frontend code; findings + fixes. Read-only. |
 | `/namht-pdf <file>` | Export a Markdown/HTML report to PDF (renders Mermaid first; headless Chrome/wkhtmltopdf). |
 | `/namht-retro [window]` | Engineering retrospective from git history — shipped, pain, quality signals, action items. |
+| `/namht-runbook [service]` | Turn the KB + the repo's real deploy/CI/error-handling config into an **operational runbook**: health checks, deploy and rollback (incl. what rollback does *not* undo), symptom→fix incident playbooks, alerts→action, data recovery. Marks what only a human knows instead of inventing it. |
 | `/namht-skillify <name+purpose>` | Scaffold a new `namht-*` skill + command following the conventions (self-extend the kit). |
 | `/namht-splunk-report [apps + window]` | Query Splunk for per-app errors over a window (default today), aggregate into one table, and post it to Slack. Read-only on Splunk; credentials from env/MCP, never hardcoded. Needs network. |
 | `/namht-user-story <requirement or Slack link>` | Deep-investigate a requirement (or comprehend a Slack thread) → features + INVEST user stories with maximally granular Given/When/Then ACs. |
@@ -365,6 +366,69 @@ The reason it stops there: when a doc and the code disagree, **you do not yet kn
 wrong**. Sometimes the doc lags. Sometimes the doc is the agreed intent and the code is the bug.
 Auto-rewriting the doc to match the code would turn that bug into "the new spec" and delete the
 evidence that anything was ever wrong.
+
+---
+
+## Many repos: telling KBs apart, and sharing them with the team
+
+`knowledge-base/` is called the same thing in every repo. Inside one repo that is fine — it is
+unambiguous, every command looks for exactly that path, and renaming it per project would break your
+existing KBs, the machine-wide ignore, and every skill at once. The name only becomes a problem the
+moment KBs from several projects sit **side by side**. So the fix is not a folder name, it is
+**identity inside the KB plus a namespace at collection time**.
+
+**1. Every KB now says who it is.** `/namht-scan` and `/namht-rescan` write
+`knowledge-base/_meta.yml`:
+
+```yaml
+project: taskflow
+repo: git@github.com:acme/taskflow.git
+branch: main
+commit: 9f2c1ab        # the KB describes THIS revision
+generated: 2026-08-13
+depth: standard
+modules: [auth, orders, billing]
+```
+
+`rescan` refreshes `commit`/`generated` — a KB whose meta points at a three-month-old commit is the
+one that gets trusted as current. Per-module docs already carry their own name
+(`knowledge-base/modules/<module>.md`).
+
+**2. Collect them into one hub repo, namespaced by project:**
+
+```bash
+scripts/kb-export.sh ~/kb-hub ~/work/taskflow ~/work/billing ~/work/gateway
+```
+
+```
+kb-hub/
+├── README.md                                  # index: project · branch · commit · exported · files
+└── projects/
+    ├── taskflow/{_meta.yml, knowledge-base/…}
+    ├── billing/{_meta.yml, knowledge-base/…}
+    └── gateway/{_meta.yml, knowledge-base/…}
+```
+
+Each folder is a **snapshot**, not a live mirror — re-export after a rescan. If a KB predates
+`_meta.yml`, the export synthesises its identity from git. Re-exporting replaces a project's
+snapshot rather than merging, so a file deleted upstream disappears here too. The script **never
+commits or pushes** — you review it yourself.
+
+**3. A teammate pulls the hub and drops one in:**
+
+```bash
+scripts/kb-import.sh ~/kb-hub taskflow ~/work/taskflow
+```
+
+It refuses to overwrite an existing `knowledge-base/` (use `--force`, which keeps a timestamped
+backup — remember `knowledge-base/` is gitignored, so git will not save you), and it warns when the
+snapshot's commit is not in that checkout, which usually means the wrong repo.
+
+> ⚠️ **Keep the hub repo private.** A Knowledge Base is a readable distillation of your source:
+> business rules, data model, auth model, endpoints. Page for page it is often *more* sensitive than
+> the code, and it is far easier to read. `kb-export.sh` refuses to write into a repo it can see is
+> public (via `gh`), but that check is a backstop, not a policy — share it only with people who
+> already have access to the repos it came from.
 
 ---
 

@@ -112,3 +112,22 @@ Document the ACTUAL architecture so future changes follow it and DO NOT break th
 - `review-skills.md` — the universal review checklist (see `review-skills-universal.md`) with a **Section 14 — Project-Specific Rules** appended (naming, mandatory patterns, banned anti-patterns, business rules every new feature must respect — each with a code citation).
 - `modules/<module>.md` + `modules/_index.md` — deep per-module docs for large projects (exhaustive flows + rules + entities + API + dependencies).
 - `_coverage-report.md` — which files were analyzed vs covered by global scan only.
+- `_meta.yml` — **the KB's identity.** The folder is called `knowledge-base/` in every repo, which is
+  fine inside one repo and useless the moment KBs from several projects sit side by side. This file is
+  how a KB says which project it belongs to and how old it is. Write it every scan/rescan:
+  ```yaml
+  project: taskflow              # the repo/product name a human uses
+  repo: git@github.com:acme/taskflow.git   # origin, or "(no remote)"
+  branch: main
+  commit: 9f2c1ab                # HEAD at scan time — the KB describes THIS revision
+  generated: 2026-08-13
+  generator: namht-scan
+  depth: standard                # quick | standard | deep
+  modules: [auth, orders, billing]         # the modules/ docs present
+  files_analyzed: 412
+  ```
+  Get `repo`/`branch`/`commit` from git (`git config --get remote.origin.url`, `git branch --show-current`,
+  `git rev-parse --short HEAD`); if the folder is not a git repo, say so rather than inventing values.
+  `project` defaults to the repo folder name — ask the user if that name is meaningless (`src`, `app`).
+  Also put a one-line stamp at the top of `00-*`/`01-*`: `> KB for **<project>** · branch `<branch>` ·
+  commit `<commit>` · generated <date>` so a printed or pasted page still says where it came from.
