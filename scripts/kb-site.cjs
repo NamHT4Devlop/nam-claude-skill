@@ -1,0 +1,290 @@
+#!/usr/bin/env node
+/**
+ * kb-site.cjs — turn a KB hub (or a single repo's knowledge-base/) into ONE self-contained web page.
+ *
+ *   node scripts/kb-site.cjs <hub-dir> [output.html]
+ *   node scripts/kb-site.cjs ~/kb-hub                  → ~/kb-hub/index.html
+ *   node scripts/kb-site.cjs ~/work/taskflow           → a single-project site
+ *
+ * Why this exists: a hub is a folder of Markdown. Twelve projects times twenty documents is 240
+ * files that nobody browses. This renders all of them into one page — project picker on the left,
+ * document tabs across the top, search over everything — that opens with a double-click, works
+ * offline, and can be handed to someone who will never run a terminal.
+ *
+ * Self-contained on purpose: every document, the CSS and (when vendored) Mermaid are inlined, so
+ * the file survives being emailed, put on a share drive, or opened on a plane.
+ */
+const fs = require('fs');
+const path = require('path');
+
+// The markdown renderer is shared with render-html.cjs so a doc looks the same in both.
+const { markdownToHtml } = require(path.join(__dirname, '..', 'resources', 'html-builder.js'));
+
+const src = process.argv[2];
+if (!src || !fs.existsSync(src)) {
+  console.error('usage: node kb-site.cjs <hub-dir|repo-dir> [output.html]');
+  process.exit(1);
+}
+const root = path.resolve(src);
+const out = process.argv[3] || path.join(root, 'index.html');
+
+// ---------- collect projects ----------
+// Two shapes are accepted: a hub (projects/<name>/knowledge-base/) or one repo (knowledge-base/).
+const projects = [];
+const hubDir = path.join(root, 'projects');
+if (fs.existsSync(hubDir) && fs.statSync(hubDir).isDirectory()) {
+  for (const name of fs.readdirSync(hubDir).sort()) {
+    const kb = path.join(hubDir, name, 'knowledge-base');
+    if (fs.existsSync(kb)) projects.push({ name, kb, metaFile: path.join(hubDir, name, '_meta.yml') });
+  }
+} else if (fs.existsSync(path.join(root, 'knowledge-base'))) {
+  const kb = path.join(root, 'knowledge-base');
+  projects.push({ name: path.basename(root), kb, metaFile: path.join(kb, '_meta.yml') });
+}
+if (!projects.length) {
+  console.error(`no Knowledge Base found under ${root}
+  expected either  <dir>/projects/<name>/knowledge-base/   (a hub, from kb-export.sh)
+             or    <dir>/knowledge-base/                   (a single repo)`);
+  process.exit(1);
+}
+
+// ---------- read each project's docs + identity ----------
+const DAY = 86400000;
+const today = new Date();
+for (const p of projects) {
+  p.meta = parseMeta(p.metaFile) || parseMeta(path.join(p.kb, '_meta.yml')) || {};
+  p.docs = [];
+  walk(p.kb, p.kb, p.docs);
+  p.docs.sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
+  const gen = p.meta.generated && /^\d{4}-\d{2}-\d{2}$/.test(p.meta.generated) ? new Date(p.meta.generated + 'T00:00:00') : null;
+  p.ageDays = gen ? Math.round((today - gen) / DAY) : null;
+  p.stale = p.ageDays != null && p.ageDays > 30;
+}
+
+function walk(dir, base, acc) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) { walk(full, base, acc); continue; }
+    if (!/\.md$/i.test(e.name)) continue;
+    const rel = path.relative(base, full);
+    acc.push({ id: rel, title: prettyTitle(rel), html: markdownToHtml(fs.readFileSync(full, 'utf8')) });
+  }
+}
+function prettyTitle(rel) {
+  const inModules = rel.includes(path.sep);
+  const leaf = rel.split(path.sep).pop().replace(/\.md$/i, '');
+  const nice = leaf.replace(/^(\d+)[-_]/, '$1 · ').replace(/[-_]/g, ' ');
+  return inModules ? `${rel.split(path.sep)[0]} / ${nice}` : nice;
+}
+// A deliberately small YAML reader: these files are flat key: value written by this kit.
+function parseMeta(f) {
+  if (!f || !fs.existsSync(f)) return null;
+  const m = {};
+  for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
+    const mm = line.match(/^([a-z_]+):\s*(.*)$/i);
+    if (mm) m[mm[1]] = mm[2].trim();
+  }
+  return m;
+}
+
+// ---------- serialise ----------
+// The same escaping build-map.cjs learned the hard way: a `</script>` inside any KB document would
+// otherwise close this block early and inject markup into the page.
+const dataJson = JSON.stringify(projects.map(p => ({
+  name: p.name, meta: p.meta, ageDays: p.ageDays, stale: p.stale,
+  docs: p.docs.map(d => ({ id: d.id, title: d.title, html: d.html })),
+})))
+  .replace(/</g, '\\u003c').replace(/>/g, '\\u003e')
+  .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+
+const nonce = 'n' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+let html = page(dataJson, nonce, path.basename(root));
+html = inlineMermaid(html, __dirname, nonce);
+
+fs.writeFileSync(out, html, 'utf8');
+const docCount = projects.reduce((n, p) => n + p.docs.length, 0);
+console.error(`${projects.length} project(s), ${docCount} document(s)${projects.some(p => p.stale) ? ' · ⚠ some KBs are over 30 days old' : ''}`);
+console.log(out);
+
+/** Inline vendor/mermaid.min.js when present so the page makes no network calls. */
+function inlineMermaid(h, dir, nce) {
+  let vendorDir = '';
+  for (let d = dir, i = 0; i < 6; i++) {
+    const cand = path.join(d, 'vendor');
+    if (fs.existsSync(cand)) { vendorDir = cand; break; }
+    const up = path.dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  const f = vendorDir && path.join(vendorDir, 'mermaid.min.js');
+  if (!f || !fs.existsSync(f)) return h;   // no vendor → leave the page working, just without diagrams
+  const code = fs.readFileSync(f, 'utf8').replace(/<\/script/gi, '<\\/script');
+  const tag = `<script nonce="${nce}">\n/* vendored mermaid — offline, no external fetch */\n${code}\n</script>`;
+  // MUST use a replacer function: minified code is full of `$&` / `$'` / `` $` ``, and a string
+  // replacement would expand those as capture-group patterns — `$'` alone splices the whole rest of
+  // the document back in, which renders the bundle as visible text instead of running it.
+  return h.replace('<!--MERMAID-->', () => tag);
+}
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function page(json, nce, title) {
+  return `<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- style-src deliberately carries NO nonce: per CSP, a nonce makes 'unsafe-inline' be ignored, and
+     Mermaid styles every diagram by injecting a <style> element at render time — with a nonce here
+     those get blocked and diagrams render unstyled (black boxes, blob arrows). Scripts keep the
+     nonce, which is the directive that actually matters: no external or injected script can run. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nce}'; img-src 'self' data:;">
+<title>Knowledge Base — ${esc(title)}</title>
+<style nonce="${nce}">
+:root{--bg:#0f1420;--panel:#151b2b;--panel2:#1b2233;--line:#2a3348;--fg:#e6e9ef;--dim:#94a0b8;--accent:#6ea8fe;--warn:#e0b341;--bad:#f2777a;--ok:#5fd08a}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex;height:100vh;overflow:hidden}
+/* left rail — projects */
+#rail{width:250px;flex:0 0 250px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column}
+#brand{padding:14px 16px 10px;font-weight:800;letter-spacing:.3px;border-bottom:1px solid var(--line)}
+#brand small{display:block;font-weight:400;color:var(--dim);font-size:11px;margin-top:3px}
+#search{margin:10px;padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--fg);font:inherit;font-size:13px}
+#search:focus{outline:1px solid var(--accent)}
+#plist{overflow:auto;padding:4px 8px 12px;flex:1}
+.p{width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:8px;color:var(--fg);padding:8px 10px;cursor:pointer;margin-bottom:3px;font:inherit}
+.p:hover{background:var(--panel2)}
+.p.on{background:var(--panel2);border-color:var(--accent)}
+.p b{display:block;font-size:13.5px}
+.p span{display:block;font-size:11px;color:var(--dim);margin-top:2px}
+.badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid;margin-left:4px}
+.badge.stale{color:var(--warn);border-color:var(--warn)}
+.badge.fresh{color:var(--ok);border-color:var(--ok)}
+/* main */
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#tabs{display:flex;gap:4px;overflow-x:auto;padding:10px 16px 0;border-bottom:1px solid var(--line);background:var(--panel)}
+.t{white-space:nowrap;background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:7px 11px;cursor:pointer;font:inherit;font-size:12.5px;border-radius:6px 6px 0 0}
+.t:hover{color:var(--fg);background:var(--panel2)}
+.t.on{color:var(--fg);border-bottom-color:var(--accent)}
+.t mark{background:var(--accent);color:#0b1020;border-radius:3px;padding:0 2px}
+#meta{padding:8px 16px;font-size:11.5px;color:var(--dim);border-bottom:1px solid var(--line);background:var(--panel)}
+#meta .w{color:var(--warn)}
+#doc{flex:1;overflow:auto;padding:22px 32px 60px;max-width:none}
+#doc h1{font-size:24px;margin:.2em 0 .5em} #doc h2{font-size:19px;margin:1.3em 0 .4em;border-bottom:1px solid var(--line);padding-bottom:4px}
+#doc h3{font-size:16px;margin:1.1em 0 .3em} #doc h4{font-size:14px;margin:1em 0 .3em}
+#doc table{border-collapse:collapse;margin:1em 0;font-size:13px;display:block;overflow-x:auto;max-width:100%}
+#doc th,#doc td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+#doc th{background:var(--panel2)}
+#doc code{background:#0b1020;border:1px solid var(--line);padding:.08em .35em;border-radius:4px;font-size:.9em}
+#doc pre{background:#0b1020;border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto}
+#doc pre code{border:none;background:none;padding:0}
+#doc blockquote{border-left:3px solid var(--accent);margin:1em 0;padding:.1em 0 .1em 14px;color:var(--dim)}
+#doc a{color:var(--accent)} #doc li{margin:.2em 0}
+#doc .mermaid{background:transparent;margin:1.2em 0}
+#empty{color:var(--dim);padding:40px 32px}
+@media (max-width:760px){body{flex-direction:column;height:auto;overflow:auto}#rail{width:auto;flex:none;border-right:none;border-bottom:1px solid var(--line)}#plist{max-height:180px}}
+</style></head><body>
+<div id="rail">
+  <div id="brand">⬡ Knowledge Base<small id="sub"></small></div>
+  <input id="search" type="search" placeholder="Search every document…" autocomplete="off">
+  <div id="plist"></div>
+</div>
+<div id="main">
+  <div id="tabs"></div>
+  <div id="meta"></div>
+  <div id="doc"><div id="empty">Pick a project.</div></div>
+</div>
+<!--MERMAID-->
+<script nonce="${nce}">
+const DATA = ${json};
+let pi = 0, di = 0, q = '';
+
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+const strip = h => { const d = document.createElement('div'); d.innerHTML = h; return (d.textContent || '').toLowerCase(); };
+// Pre-computed once: searching re-parses nothing.
+DATA.forEach(p => p.docs.forEach(d => { d._t = strip(d.html); }));
+
+function hits(doc) { return q && doc._t.includes(q); }
+function projHits(p) { return q ? p.docs.filter(hits).length : 0; }
+
+function renderRail() {
+  const list = document.getElementById('plist'); list.textContent = '';
+  DATA.forEach((p, i) => {
+    const n = projHits(p);
+    if (q && !n) return;                                  // hide projects with no match
+    const b = el('button', 'p' + (i === pi ? ' on' : ''));
+    const t = el('b', null, p.name);
+    if (p.stale) t.appendChild(Object.assign(el('span', 'badge stale', p.ageDays + 'd'), { style: 'display:inline-block' }));
+    else if (p.ageDays != null) t.appendChild(Object.assign(el('span', 'badge fresh', p.ageDays + 'd'), { style: 'display:inline-block' }));
+    b.appendChild(t);
+    b.appendChild(el('span', null, (p.meta.branch ? p.meta.branch + ' · ' : '') + (p.meta.commit || '') + (q ? '  — ' + n + ' match' + (n > 1 ? 'es' : '') : '')));
+    b.onclick = () => { pi = i; di = q ? p.docs.findIndex(hits) : 0; if (di < 0) di = 0; render(); };
+    list.appendChild(b);
+  });
+  if (!list.children.length) list.appendChild(el('div', null, q ? 'No project matches.' : 'No projects.'));
+  document.getElementById('sub').textContent = DATA.length + ' project' + (DATA.length > 1 ? 's' : '') + ' · ' + DATA.reduce((n, p) => n + p.docs.length, 0) + ' documents';
+}
+
+function render() {
+  renderRail();
+  const p = DATA[pi]; const tabs = document.getElementById('tabs'); tabs.textContent = '';
+  p.docs.forEach((d, i) => {
+    if (q && !hits(d)) return;
+    const b = el('button', 't' + (i === di ? ' on' : ''), d.title);
+    if (q && hits(d)) { const m = el('mark', null, '•'); b.appendChild(document.createTextNode(' ')); b.appendChild(m); }
+    b.onclick = () => { di = i; render(); };
+    tabs.appendChild(b);
+  });
+  if (!tabs.children.length) tabs.appendChild(el('div', null, 'No document in this project matches.'));
+
+  const m = document.getElementById('meta'); m.textContent = '';
+  const bits = [];
+  if (p.meta.repo) bits.push(p.meta.repo);
+  if (p.meta.branch) bits.push('branch ' + p.meta.branch);
+  if (p.meta.commit) bits.push('commit ' + p.meta.commit);
+  if (p.meta.generated) bits.push('KB generated ' + p.meta.generated + (p.ageDays != null ? ' (' + p.ageDays + ' days ago)' : ''));
+  if (p.meta.exported) bits.push('exported ' + p.meta.exported);
+  m.appendChild(document.createTextNode(bits.join('  ·  ')));
+  if (p.stale) {
+    const w = el('div', 'w', '⚠ This Knowledge Base is ' + p.ageDays + ' days old — it describes commit ' + (p.meta.commit || '?') + ', not necessarily what is deployed. Re-run /namht-rescan and re-export before relying on it.');
+    m.appendChild(w);
+  }
+
+  const host = document.getElementById('doc');
+  const doc = p.docs[di];
+  host.innerHTML = doc ? doc.html : '<div id="empty">Nothing to show.</div>';
+  host.scrollTop = 0;
+  drawDiagrams(host);
+}
+
+// Mermaid blocks arrive as <pre><code class="language-mermaid">; convert then render.
+function drawDiagrams(host) {
+  if (typeof mermaid === 'undefined') return;
+  host.querySelectorAll('pre > code').forEach(c => {
+    if (!/language-mermaid/.test(c.className)) return;
+    const d = document.createElement('div');
+    d.className = 'mermaid'; d.textContent = c.textContent;
+    c.parentElement.replaceWith(d);
+  });
+  const nodes = host.querySelectorAll('.mermaid');
+  if (!nodes.length) return;
+  try { mermaid.run({ nodes }); } catch (e) { /* a bad diagram must not blank the page */ }
+}
+
+if (typeof mermaid !== 'undefined') {
+  mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict',
+    themeVariables: { background: '#0f1420', primaryColor: '#1b2233', primaryTextColor: '#e6e9ef', lineColor: '#6ea8fe', fontSize: '13px' } });
+}
+
+let timer;
+document.getElementById('search').addEventListener('input', e => {
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    q = e.target.value.trim().toLowerCase();
+    if (q) {   // jump to the first project/document that matches
+      const p = DATA.findIndex(pp => projHits(pp));
+      if (p >= 0) { pi = p; const d = DATA[p].docs.findIndex(hits); di = d >= 0 ? d : 0; }
+    }
+    render();
+  }, 140);
+});
+
+render();
+</script></body></html>`;
+}

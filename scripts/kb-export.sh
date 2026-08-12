@@ -123,6 +123,16 @@ if [ "$DRY" = 0 ] && [ "$ok" -gt 0 ]; then
   } > "$hub/README.md"
 fi
 
+# --- browsable page ------------------------------------------------------------------
+# A hub is otherwise a folder of Markdown nobody opens. Build the one-page site so the export is
+# immediately readable by someone who will never run a terminal.
+if [ "$DRY" = 0 ] && [ "$ok" -gt 0 ] && command -v node >/dev/null 2>&1; then
+  here=$(cd "$(dirname "$0")" && pwd)
+  if [ -f "$here/kb-site.cjs" ]; then
+    node "$here/kb-site.cjs" "$hub" >/dev/null 2>&1 && echo "· built $hub/index.html (open it in a browser)"
+  fi
+fi
+
 echo
 echo "✔ exported $ok project(s), skipped $skipped → $hub"
 [ "$DRY" = 1 ] && echo "(dry run — nothing written)"

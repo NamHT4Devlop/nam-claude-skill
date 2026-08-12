@@ -70,5 +70,29 @@ echo "kb-import: an unknown project is an error, not an empty import"
 "$IMPORT" "$TMP/hub" nosuch "$TMP/mate" >/dev/null 2>&1
 check "exit non-zero"             "$([ $? -ne 0 ] && echo yes || echo no)" yes
 
+echo "kb-site: builds one self-contained page from a hub"
+if command -v node >/dev/null 2>&1; then
+  node "$PWD/scripts/kb-site.cjs" "$TMP/hub" "$TMP/site.html" >/dev/null 2>&1
+  check "page written"                "$([ -f "$TMP/site.html" ] && echo yes || echo no)" yes
+  check "every project embedded"      "$(grep -c '"name":"alpha"' "$TMP/site.html" 2>/dev/null)" 1
+  check "no external script/style"    "$(grep -cE '(src|href)="https?://' "$TMP/site.html" 2>/dev/null)" 0
+  # CSP: a nonce on style-src makes 'unsafe-inline' be ignored, which silently breaks every Mermaid
+  # diagram (they are styled by an injected <style>). Read the real directive out of the meta tag —
+  # not the file at large, which also contains a comment explaining this.
+  csp=$(grep -o 'content="default-src[^"]*"' "$TMP/site.html" | head -1)
+  check "style-src has no nonce"      "$(echo "$csp" | grep -o "style-src [^;]*" | grep -c nonce)" 0
+  check "script-src keeps its nonce"  "$(echo "$csp" | grep -o "script-src [^;]*" | grep -c nonce)" 1
+  # A '</script>' inside any KB document must not close the embedded data block early.
+  printf '# x\n\n</script><img src=x onerror=alert(1)>\n' > "$TMP/alpha/knowledge-base/99-xss.md"
+  "$EXPORT" "$TMP/hub" "$TMP/alpha" >/dev/null 2>&1
+  node "$PWD/scripts/kb-site.cjs" "$TMP/hub" "$TMP/site2.html" >/dev/null 2>&1
+  # Two layers catch it: the markdown renderer escapes the tags, then JSON-encoding escapes < and >.
+  check "payload rendered as text"    "$(grep -c '&lt;/script&gt;' "$TMP/site2.html" 2>/dev/null)" 1
+  check "payload not live markup"     "$(grep -c '<img src=x onerror' "$TMP/site2.html" 2>/dev/null)" 0
+  check "no stray closing script tag" "$(grep -o '</script' "$TMP/site2.html" | wc -l | tr -d ' ')" "$(grep -o '<script' "$TMP/site2.html" | wc -l | tr -d ' ')"
+else
+  echo "  – skipped (node not installed)"
+fi
+
 echo "kb-hub: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

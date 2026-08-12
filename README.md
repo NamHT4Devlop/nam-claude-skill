@@ -414,7 +414,21 @@ Each folder is a **snapshot**, not a live mirror — re-export after a rescan. I
 snapshot rather than merging, so a file deleted upstream disappears here too. The script **never
 commits or pushes** — you review it yourself.
 
-**3. The hub is also readable on its own — no clone needed.** Two skills detect the
+**3. It is one browsable web page, not a folder of Markdown.** `kb-export.sh` also writes
+`<hub>/index.html` — a **single self-contained page**: projects down the left with a freshness badge,
+one tab per KB document across the top, Mermaid diagrams drawn, and a search box that covers every
+document in every project at once. It opens with a double-click, works offline (no network calls at
+all), and survives being emailed or dropped on a share drive. Build or rebuild it any time:
+
+```bash
+node scripts/kb-site.cjs ~/kb-hub              # → ~/kb-hub/index.html
+node scripts/kb-site.cjs ~/work/taskflow       # also works on a single repo's knowledge-base/
+```
+
+A KB older than 30 days gets an amber badge and a banner naming the commit it actually describes —
+the point being that a stale KB should not be able to pass itself off as current.
+
+**4. The hub is also readable by the skills — no clone needed.** Two skills detect the
 `projects/*/knowledge-base/` layout and work straight from it, which is what makes the hub useful to
 someone who is not a developer:
 
@@ -428,7 +442,7 @@ confirmed against real files, and every project is a **snapshot** at the commit 
 A confident answer drawn from a KB exported four months ago is the failure mode here, so the dates
 are printed, not buried.
 
-**4. A teammate pulls the hub and drops one in:**
+**5. A teammate pulls the hub and drops one in:**
 
 ```bash
 scripts/kb-import.sh ~/kb-hub taskflow ~/work/taskflow

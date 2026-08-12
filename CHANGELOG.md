@@ -14,7 +14,7 @@ noted per release when it changed.
 
 ---
 
-## [2.2.0] — 2026-08-13
+## [2.3.0] — 2026-08-13
 
 ### Added
 
@@ -37,6 +37,12 @@ noted per release when it changed.
   existing KB without `--force`, keeps a timestamped backup when it does, and warns when the
   snapshot's commit is not in that checkout.
 
+- **`scripts/kb-site.cjs` — the hub as one browsable page.** A hub was a folder of Markdown that
+  nobody opens; twelve projects times twenty documents is 240 files. This renders all of them into a
+  single self-contained `index.html`: project rail with freshness badges, a tab per document, Mermaid
+  drawn, and search across every document in every project. Zero network calls, opens with a
+  double-click, works on a single repo's `knowledge-base/` too. `kb-export.sh` builds it
+  automatically at the end of an export.
 - **The hub is readable, not just a distribution point.** `/namht-system-map` and `/namht-ask`
   detect the `projects/*/knowledge-base/` layout and work straight from a hub — the cross-service map
   and cross-project questions without cloning any repo. Both must state the limits: no source to

@@ -41,6 +41,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildUserStoriesHtml = buildUserStoriesHtml;
 exports.markdownToHtml = markdownToHtml;
 exports.buildDocumentHtml = buildDocumentHtml;
+// Exposed for scripts/kb-site.cjs, which renders many documents into one page and therefore
+// needs the body renderer without the surrounding document shell.
+exports.markdownToHtml = (md) => markdownToHtml(md);
 exports.buildKnowledgeGraphHtml = buildKnowledgeGraphHtml;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function esc(s) {
