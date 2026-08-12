@@ -56,5 +56,50 @@ for f in commands/*.md; do
 done
 [ "$bad" -eq 0 ] && echo "  ✓ help.md covers every command" || fail=1
 
+echo "consistency: extension card (media/main.js) per skill"
+bad=0
+cards=$(grep -oE "^  A\('namht-[a-z-]+'" vscode-extension/media/main.js | grep -oE "namht-[a-z-]+" | sort -u)
+for s in $skills_set; do
+  echo "$cards" | grep -qxF "$s" || { echo "  ✗ $s has no A(...) card in media/main.js"; bad=1; }
+done
+[ "$bad" -eq 0 ] && echo "  ✓ every skill has a UI card" || fail=1
+
+echo "consistency: docs/skills-catalog.html lists every skill"
+bad=0
+rows=$(grep -oE 'class="name">namht-[a-z-]+' docs/skills-catalog.html | sed 's/.*>//' | sort -u)
+for s in $skills_set; do
+  echo "$rows" | grep -qxF "$s" || { echo "  ✗ $s has no row in docs/skills-catalog.html"; bad=1; }
+done
+for r in $rows; do
+  [ -d "skills/$r" ] || { echo "  ✗ catalog lists $r but skills/$r/ does not exist"; bad=1; }
+done
+[ "$bad" -eq 0 ] && echo "  ✓ catalog covers every skill" || fail=1
+
+# The counts are written by hand in several docs; drift there is invisible until someone counts.
+echo "consistency: documented counts match reality"
+bad=0
+n_skills=$(ls -d skills/namht-*/ | wc -l | tr -d ' ')
+n_cmds=$(ls commands/*.md | wc -l | tr -d ' ')
+check_count() {  # file, regex with ONE capture group, expected, label
+  local f="$1" re="$2" want="$3" label="$4" got
+  got=$(grep -oE "$re" "$f" | grep -oE '[0-9]+' | head -1)
+  [ -z "$got" ] && { echo "  ✗ $f: could not find the $label count (pattern changed?)"; bad=1; return; }
+  [ "$got" = "$want" ] || { echo "  ✗ $f says $got $label, actual is $want"; bad=1; }
+}
+check_count README.md                    '# [0-9]+ skills \(the methodology' "$n_skills" skills
+check_count README.md                    'The [0-9]+ skills and 7 sub-agents' "$n_skills" skills
+check_count README.md                    '# [0-9]+ slash commands'           "$n_cmds"   commands
+check_count docs/skills-catalog.html     '<b>[0-9]+</b> skills'              "$n_skills" skills
+check_count vscode-extension/README.md   'all [0-9]+ skills'                 "$n_skills" skills
+check_count docs/manual-setup-guide.html '# [0-9]+ skill →'                  "$n_skills" skills
+check_count docs/manual-setup-guide.html '# [0-9]+ command'                  "$n_cmds"   commands
+[ "$bad" -eq 0 ] && echo "  ✓ documented counts match ($n_skills skills / $n_cmds commands)" || fail=1
+
+echo "consistency: version + changelog"
+bad=0
+plugin_v=$(grep -oE '"version": "[0-9.]+"' .claude-plugin/plugin.json | grep -oE '[0-9.]+')
+grep -qF "## [$plugin_v]" CHANGELOG.md || { echo "  ✗ plugin.json is $plugin_v but CHANGELOG.md has no '## [$plugin_v]' entry"; bad=1; }
+[ "$bad" -eq 0 ] && echo "  ✓ plugin version $plugin_v is in the changelog" || fail=1
+
 echo "consistency: $([ "$fail" -eq 0 ] && echo PASS || echo FAIL)"
 [ "$fail" -eq 0 ]

@@ -1,16 +1,52 @@
-name: ci
+name: CI
+
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+# Read-only: this workflow verifies, it never writes to the repo.
+permissions:
+  contents: read
 
 jobs:
-  test:
+  tests:
+    name: toolkit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-      - name: Run test suite (git-guard, smoke, bundle-sync, skill names)
+          node-version: 20
+      # tests/run.sh covers: bundle sync, git-guard (56 cases), smoke, skill-name==folder,
+      # consistency (commands ↔ skills ↔ extension ↔ docs ↔ counts ↔ changelog),
+      # migrate-sessions fixtures, webview markdown escaping, and the vendored-lib hashes.
+      - name: Run the test suite
         run: bash tests/run.sh
+
+  extension:
+    name: vscode extension compiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install (frozen lockfile)
+        working-directory: vscode-extension
+        run: yarn install --frozen-lockfile
+      - name: Type-check + compile
+        working-directory: vscode-extension
+        run: yarn compile
+
+  shellcheck:
+    name: shell scripts lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The guard hook and the install/migrate scripts are the highest-risk shell in the repo.
+      - name: shellcheck
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y shellcheck
+          shellcheck --severity=error hooks/*.sh scripts/*.sh tests/*.sh

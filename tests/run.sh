@@ -11,6 +11,10 @@ names_rc=0
 for d in skills/*/; do d=${d%/}; n=$(grep -m1 '^name:' "$d/SKILL.md" | awk '{print $2}'); [ "$n" = "$(basename "$d")" ] || { echo "  ✗ $(basename "$d") != $n"; names_rc=1; }; done
 [ "$names_rc" -eq 0 ] && echo "  ✓ skill names OK" || rc=1
 echo; echo "== consistency =="; bash tests/consistency.test.sh || rc=1
+echo; echo "== migrate-sessions (touches real user data) =="; bash tests/migrate-sessions.test.sh || rc=1
+echo; echo "== webview markdown (renders untrusted model output) =="
+if command -v node >/dev/null 2>&1; then node tests/webview-markdown.test.cjs || rc=1
+else echo "  – skipped (node not installed)"; fi
 echo; echo "== vendored libs unchanged? =="
 if [ -f vendor/SHA256SUMS ]; then
   if (cd vendor && shasum -a 256 -c SHA256SUMS >/dev/null 2>&1); then

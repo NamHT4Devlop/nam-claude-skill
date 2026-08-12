@@ -25,9 +25,22 @@ and document it. Operate inside the `nam-claude-skill` repo (the toolkit source,
 4. **If it needs bundles** (HTML render / review checklist): add `namht-<name>` to the right list in
    `scripts/sync-bundles.sh` (`map_html` for the renderer, `map_review` for the checklist), then run
    `bash scripts/sync-bundles.sh`.
-5. **Install + docs:** run `bash scripts/personal-install.sh`; add a row to `commands/help.md`,
-   the README command table, and `docs/*.html`; bump notes if needed.
-6. **Verify:** `bash tests/run.sh` (skill-name==folder + sync check must pass).
+5. **Register it in EVERY place a skill is listed.** Missing one is how the kit drifts — and
+   `tests/consistency.test.sh` fails on each of these, so check them off before running it:
+   - `vscode-extension/src/extension.ts` → add the command to the **`ALLOWED`** set (and to
+     `EDITS_CODE` if it modifies source).
+   - `vscode-extension/media/main.js` → add an `A(...)` **card** in `ACTIONS`: pick the category,
+     an icon, a short title/description, the form fields, and the `build(v)` that assembles the
+     arguments. Pass `true` as the last argument if it edits code.
+   - `commands/help.md` → one table row.
+   - `README.md` → the command table row (and the skill/command counts near the top).
+   - `docs/skills-catalog.html` → one `<tr>` with the **Edits code / Read-only** badge, and bump the
+     `<b>N</b> skills` fact.
+   - `docs/manual-setup-guide.html` → the file counts shown in the copy-paste blocks.
+   - `CHANGELOG.md` → an entry under **Added** (MINOR bump; MAJOR only if users must act).
+6. **Install:** `bash scripts/personal-install.sh` (symlinks the new skill + command into `~/.claude`).
+7. **Verify:** `bash tests/run.sh` — it checks skill-name==folder, bundle sync, `ALLOWED` ↔ `skills/`,
+   command ↔ skill, `help.md` coverage, catalog coverage and the documented counts.
 
 ## Rules
 - Follow the established conventions exactly (naming, unprefixed command files, frontmatter shape,

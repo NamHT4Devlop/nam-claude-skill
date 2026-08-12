@@ -54,6 +54,13 @@ read-only specialists the build/review steps fan out to in parallel.
   needed. The plugin itself needs **no API key** — it runs on your existing Claude Code.
 - Paths below use `~/.claude` (macOS/Linux). On **Windows** use `%USERPROFILE%\.claude`
   (PowerShell: `$HOME\.claude`).
+- **Windows, read this first.** Option A (plugin) works natively — it is all typed inside
+  Claude Code. The shell scripts in `scripts/` and the `hooks/git-guard.sh` hook are **bash**,
+  so they need **Git Bash** (ships with Git for Windows) or **WSL**. If you want a pure
+  PowerShell install, use **Option B** below — it is plain file copying and needs no bash.
+  There is no PowerShell port of `personal-install.sh`: it creates symlinks and merges
+  `settings.json`, and shipping an untested installer for a platform I cannot test on would be
+  worse than telling you this plainly.
 
 ---
 
@@ -128,6 +135,26 @@ cp -R <PLUGIN_DIR>/skills/*   ~/.claude/skills/
 cp -R <PLUGIN_DIR>/commands/* ~/.claude/commands/
 cp -R <PLUGIN_DIR>/agents/*   ~/.claude/agents/
 ```
+
+**B — on Windows (PowerShell, no bash needed):**
+
+```powershell
+# per project — run from the target repo's root
+New-Item -ItemType Directory -Force .claude\skills, .claude\commands, .claude\agents | Out-Null
+Copy-Item -Recurse -Force <PLUGIN_DIR>\skills\*   .claude\skills\
+Copy-Item -Recurse -Force <PLUGIN_DIR>\commands\* .claude\commands\
+Copy-Item -Recurse -Force <PLUGIN_DIR>\agents\*   .claude\agents\
+
+# per user — same thing into $HOME\.claude
+New-Item -ItemType Directory -Force $HOME\.claude\skills, $HOME\.claude\commands, $HOME\.claude\agents | Out-Null
+Copy-Item -Recurse -Force <PLUGIN_DIR>\skills\*   $HOME\.claude\skills\
+Copy-Item -Recurse -Force <PLUGIN_DIR>\commands\* $HOME\.claude\commands\
+Copy-Item -Recurse -Force <PLUGIN_DIR>\agents\*   $HOME\.claude\agents\
+```
+
+> The **git-guard hook is not installed by this route** on any platform — Option A ships it with the
+> plugin, Option C installs it via the script. On Windows without bash the hook cannot run at all;
+> rely on Claude Code's own permission prompts instead, and know that is a weaker guarantee.
 
 **You do NOT need to copy the plugin's `resources/` folder for Option B.** Each skill is
 self-contained — it bundles whatever it needs under its own `references/` subfolder, which

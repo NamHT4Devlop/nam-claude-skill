@@ -20,7 +20,7 @@ map_html="namht-ask namht-document namht-plan namht-qa namht-system-map namht-pr
 
 emit() { # <canonical-file> <skill-list>
   local file="$1"; shift
-  for sk in $@; do
+  for sk in "$@"; do
     local dir="skills/$sk/references"
     if [ ! -d "skills/$sk" ]; then
       if [ "$CHECK" = "--check" ]; then echo "MISSING: skills/$sk (mapped for $file) does not exist"; DRIFT=1; fi

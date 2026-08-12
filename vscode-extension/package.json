@@ -2,7 +2,7 @@
   "name": "namht-spec-ui",
   "displayName": "namht Kit UI",
   "description": "Point-and-click UI over the namht-* namht Kit skills for non-technical roles (PM/SM). Runs Claude Code under the hood.",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "publisher": "namht",
   "private": true,
   "license": "UNLICENSED",
