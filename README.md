@@ -19,8 +19,8 @@ nam-claude-skill/
 ├── .claude-plugin/
 │   ├── plugin.json          # plugin manifest
 │   └── marketplace.json     # local marketplace (for one-command install)
-├── commands/                # 29 slash commands → /namht:build (plugin) or /namht-build (personal), …
-├── skills/                  # 28 skills (the methodology — also usable standalone)
+├── commands/                # 30 slash commands → /namht:build (plugin) or /namht-build (personal), …
+├── skills/                  # 29 skills (the methodology — also usable standalone)
 │   ├── namht-build/          #   13-step pipeline   (+ bundled review checklist)
 │   ├── namht-scan/           #   KB generation       (+ bundled kb-steps spec)
 │   ├── namht-rescan/         #   incremental KB update
@@ -103,7 +103,7 @@ commands are typed into Claude Code, not your shell):
 After install, commands are namespaced by the plugin (type `/` to see them):
 `/namht:scan`, `/namht:rescan`, `/namht:build`, `/namht:fix-bug`, `/namht:review`, `/namht:ask`,
 `/namht:plan`, `/namht:map`, `/namht:system-map`, `/namht:document`, `/namht:help`.
-The 28 skills and 7 sub-agents load automatically (skills also activate from plain English), and the
+The 29 skills and 7 sub-agents load automatically (skills also activate from plain English), and the
 **git-guard hook ships with the plugin** (`hooks/hooks.json`) so it's active right after install.
 (The personal symlink install — Option C — exposes the same commands as `/namht-build`, etc.)
 
@@ -269,6 +269,7 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
 | `/namht-review [file\|PR#]` | Two-phase review: quality checklist + business consistency vs the KB. Empty arg = current branch vs the default branch (or working-tree diff if uncommitted); accepts a PR #/URL (`gh pr diff`). |
 | `/namht-ask <question>` | Q&A grounded in the KB — plain language + Mermaid diagram + technical detail. |
 | `/namht-plan <epic>` | PO/BA: Epic → features → impact → user stories (Given/When/Then) → sprint plan. |
+| `/namht-issues [plan] [target] [--create]` | Turn a plan / user stories into real tracker issues — GitHub via `gh`, Jira/Linear via a connected MCP. One issue per story, ACs as a checklist, ids kept so re-runs update instead of duplicating. Preview-by-default; creating needs an explicit yes. |
 | `/namht-qa <user story>` | QA: user story → test cases covering the **NEW flow + regression for OLD business flows** (Gherkin + manual table + AC↔case traceability). Designs tests; doesn't code them. |
 | `/namht-pr [review <PR#>]` | Prepare a PR description from the current branch, or review a GitHub PR (`gh pr diff` → two-phase review + blast radius). Read-only on the remote. |
 | `/namht-security-audit [scope]` | Whole-repo security audit: attack surface + injection/authz/IDOR/secrets/exposure/AI, grounded in the KB, with severities + fixes. Read-only. |
@@ -364,6 +365,29 @@ The reason it stops there: when a doc and the code disagree, **you do not yet kn
 wrong**. Sometimes the doc lags. Sometimes the doc is the agreed intent and the code is the bug.
 Auto-rewriting the doc to match the code would turn that bug into "the new spec" and delete the
 evidence that anything was ever wrong.
+
+---
+
+## Running a skill on a schedule
+
+Two skills are genuinely periodic — the Splunk error digest, and keeping a Knowledge Base fresh —
+and `/namht-drift` is worth a monthly run. `scripts/schedule.sh` wires them to cron:
+
+```bash
+scripts/schedule.sh add rescan "0 7 * * 1"  ~/work/my-repo          # Mondays 07:00
+scripts/schedule.sh add drift  "0 8 1 * *"  ~/work/my-repo          # 1st of the month
+scripts/schedule.sh add splunk "30 8 * * *" ~/work/my-repo -- "index=app_logs cai_enviroment=prod 24h"
+scripts/schedule.sh list
+scripts/schedule.sh remove rescan ~/work/my-repo
+```
+
+It edits a persistent system setting, so it is deliberately careful: every line it writes carries a
+`# namht-kit:<preset>:<repo>` marker and it only ever adds or removes **its own** lines; it prints
+the exact change and asks before writing (`--dry-run` to just look, `--yes` to skip the prompt); and
+it **refuses to schedule any skill that edits code** — an unattended source change should not be
+something you can set up by accident. Output goes to `~/.claude/logs/namht-<preset>.log`. Note that
+an unattended run cannot answer a permission prompt, so a skill that needs one simply fails in the
+log rather than hanging.
 
 ---
 

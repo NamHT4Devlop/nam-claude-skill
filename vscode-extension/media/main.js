@@ -24,6 +24,7 @@ const ACTIONS = [
   A('namht-plan', 'plan', '📋', 'Plan an epic', 'Epic → features → user stories → sprint plan.', [one('title', 'Epic title', 'Recurring invoices', 'text'), one('desc', 'Description (what & why)', 'Describe the epic…')], v => `${v.title}\n\n${v.desc}`),
   A('namht-plan-review', 'plan', '🔎', 'Review a plan', 'Multi-lens critique + verdict.', [one('plan', 'The plan / user stories', 'Paste the plan…')], v => v.plan),
   A('namht-user-story', 'plan', '📝', 'Create user stories', 'Deep-investigate → features + INVEST stories, each AC as granular as possible.', [one('req', 'Requirement / idea (leave blank if using Slack)', 'As a coach I want…', 'textarea', true), one('slack', 'Slack thread / channel URL (optional)', 'https://…slack.com/archives/…', 'text', true)], v => [v.req, v.slack ? ('Slack source: ' + v.slack) : ''].filter(Boolean).join('\n\n')),
+  A('namht-issues', 'plan', '🎫', 'Stories → tracker issues', 'Turn a plan / user stories into GitHub or Jira issues. Previews first — nothing is created without your OK.', [one('src', 'Plan or user-story file (blank = pick the most recent)', 'namht-sessions/plans/…md', 'text', true), one('target', 'Target project', 'e.g. github NamHT4Devlop/my-repo', 'text', true), one('create', 'Create them for real (otherwise it only writes a preview file)', 'It still shows you every issue and asks before creating anything.', 'checkbox', true)], v => [v.src || '', v.target || '', v.create ? '--create' : ''].filter(Boolean).join(' ')),
   A('namht-build', 'build', '🏗️', 'Build a feature', '13-step pipeline: plan → code → review → test.', [one('req', 'Requirement', 'Add a forgot-password flow via email OTP')], v => v.req, true),
   A('namht-fix-bug', 'build', '🐛', 'Fix a bug', 'Triage (code vs config/spec) → root-cause → regression test → minimal fix.', [one('err', 'Error / stack trace, or a QA report (expected vs actual + repro + environment + failing case)', 'Paste the error, or the QA bug report…')], v => v.err, true),
   A('namht-migrate', 'build', '🔀', 'Migration / deprecation', 'Safe API/DB/event/lib change with rollback.', [one('change', "What's changing", 'Add nullable dueDate column to tasks')], v => v.change, true),
@@ -44,6 +45,12 @@ const ACTIONS = [
   A('namht-skillify', 'ops', '🧩', 'Create a new skill', 'Scaffold a new namht-* skill (for devs).', [one('spec', 'Name + purpose', 'changelog — generate a release changelog from git')], v => v.spec),
 ];
 const byCmd = c => ACTIONS.find(a => a.cmd === c);
+
+// ---------- i18n ----------
+// LANG comes from namhtSpecUi.language via the 'config' message. Keys ARE the English
+// strings, so a missing translation shows English rather than a broken placeholder.
+let LANG = 'en';
+const t = s => (LANG === 'vi' && typeof I18N_VI !== 'undefined' && I18N_VI[s]) || s;
 
 // ---------- safe mini-markdown ----------
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -71,6 +78,17 @@ function mdToHtml(md) {
 const app = document.getElementById('app');
 const rid = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 let statusMsg = 'Checking Claude Code…', statusOk = null, filter = '', catFilter = '';
+let spend = null;   // { session:{usd,runs}, today:{usd,runs}, week:{usd,runs}, rate }
+// A per-run chip never adds up to a number you can act on — this is the running total.
+function spendEl() {
+  if (!spend || !(spend.today.usd > 0 || spend.session.usd > 0)) return null;
+  const m = (b) => '$' + (b.usd || 0).toFixed(2) + (spend.rate ? ' ≈ ' + Math.round(b.usd * spend.rate).toLocaleString() + '₫' : '');
+  const e = el('div', 'spend', `\u{1F4B0} this session ${m(spend.session)} · today ${m(spend.today)} (${spend.today.runs} runs) · 7d ${m(spend.week)}`);
+  e.title = 'API-equivalent value of the runs started from this panel, from Claude\u2019s own result events. '
+    + 'Kept per day on this machine for 60 days. On a Team/Enterprise seat you are NOT billed per token \u2014 '
+    + 'treat it as usage, not a charge.';
+  return e;
+}
 let history = [];                 // from host (persisted)
 const runs = {};                  // runId → { cmd, title, values, status, log, result, sessionId, report, files, steps }
 let cur = { view: 'home', runId: null, a: null, values: null };
@@ -132,8 +150,8 @@ function renderRail(rail) {
   rail.appendChild(search);
   const nv = el('div', 'railnav');
   const mk = (label, icon, active, on) => { const b = el('button', 'railitem' + (active ? ' active' : '')); b.appendChild(el('span', 'ri-ic', icon)); b.appendChild(el('span', null, label)); b.onclick = on; return b; };
-  nv.appendChild(mk('Home', '⌂', cur.view === 'home' && !catFilter, () => { catFilter = ''; renderHome(); }));
-  CATS.forEach(c => nv.appendChild(mk(c.name, c.icon, cur.view === 'home' && catFilter === c.key, () => { catFilter = c.key; if (cur.view !== 'home') renderHome(); else { renderRail(rail); refreshContentGrid(); } })));
+  nv.appendChild(mk(t('Home'), '⌂', cur.view === 'home' && !catFilter, () => { catFilter = ''; renderHome(); }));
+  CATS.forEach(c => nv.appendChild(mk(t(c.name), c.icon, cur.view === 'home' && catFilter === c.key, () => { catFilter = c.key; if (cur.view !== 'home') renderHome(); else { renderRail(rail); refreshContentGrid(); } })));
   rail.appendChild(nv);
   const running = Object.values(runs).filter(r => r.status === 'running').length;
   const rh = el('div', 'rail-h'); rh.appendChild(el('span', null, 'Recent')); if (running) rh.appendChild(el('span', 'badge', running + ' running')); rail.appendChild(rh);
@@ -149,6 +167,7 @@ function renderRail(rail) {
   const foot = el('div', 'railfoot');
   if (history && history.length) { const clr = el('button', 'link', 'clear history'); clr.onclick = () => vscode.postMessage({ type: 'clearHistory' }); foot.appendChild(clr); }
   foot.appendChild(el('div', 'status ' + (statusOk === false ? 'bad' : statusOk ? 'ok' : ''), statusMsg));
+  const sp = spendEl(); if (sp) foot.appendChild(sp);
   rail.appendChild(foot);
 }
 function heroEl() {
@@ -180,10 +199,11 @@ function renderHome() {
   const head = el('div', 'head');
   head.appendChild(el('div', 'brand', '⬡ namht Kit'));
   head.appendChild(el('div', 'status ' + (statusOk === false ? 'bad' : statusOk ? 'ok' : ''), statusMsg));
+  const sp = spendEl(); if (sp) head.appendChild(sp);
   root.appendChild(head);
   if (history.length) {
     const rcw = el('div', 'recent');
-    const rhw = el('div', 'recent-h'); rhw.appendChild(el('span', null, 'Recent & running'));
+    const rhw = el('div', 'recent-h'); rhw.appendChild(el('span', null, t('Recent & running')));
     const clr = el('button', 'link', 'clear'); clr.onclick = () => vscode.postMessage({ type: 'clearHistory' }); rhw.appendChild(clr);
     rcw.appendChild(rhw);
     history.slice(0, 8).forEach(it => {
@@ -206,12 +226,12 @@ function renderGridsInto(wrap) {
   cats.forEach(cat => {
     const items = ACTIONS.filter(a => a.cat === cat.key && !(uiMode === 'readonly' && a.edits) && (!filter || (a.title + ' ' + a.desc + ' ' + a.cmd).toLowerCase().includes(filter)));
     if (!items.length) return; any = true;
-    wrap.appendChild(el('div', 'cat', cat.icon + '  ' + cat.name));
+    wrap.appendChild(el('div', 'cat', cat.icon + '  ' + t(cat.name)));
     const grid = el('div', 'grid');
     items.forEach(a => {
       const card = el('button', 'card'); const top = el('div', 'card-top');
-      top.appendChild(el('span', 'card-ic', a.icon)); if (a.edits) top.appendChild(el('span', 'tag', 'edits code')); card.appendChild(top);
-      card.appendChild(el('div', 'card-t', a.title)); card.appendChild(el('div', 'card-d', a.desc));
+      top.appendChild(el('span', 'card-ic', a.icon)); if (a.edits) top.appendChild(el('span', 'tag', t('edits code'))); card.appendChild(top);
+      card.appendChild(el('div', 'card-t', t(a.title))); card.appendChild(el('div', 'card-d', t(a.desc)));
       card.onclick = () => renderForm(a); grid.appendChild(card);
     });
     wrap.appendChild(grid);
@@ -246,7 +266,7 @@ function renderForm(a, values) {
   const missingRequired = vals => a.fields.some(f => !f.optional && !vals[f.name]);
   const doRun = () => {
     const vals = collect();
-    if (missingRequired(vals)) { run.textContent = 'Fill the required field'; setTimeout(() => run.textContent = '▶  Run', 1200); return; }
+    if (missingRequired(vals)) { run.textContent = t('Fill the required field'); setTimeout(() => run.textContent = t('▶  Run'), 1200); return; }
     vals.__model = mdl.value;
     const id = rid();
     const q = (a.build(vals) || a.title || a.cmd);
@@ -260,34 +280,34 @@ function renderForm(a, values) {
       const box = el('input', 'checkfield'); box.type = 'checkbox';
       if (values && values[f.name]) box.checked = true;
       inputs[f.name] = box;
-      wrap.appendChild(box); wrap.appendChild(el('span', '', f.label));
+      wrap.appendChild(box); wrap.appendChild(el('span', '', t(f.label)));
       root.appendChild(wrap);
-      if (f.ph) root.appendChild(el('p', 'muted tiny', f.ph));
+      if (f.ph) root.appendChild(el('p', 'muted tiny', t(f.ph)));
       return;
     }
-    root.appendChild(el('label', 'flabel', f.label));
+    root.appendChild(el('label', 'flabel', t(f.label)));
     const inp = f.type === 'textarea' ? el('textarea', 'field') : el('input', 'field'); if (f.type !== 'textarea') inp.type = 'text';
-    inp.placeholder = f.ph || ''; if (values && values[f.name] != null) inp.value = values[f.name]; inputs[f.name] = inp;
+    inp.placeholder = t(f.ph || ''); if (values && values[f.name] != null) inp.value = values[f.name]; inputs[f.name] = inp;
     onEnter(inp, doRun); root.appendChild(inp);
   });
-  root.appendChild(el('label', 'flabel', 'Model  ·  cheaper = fewer tokens / lower cost'));
+  root.appendChild(el('label', 'flabel', t('Model  ·  cheaper = fewer tokens / lower cost')));
   root.appendChild(mdl);
   const row = el('div', 'formbtns');
-  const run = el('button', 'primary', '▶  Run');
+  const run = el('button', 'primary', t('▶  Run'));
   run.onclick = doRun;
   row.appendChild(run);
   if (a.edits) {
-    const iv = el('button', 'ghost inline-iv', '⚡ Interactive');
+    const iv = el('button', 'ghost inline-iv', t('⚡ Interactive'));
     iv.title = 'Open a terminal running Claude Code interactively — see each diff and approve / reject / redo, like the official panel.';
     iv.onclick = () => {
       const vals = collect();
-      if (missingRequired(vals)) { iv.textContent = 'Fill the required field'; setTimeout(() => iv.textContent = '⚡ Interactive', 1200); return; }
+      if (missingRequired(vals)) { iv.textContent = t('Fill the required field'); setTimeout(() => iv.textContent = t('⚡ Interactive'), 1200); return; }
       vscode.postMessage({ type: 'interactive', command: a.cmd, args: (a.build(vals) || '').trim(), title: a.title, model: mdl.value });
     };
     row.appendChild(iv);
   }
   root.appendChild(row);
-  root.appendChild(el('p', 'muted tiny', '↵ Enter to run · ⇧ Shift+Enter for a new line' + (a.edits ? '  ·  ⚡ Interactive = terminal with approve/reject per edit' : '')));
+  root.appendChild(el('p', 'muted tiny', t('↵ Enter to run · ⇧ Shift+Enter for a new line') + (a.edits ? t('  ·  ⚡ Interactive = terminal with approve/reject per edit') : '')));
   if (a.fields[0]) setTimeout(() => inputs[a.fields[0].name].focus(), 30);
 }
 
@@ -301,7 +321,7 @@ function openRun(id) {
   const a = byCmd(r.cmd);
   root.appendChild(el('h2', null, (a ? a.icon + '  ' : '') + r.title));
   const bar = el('div', 'runbar');
-  cancelBtn = el('button', 'ghost', 'Cancel'); cancelBtn.onclick = () => vscode.postMessage({ type: 'cancel', runId: id });
+  cancelBtn = el('button', 'ghost', t('Cancel')); cancelBtn.onclick = () => vscode.postMessage({ type: 'cancel', runId: id });
   cancelBtn.style.display = r.status === 'running' ? '' : 'none'; bar.appendChild(cancelBtn);
   toggleBtn = el('button', 'ghost', 'Result'); toggleBtn.onclick = () => showView(logEl.style.display === 'none' ? 'activity' : 'result'); bar.appendChild(toggleBtn);
   if (a) { const fb = el('button', 'ghost', '↻ Form'); fb.onclick = () => renderForm(a, r.values); bar.appendChild(fb); }
@@ -334,7 +354,7 @@ function openRun(id) {
   followRow.appendChild(send);
   root.appendChild(followRow);
 }
-function addReportBtn(path) { if (!doneEl) return; const b = el('button', 'primary small', '📄 Report'); b.onclick = () => vscode.postMessage({ type: 'openReport', path }); doneEl.parentElement.appendChild(b); }
+function addReportBtn(path) { if (!doneEl) return; const b = el('button', 'primary small', t('📄 Report')); b.onclick = () => vscode.postMessage({ type: 'openReport', path }); doneEl.parentElement.appendChild(b); }
 
 // ---------- step bar + changed-files panel (live during a run) ----------
 function renderAux(r) {
@@ -407,7 +427,8 @@ function renderChat(r) {
 window.addEventListener('message', ev => {
   const m = ev.data; const id = m.runId;
   if (m.type === 'status') { statusOk = m.ok; statusMsg = m.msg; if (cur.view === 'home') renderHome(); return; }
-  if (m.type === 'config') { if (m.defaultModel !== undefined) defaultModel = m.defaultModel; if (m.mode) uiMode = m.mode; if (cur.view === 'home') renderHome(); return; }
+  if (m.type === 'spend') { spend = m; if (cur.view === 'home') renderHome(); return; }
+  if (m.type === 'config') { if (m.defaultModel !== undefined) defaultModel = m.defaultModel; if (m.mode) uiMode = m.mode; if (m.language) { LANG = m.language; if (LANG === 'vi') statusMsg = t(statusMsg); } if (cur.view === 'home') renderHome(); return; }
   if (m.type === 'history') { history = m.items || []; if (cur.view === 'home') renderHome(); return; }
   if (m.type === 'restore') { // rebuild live runs (incl. logs) after a webview recreation — background runs are NOT lost
     (m.runs || []).forEach(s => { const ex = runs[s.runId] || {}; runs[s.runId] = { cmd: s.command || ex.cmd || '', title: s.title || ex.title || s.runId, values: ex.values || {}, status: s.status || 'done', log: s.log || ex.log || '', result: s.result || ex.result || '', sessionId: s.sessionId || ex.sessionId || null, report: s.report || ex.report || null, cost: s.cost != null ? s.cost : ex.cost, usage: s.usage || ex.usage, vnd: s.vnd != null ? s.vnd : ex.vnd, files: s.files || ex.files || [], steps: s.steps || ex.steps || [], model: s.model != null ? s.model : ex.model }; });

@@ -220,3 +220,7 @@ pre.diff { margin: 0 0 6px; font-family: var(--vscode-editor-font-family, monosp
 pre.diff span { display: block; white-space: pre-wrap; word-break: break-word; padding: 0 3px; }
 pre.diff span.del { color: var(--vscode-testing-iconFailed, #f85149); background: color-mix(in srgb, #f85149 8%, transparent); }
 pre.diff span.add { color: var(--vscode-testing-iconPassed, #3fb950); background: color-mix(in srgb, #3fb950 8%, transparent); }
+
+/* running spend total — quiet by default, it is context not a headline */
+.spend { font-size: 11px; opacity: .75; margin-top: 6px; line-height: 1.5; }
+.head .spend { margin-top: 2px; }

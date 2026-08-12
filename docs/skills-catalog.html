@@ -88,8 +88,8 @@
     <b>whole lifecycle</b> — understand → plan → build → review → QA → operate. Every output is written for
     <b>both technical and non-technical readers</b>, runs locally, and is protected by a git safety guard.</p>
     <div class="facts">
-      <span class="fact"><b>28</b> skills</span>
-      <span class="fact"><b>7</b> edit code · <b>21</b> read-only</span>
+      <span class="fact"><b>29</b> skills</span>
+      <span class="fact"><b>7</b> edit code · <b>22</b> read-only</span>
       <span class="fact">Spec-driven</span>
       <span class="fact">Knowledge-Base grounded</span>
       <span class="fact">Dual-audience</span>
@@ -131,6 +131,7 @@
 
       <tr class="group"><td colspan="3"><span class="ic">🔍</span>Review &amp; QA — verify quality</td></tr>
       <tr><td class="c-name"><code class="name">namht-review</code></td><td class="c-who"><span class="who">Dev / Reviewer</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Reviews a file, branch or PR in two passes — a rigorous quality checklist and a business-consistency check against the Knowledge Base — reporting findings, and only touching code if you explicitly ask it to apply the fixes.</td></tr>
+      <tr><td class="c-name"><code class="name">namht-issues</code></td><td class="c-who"><span class="who">PO / BA / SM</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Closes the gap where a good plan gets retyped into a ticket tool by hand. It reads the stories this kit already wrote and turns each one into a real tracker issue — acceptance criteria as a checklist, parents linked to children, ids preserved — on GitHub or on Jira/Linear through a connected integration. It shows you every issue before it exists, creates nothing without your word, and a second run updates what it made rather than duplicating it.</td></tr>
       <tr><td class="c-name"><code class="name">namht-qa</code></td><td class="c-who"><span class="who">QA</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Turns a user story into an executable test plan that deliberately covers both the new behavior and the existing flows it might disturb, with every case traced back to an acceptance criterion.</td></tr>
       <tr><td class="c-name"><code class="name">namht-qa-integration</code></td><td class="c-who"><span class="who">QA</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Drives a running application through a real browser to execute the test cases end-to-end, asserting from the live UI and reporting a clear pass or fail backed by screenshots — it exercises the app, not the source.</td></tr>
       <tr><td class="c-name"><code class="name">namht-security-audit</code></td><td class="c-who"><span class="who">Dev / Security</span></td><td class="c-desc"><span class="impact safe">Read-only</span>Sweeps the whole repository for vulnerabilities category by category — injection, broken access control, secrets, data exposure — grounded in the code's real entry points and its auth model.</td></tr>

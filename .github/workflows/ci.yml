@@ -21,7 +21,8 @@ jobs:
           node-version: 20
       # tests/run.sh covers: bundle sync, git-guard (56 cases), smoke, skill-name==folder,
       # consistency (commands ↔ skills ↔ extension ↔ docs ↔ counts ↔ changelog),
-      # migrate-sessions fixtures, webview markdown escaping, and the vendored-lib hashes.
+      # migrate-sessions fixtures, webview markdown escaping, i18n coverage, and the
+      # vendored-lib hashes.
       - name: Run the test suite
         run: bash tests/run.sh
 

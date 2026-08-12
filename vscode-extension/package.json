@@ -2,7 +2,7 @@
   "name": "namht-spec-ui",
   "displayName": "namht Kit UI",
   "description": "Point-and-click UI over the namht-* namht Kit skills for non-technical roles (PM/SM). Runs Claude Code under the hood.",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "publisher": "namht",
   "private": true,
   "license": "UNLICENSED",
@@ -88,6 +88,19 @@
           "default": "full",
           "scope": "machine",
           "description": "Which skills this panel offers. 'readonly' hides the seven code-editing skills (build, fix-bug, migrate, simplify, perf, observe, rails-to-spring) and blocks them in the extension host — use it for the .vsix you hand to non-developers."
+        },
+        "namhtSpecUi.language": {
+          "type": "string",
+          "enum": [
+            "en",
+            "vi"
+          ],
+          "enumDescriptions": [
+            "English (default).",
+            "Ti\u1ebfng Vi\u1ec7t \u2014 for a Vietnamese-speaking PM/SM."
+          ],
+          "default": "en",
+          "description": "Language for the panel's own labels and buttons. It does NOT change the language Claude answers in \u2014 that comes from the skill and from how you write the request."
         }
       }
     },

@@ -15,6 +15,9 @@ echo; echo "== migrate-sessions (touches real user data) =="; bash tests/migrate
 echo; echo "== webview markdown (renders untrusted model output) =="
 if command -v node >/dev/null 2>&1; then node tests/webview-markdown.test.cjs || rc=1
 else echo "  – skipped (node not installed)"; fi
+echo; echo "== Vietnamese UI strings still match the UI =="
+if command -v node >/dev/null 2>&1; then node tests/i18n.test.cjs || rc=1
+else echo "  – skipped (node not installed)"; fi
 echo; echo "== vendored libs unchanged? =="
 if [ -f vendor/SHA256SUMS ]; then
   if (cd vendor && shasum -a 256 -c SHA256SUMS >/dev/null 2>&1); then

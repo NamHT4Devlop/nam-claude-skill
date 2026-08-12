@@ -11,10 +11,10 @@ It runs the **Claude Code CLI** under the hood — no API key of its own.
   area: a **left nav rail** (Home + categories + recent/running + status) beside a roomy content
   area with a hero and skill cards. Both stay in sync — a run started in one shows in the other.
 
-## What it exposes (all 28 skills, categorized)
+## What it exposes (all 29 skills, categorized)
 - **General:** **ask anything** — a plain question on any topic, not tied to the repo (runs Claude with no skill)
 - **Understand:** scan · rescan · ask · map · system-map · document
-- **Plan:** discover · plan · plan-review · **user-story** (requirement or a Slack thread → INVEST stories)
+- **Plan:** discover · plan · plan-review · **user-story** (requirement or a Slack thread → INVEST stories) · **issues** (stories → GitHub/Jira tickets)
 - **Build & Fix:** build · fix-bug · migrate · simplify · perf · observe · **rails-to-spring** (contract-first stack port)
 - **Review & QA:** review · qa · qa-integration · security-audit · design-review · pr · **drift** (docs vs reality audit — optional checkbox refreshes the stale docs)
 - **Ops & Docs:** splunk-report · retro · pdf · skillify
@@ -82,6 +82,18 @@ lookup, **Sonnet** for balanced Q&A/planning, **Opus** for the hardest code. Eac
 (e.g. plan on Sonnet, then a cheap Haiku follow-up) and **the session keeps its full context** — the
 extension resumes the same Claude session (`--resume`), so the new model still knows what it was doing.
 
+## Running total (what has this cost me?)
+Besides the per-run cost chip, the panel shows a **running total** — `this session · today (n runs) ·
+7d` — kept per day on this machine for 60 days (`namhtSpecUi.usdToVnd` adds the ₫ figure). It counts
+only runs started from this panel. On a **Team/Enterprise seat you are not billed per token**, so
+read it as usage value rather than a bill.
+
+## Vietnamese UI
+Set `namhtSpecUi.language` to `vi` and the panel's own labels, cards and buttons are in Vietnamese.
+It does **not** change the language Claude answers in — that comes from the skill and from how the
+request is written. A string with no translation falls back to English, and `tests/i18n.test.cjs`
+fails the build if a card is reworded and leaves its translation stranded.
+
 ## Settings
 - `namhtSpecUi.claudePath` — path to the `claude` CLI (default `claude`). **Machine-scoped**: a repo's
   `.vscode/settings.json` cannot change which binary this extension launches.
@@ -99,6 +111,7 @@ extension resumes the same Claude session (`--resume`), so the new model still k
   are hidden AND refused by the extension host, so a PM/SM build cannot change source even if the
   command is sent by hand. Package a separate `.vsix` with this default flipped and hand that one out.
 - `namhtSpecUi.usdToVnd` — VND rate to show next to the USD cost (0 = off; e.g. `25400`).
+- `namhtSpecUi.language` — `en` (default) or `vi` for the panel's own labels. Does not affect Claude's answers.
 - `namhtSpecUi.model` — model for the UI's runs (default **`sonnet`** — ~5x cheaper than Opus for
   read-only Q&A/planning; use `opus` for the hardest code tasks, `haiku` for cheap lookups, empty to inherit).
 

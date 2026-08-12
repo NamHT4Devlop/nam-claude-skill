@@ -14,6 +14,36 @@ noted per release when it changed.
 
 ---
 
+## [2.1.0] — 2026-08-13
+
+### Added
+
+- **`/namht-issues`** — the last manual step in the chain: a plan or set of user stories becomes
+  real tracker issues (GitHub via `gh`, Jira/Linear via a connected MCP). One issue per story with
+  its acceptance criteria as a checklist, parents linked to children, and the story ids kept
+  verbatim so a **second run updates instead of duplicating**. Preview-by-default — it writes a file
+  and shows every issue before anything exists; creating requires an explicit yes, and it never
+  closes or deletes an issue.
+- **Running spend total in the extension** — the per-run cost chip never added up to a number you
+  could act on. The panel now shows `this session · today (n runs) · 7d`, kept per day on the
+  machine for 60 days. On a Team/Enterprise seat this is usage value, not a charge.
+- **Vietnamese UI** — `namhtSpecUi.language: en | vi` translates the panel's own labels, cards and
+  buttons (not what Claude writes back). Untranslated strings fall through to English rather than
+  breaking, and `tests/i18n.test.cjs` fails if a card is reworded and leaves its translation
+  stranded, or if a new card ships untranslated.
+- **`scripts/schedule.sh`** — cron helper for the two genuinely periodic skills plus drift:
+  `add rescan|drift|splunk <cron> <repo>`, `list`, `remove`. It only ever touches its own tagged
+  lines, always shows the change and asks before writing, and **refuses to schedule a skill that
+  edits code** — unattended source edits should not be settable by accident.
+
+### Changed
+
+- The extension's form fields support a checkbox type (used by `--fix-docs` and by `--create`).
+- `/namht-skillify`'s registration checklist now names all eight places a skill must appear,
+  matching what the consistency test enforces.
+
+---
+
 ## [2.0.0] — 2026-08-12
 
 ### ⚠️ Breaking

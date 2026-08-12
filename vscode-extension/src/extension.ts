@@ -8,7 +8,7 @@ const ALLOWED = new Set([
   'namht-discover', 'namht-plan', 'namht-plan-review', 'namht-user-story',
   'namht-build', 'namht-fix-bug', 'namht-migrate', 'namht-simplify', 'namht-perf', 'namht-observe', 'namht-rails-to-spring',
   'namht-review', 'namht-qa', 'namht-qa-integration', 'namht-security-audit', 'namht-design-review', 'namht-pr', 'namht-drift',
-  'namht-splunk-report', 'namht-retro', 'namht-pdf', 'namht-skillify',
+  'namht-splunk-report', 'namht-retro', 'namht-pdf', 'namht-skillify', 'namht-issues',
 ]);
 // The seven skills that modify source. In readonly mode the host refuses them outright, so hiding
 // the cards is a UI convenience rather than the actual control.
@@ -18,6 +18,9 @@ const EDITS_CODE = new Set([
 ]);
 const HIST_KEY = 'namhtSpecUi.history';
 const HIST_MAX = 40;
+// Spend is per machine, not per workspace — globalState, one bucket per day, pruned to SPEND_DAYS.
+const SPEND_KEY = 'namhtSpecUi.spend';
+const SPEND_DAYS = 60;
 
 export function activate(context: vscode.ExtensionContext) {
   const provider = new SpecKitViewProvider(context);
@@ -60,7 +63,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
 
   private handleMessage(m: any) {
     switch (m?.type) {
-      case 'check': this.checkClaude(); this.post({ type: 'config', defaultModel: this.cfg().model, mode: this.cfg().mode }); this.post({ type: 'history', items: this.history() }); this.post({ type: 'restore', runs: Array.from(this.state.values()) }); break;
+      case 'check': this.checkClaude(); this.post({ type: 'config', defaultModel: this.cfg().model, mode: this.cfg().mode, language: this.cfg().language }); this.post({ type: 'history', items: this.history() }); this.post({ type: 'restore', runs: Array.from(this.state.values()) }); this.postSpend(); break;
       case 'run': this.start(m); break;
       case 'followup': this.followup(String(m.runId), String(m.text || ''), String(m.sessionId || ''), m.model); break;
       case 'cancel': this.cancel(String(m.runId)); break;
@@ -75,7 +78,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   private cfg() {
     const c = vscode.workspace.getConfiguration('namhtSpecUi');
     return { claudePath: c.get<string>('claudePath', 'claude'), extraArgs: c.get<string[]>('extraArgs', ['--permission-mode', 'bypassPermissions']), usdToVnd: c.get<number>('usdToVnd', 26000), model: c.get<string>('model', 'sonnet'),
-      mode: c.get<string>('mode', 'full') };
+      mode: c.get<string>('mode', 'full'), language: c.get<string>('language', 'en') };
   }
   private cwd(): string | undefined { return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath; }
 
@@ -97,6 +100,43 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
       out[k] = (typeof v === 'string' && /https?:\/\/\S/i.test(v)) ? '<redacted URL — not stored>' : v;
     }
     return out;
+  }
+
+  // ---- spend (per day, machine-wide) ----
+  // Answers "what has this panel cost me?" — a per-run chip alone never adds up to a number the
+  // user can act on. Local dates, so "today" means the user's today, not UTC.
+  private sessionSpend = { usd: 0, runs: 0 };
+  private static dayKey(d = new Date()) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  private spendMap(): Record<string, { usd: number; runs: number }> {
+    return this.ctx.globalState.get<Record<string, { usd: number; runs: number }>>(SPEND_KEY, {});
+  }
+  private addSpend(usd: number) {
+    if (!(usd > 0)) return;                       // a 0-cost result must not inflate the run count
+    const map = this.spendMap();
+    const k = SpecKitViewProvider.dayKey();
+    const cur = map[k] || { usd: 0, runs: 0 };
+    map[k] = { usd: cur.usd + usd, runs: cur.runs + 1 };
+    for (const key of Object.keys(map)) {         // prune old days so globalState can't grow forever
+      const age = (Date.now() - new Date(key + 'T00:00:00').getTime()) / 86400000;
+      if (!isFinite(age) || age > SPEND_DAYS) delete map[key];
+    }
+    this.ctx.globalState.update(SPEND_KEY, map);
+    this.sessionSpend = { usd: this.sessionSpend.usd + usd, runs: this.sessionSpend.runs + 1 };
+    this.postSpend();
+  }
+  private postSpend() {
+    const map = this.spendMap();
+    const today = map[SpecKitViewProvider.dayKey()] || { usd: 0, runs: 0 };
+    let week = { usd: 0, runs: 0 };
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const b = map[SpecKitViewProvider.dayKey(d)];
+      if (b) { week.usd += b.usd; week.runs += b.runs; }
+    }
+    const rate = this.cfg().usdToVnd || 0;
+    this.post({ type: 'spend', session: this.sessionSpend, today, week, rate });
   }
 
   // ---- history (persisted per workspace so it survives reloads) ----
@@ -227,6 +267,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
       const vnd = rate ? Math.round(totalCost * rate) : 0;
       if (st) st.vnd = vnd;
       this.post({ type: 'usage', runId, cost, usage, totalCost, totalUsage: st?.usage || usage, vnd });
+      this.addSpend(cost);
       return typeof ev.result === 'string' ? ev.result : undefined;
     }
     return undefined;
@@ -331,6 +372,6 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     return `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="${csp}">
 <link href="${uri('main.css')}" rel="stylesheet"></head><body>
-<div id="app"></div><script nonce="${nonce}" src="${uri('main.js')}"></script></body></html>`;
+<div id="app"></div><script nonce="${nonce}" src="${uri('i18n.js')}"></script><script nonce="${nonce}" src="${uri('main.js')}"></script></body></html>`;
   }
 }
