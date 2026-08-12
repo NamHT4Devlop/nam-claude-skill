@@ -12,3 +12,8 @@ the graph + flows to HTML. Run this at the **workspace root** (parent of the ser
 each service should ideally have a KB already (`/namht-scan`).
 
 Optional focus (a specific flow or service to center on): $ARGUMENTS
+
+If the current folder is a **KB hub** (`projects/<name>/knowledge-base/`, produced by
+`scripts/kb-export.sh`) rather than a workspace of checked-out repos, build the map from those KBs —
+and say plainly in the output that edges could not be confirmed against source and that each
+project is a snapshot at the commit in its `_meta.yml`, listing those dates.

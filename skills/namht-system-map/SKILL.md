@@ -18,8 +18,23 @@ Per-service `/namht-scan` (KB) understands each service **internally**. This ski
 flows** that span them. It works for a **multi-repo workspace** — a parent folder containing N
 service repos in possibly different languages.
 
+## Two possible sources — check which one you are standing in
+1. **A workspace of checked-out repos** (the normal case) — a parent folder containing the service
+   repos. Full fidelity: you can read the KBs *and* confirm edges in real source.
+2. **A KB hub** (`scripts/kb-export.sh` output) — a folder with `projects/<name>/knowledge-base/`
+   and no source code. Everything this skill actually consumes (`11-api-docs`, `14-integrations`,
+   `17-async-events`) is in there, so the map builds fine — with two honest limits you must state in
+   the output: you **cannot confirm an edge by reading code**, and each project is a **snapshot** at
+   the commit in its `_meta.yml`, so the map is as old as the oldest export. Print that table of
+   project/commit/exported dates at the top and flag anything older than ~30 days.
+   Detect this case by the `projects/*/knowledge-base/` layout; treat each project folder as a service.
+
+This is what makes the hub useful to someone who is not a developer: a PM, an architect or a new
+joiner can produce the cross-service map from the hub alone, without cloning a single repo.
+
 ## Inputs & setup
-- **Run at the workspace root** (the parent folder that contains the service repos).
+- **Run at the workspace root** (the parent folder that contains the service repos), **or at a KB
+  hub root** (see above).
 - **Discover services:** each immediate sub-folder that is a git repo or has a manifest
   (`package.json`, `pom.xml`/`build.gradle`, `go.mod`, `Gemfile`, `requirements.txt`,
   `*.csproj`, `Cargo.toml`) and/or a `knowledge-base/`. List them with detected language + role.

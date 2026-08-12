@@ -414,7 +414,21 @@ Each folder is a **snapshot**, not a live mirror — re-export after a rescan. I
 snapshot rather than merging, so a file deleted upstream disappears here too. The script **never
 commits or pushes** — you review it yourself.
 
-**3. A teammate pulls the hub and drops one in:**
+**3. The hub is also readable on its own — no clone needed.** Two skills detect the
+`projects/*/knowledge-base/` layout and work straight from it, which is what makes the hub useful to
+someone who is not a developer:
+
+| Run at the hub root | What you get |
+|---|---|
+| `/namht-system-map` | The cross-service dependency graph + end-to-end flows. Everything it consumes (`11-api-docs`, `14-integrations`, `17-async-events`) is in the hub, so an architect or a new joiner can produce the map **without cloning a single repo**. |
+| `/namht-ask "which services validate tenant id?"` | An answer **across projects**, attributing every claim to a project and leading with the contrast between them — usually the interesting part. |
+
+Both are required to state the two limits out loud: a hub has **no source code**, so nothing can be
+confirmed against real files, and every project is a **snapshot** at the commit in its `_meta.yml`.
+A confident answer drawn from a KB exported four months ago is the failure mode here, so the dates
+are printed, not buried.
+
+**4. A teammate pulls the hub and drops one in:**
 
 ```bash
 scripts/kb-import.sh ~/kb-hub taskflow ~/work/taskflow

@@ -10,3 +10,8 @@ Never invent files or behavior; if the KB lacks the answer, say so.
 
 Question:
 $ARGUMENTS
+
+If the current folder is a **KB hub** (`projects/<name>/knowledge-base/`) rather than a single
+repo, answer **across projects**: attribute every claim to a project, lead with any contrast between
+them, and state once that a hub has no source to verify against and each KB is a snapshot at the
+commit/date in its `_meta.yml`.

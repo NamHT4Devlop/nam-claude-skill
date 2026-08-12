@@ -30,6 +30,19 @@ and real source (technical detail) — never invent files, APIs, fields, or beha
    **Check the conclusion isn't stale before reusing it:** the files it cited may have moved on —
    `git log --since=<that date> -- <those files>`. If they changed, re-derive rather than repeat an
    answer that was true last month; say which it was.
+0.5 **Are you in a single repo, or a KB hub?** If the current folder has `projects/*/knowledge-base/`
+   (a hub produced by `scripts/kb-export.sh`) instead of its own `knowledge-base/`, you are being
+   asked **across projects**. Then:
+   - Search every project's KB, and **name the project in every claim** — "in `billing`, …". An
+     unattributed fact is useless here, because the reader cannot tell which system it applies to.
+   - When several projects answer the same question **differently**, that contrast is usually the
+     real answer (e.g. "three services validate this, `gateway` does not"). Lead with it.
+   - **There is no source code in a hub.** You cannot verify anything against real files, and each
+     KB is a snapshot at the commit in its `_meta.yml`. Say so once, and give the dates — a
+     confident answer from a KB exported four months ago is the failure mode here.
+   - If the question is really about one project, say which, and suggest asking again inside that
+     repo where the answer can be grounded in code.
+
 1. **Ground code answers in real source.** When the question is about *how code works / where
    something is*, use Grep/Glob/Read to ground the **Technical detail** section in real files; the
    KB supplies business meaning.

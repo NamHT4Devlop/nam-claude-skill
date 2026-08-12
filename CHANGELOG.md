@@ -37,6 +37,11 @@ noted per release when it changed.
   existing KB without `--force`, keeps a timestamped backup when it does, and warns when the
   snapshot's commit is not in that checkout.
 
+- **The hub is readable, not just a distribution point.** `/namht-system-map` and `/namht-ask`
+  detect the `projects/*/knowledge-base/` layout and work straight from a hub — the cross-service map
+  and cross-project questions without cloning any repo. Both must state the limits: no source to
+  verify against, and every project is a snapshot at the commit in its `_meta.yml`.
+
 ### Changed
 
 - The folder name stays `knowledge-base/` on purpose — renaming it per project would break existing
