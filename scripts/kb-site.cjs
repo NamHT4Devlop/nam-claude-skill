@@ -176,7 +176,42 @@ body{margin:0;font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
 #doc pre code{border:none;background:none;padding:0}
 #doc blockquote{border-left:3px solid var(--accent);margin:1em 0;padding:.1em 0 .1em 14px;color:var(--dim)}
 #doc a{color:var(--accent)} #doc li{margin:.2em 0}
-#doc .mermaid{background:transparent;margin:1.2em 0}
+/* diagrams — framed, contained, and readable. Mermaid's dark defaults sit badly on this palette
+   (grey cluster boxes, near-black nodes, edge labels lost in the background), and it scopes its own
+   CSS by svg id, so the overrides below need !important to land. */
+figure.dg{margin:1.4em 0;background:#0b1020;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+figure.dg .dgbar{display:flex;justify-content:flex-end;gap:6px;padding:6px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
+figure.dg .dgbar button{background:var(--panel2);border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:2px 9px;font:inherit;font-size:11.5px;cursor:pointer}
+figure.dg .dgbar button:hover{color:var(--fg);border-color:var(--accent)}
+/* align-items:flex-start matters: the default stretch squashes a tall diagram to the panel's
+   max-height instead of letting it keep its natural size and scroll. */
+figure.dg .dgbody{overflow:auto;max-height:74vh;padding:18px;display:flex;justify-content:center;align-items:flex-start}
+figure.dg .dgbody > .mermaid{flex:0 0 auto}
+#doc .mermaid{background:transparent;margin:0}
+#doc .mermaid svg{max-width:100%;height:auto}
+/* labels: mermaid puts flowchart text inside foreignObject divs, so target those too */
+#doc .mermaid .nodeLabel,#doc .mermaid .edgeLabel,#doc .mermaid .label,#doc .mermaid .cluster-label,
+#doc .mermaid .titleText,#doc .mermaid text{fill:var(--fg)!important;color:var(--fg)!important}
+#doc .mermaid .edgeLabel{background:var(--bg)!important;border-radius:4px}
+#doc .mermaid .edgeLabel foreignObject div,#doc .mermaid .labelBkg{background:transparent!important}
+#doc .mermaid .edgeLabel rect,#doc .mermaid .edgeLabel .label rect{fill:var(--bg)!important;opacity:.92}
+#doc .mermaid .cluster rect{fill:#131a29!important;stroke:#33405c!important;rx:8;ry:8}
+#doc .mermaid .cluster-label,#doc .mermaid .cluster .nodeLabel{font-weight:700!important}
+#doc .mermaid .node rect,#doc .mermaid .node polygon,#doc .mermaid .node circle,#doc .mermaid .node path{
+  fill:#1e2739!important;stroke:#4a5975!important;stroke-width:1.2px!important}
+#doc .mermaid .flowchart-link,#doc .mermaid .messageLine0,#doc .mermaid .messageLine1{stroke:#8ba0c4!important;stroke-width:1.4px!important}
+#doc .mermaid marker path,#doc .mermaid .marker{fill:#8ba0c4!important;stroke:#8ba0c4!important}
+#doc .mermaid .actor{fill:#1e2739!important;stroke:#4a5975!important}
+#doc .mermaid .note,#doc .mermaid .noteText{fill:#2a2340!important}
+#doc .mermaid .activation0,#doc .mermaid .activation1,#doc .mermaid .activation2{fill:#2c3a55!important;stroke:#4a5975!important}
+/* fullscreen view for the big ones */
+#zoom{position:fixed;inset:0;background:#070a12;display:none;z-index:50;flex-direction:column}
+#zoom.on{display:flex}
+#zoom .zbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+#zoom .zbar button{background:var(--panel2);border:1px solid var(--line);color:var(--fg);border-radius:6px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer}
+#zoom .zbar button:hover{border-color:var(--accent)}
+#zoom .zbody{flex:1;overflow:auto;padding:24px;display:flex;justify-content:center;align-items:flex-start}
+#zoom svg{max-width:none!important;height:auto}
 #empty{color:var(--dim);padding:40px 32px}
 @media (max-width:760px){body{flex-direction:column;height:auto;overflow:auto}#rail{width:auto;flex:none;border-right:none;border-bottom:1px solid var(--line)}#plist{max-height:180px}}
 </style></head><body>
@@ -190,6 +225,7 @@ body{margin:0;font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
   <div id="meta"></div>
   <div id="doc"><div id="empty">Pick a project.</div></div>
 </div>
+<div id="zoom"><div class="zbar"><b id="ztitle">Diagram</b><button id="zclose">✕  Close  (Esc)</button></div><div class="zbody" id="zbody"></div></div>
 <!--MERMAID-->
 <script nonce="${nce}">
 const DATA = ${json};
@@ -253,23 +289,75 @@ function render() {
   drawDiagrams(host);
 }
 
-// Mermaid blocks arrive as <pre><code class="language-mermaid">; convert then render.
+// Mermaid blocks arrive as <pre><code class="language-mermaid">. Wrap each one in a framed figure
+// with its own scroll area, so a 900px-tall architecture diagram is a contained panel rather than a
+// wall you scroll past, and give it an expand button for when you actually need to read it.
 function drawDiagrams(host) {
   if (typeof mermaid === 'undefined') return;
+  // NOTE: this whole page is emitted from a JS template literal, so no backticks in here.
+  // The shared markdown renderer already emits a div.mermaid for a mermaid fence; a
+  // pre > code.language-mermaid only shows up if some other renderer produced the HTML.
+  // Normalise the second shape into the first, then frame every .mermaid that isn't framed yet.
   host.querySelectorAll('pre > code').forEach(c => {
     if (!/language-mermaid/.test(c.className)) return;
-    const d = document.createElement('div');
-    d.className = 'mermaid'; d.textContent = c.textContent;
+    const d = document.createElement('div'); d.className = 'mermaid'; d.textContent = c.textContent;
     c.parentElement.replaceWith(d);
+  });
+  host.querySelectorAll('.mermaid').forEach(d => {
+    if (d.closest('figure.dg')) return;
+    const fig = document.createElement('figure'); fig.className = 'dg';
+    const bar = document.createElement('div'); bar.className = 'dgbar';
+    const exp = document.createElement('button'); exp.textContent = '⤢  Expand';
+    bar.appendChild(exp);
+    const body = document.createElement('div'); body.className = 'dgbody';
+    d.replaceWith(fig); body.appendChild(d); fig.appendChild(bar); fig.appendChild(body);
+    exp.onclick = () => openZoom(d);
   });
   const nodes = host.querySelectorAll('.mermaid');
   if (!nodes.length) return;
   try { mermaid.run({ nodes }); } catch (e) { /* a bad diagram must not blank the page */ }
 }
 
+function openZoom(node) {
+  const z = document.getElementById('zoom'), body = document.getElementById('zbody');
+  const svg = node.querySelector('svg');
+  if (!svg) return;
+  body.textContent = '';
+  const clone = svg.cloneNode(true);
+  clone.removeAttribute('style');              // drop mermaid's inline max-width so it can grow
+  body.appendChild(clone);
+  z.classList.add('on');
+}
+document.getElementById('zclose').onclick = () => document.getElementById('zoom').classList.remove('on');
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('zoom').classList.remove('on'); });
+
 if (typeof mermaid !== 'undefined') {
-  mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict',
-    themeVariables: { background: '#0f1420', primaryColor: '#1b2233', primaryTextColor: '#e6e9ef', lineColor: '#6ea8fe', fontSize: '13px' } });
+  // Mermaid's own dark theme assumes a mid-grey page; on #0f1420 its clusters go flat grey and its
+  // nodes go near-black. Pin the whole palette to this page instead of overriding a few values.
+  mermaid.initialize({
+    startOnLoad: false, securityLevel: 'strict', theme: 'base',
+    // useMaxWidth:false is deliberate. With it on, mermaid puts width="100%" on the svg, and
+    // inside a shrink-to-fit flex item that resolves against an auto width and collapses the
+    // diagram to a fraction of its size. Natural pixel dimensions + a scrolling panel instead.
+    flowchart: { curve: 'basis', padding: 14, nodeSpacing: 42, rankSpacing: 52, useMaxWidth: false },
+    sequence: { useMaxWidth: false, boxMargin: 10, mirrorActors: false },
+    themeVariables: {
+      darkMode: true, fontFamily: '-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif', fontSize: '13px',
+      background: '#0b1020', mainBkg: '#1e2739', primaryColor: '#1e2739', primaryBorderColor: '#4a5975',
+      primaryTextColor: '#e6e9ef', secondaryColor: '#243049', secondaryBorderColor: '#4a5975',
+      tertiaryColor: '#131a29', tertiaryBorderColor: '#33405c',
+      lineColor: '#8ba0c4', textColor: '#e6e9ef', titleColor: '#e6e9ef',
+      nodeBorder: '#4a5975', clusterBkg: '#131a29', clusterBorder: '#33405c',
+      edgeLabelBackground: '#0f1420', labelBackground: '#0f1420', labelBoxBkgColor: '#1e2739',
+      labelBoxBorderColor: '#4a5975', labelTextColor: '#e6e9ef',
+      actorBkg: '#1e2739', actorBorder: '#4a5975', actorTextColor: '#e6e9ef', actorLineColor: '#4a5975',
+      signalColor: '#8ba0c4', signalTextColor: '#e6e9ef',
+      noteBkgColor: '#2a2340', noteTextColor: '#e6e9ef', noteBorderColor: '#5b4a86',
+      activationBkgColor: '#2c3a55', activationBorderColor: '#4a5975',
+      sequenceNumberColor: '#0b1020', altBackground: '#131a29',
+      attributeBackgroundColorOdd: '#1e2739', attributeBackgroundColorEven: '#182031',
+    },
+  });
 }
 
 let timer;

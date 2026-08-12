@@ -43,6 +43,9 @@ noted per release when it changed.
   drawn, and search across every document in every project. Zero network calls, opens with a
   double-click, works on a single repo's `knowledge-base/` too. `kb-export.sh` builds it
   automatically at the end of an export.
+- Diagrams in that page are framed panels with an **⤢ Expand** overlay, and the Mermaid palette is
+  pinned to the page (its own dark theme assumes a mid-grey background and turns clusters flat grey
+  and nodes near-black on `#0f1420`).
 - **The hub is readable, not just a distribution point.** `/namht-system-map` and `/namht-ask`
   detect the `projects/*/knowledge-base/` layout and work straight from a hub — the cross-service map
   and cross-project questions without cloning any repo. Both must state the limits: no source to
