@@ -11,12 +11,12 @@ It runs the **Claude Code CLI** under the hood — no API key of its own.
   area: a **left nav rail** (Home + categories + recent/running + status) beside a roomy content
   area with a hero and skill cards. Both stay in sync — a run started in one shows in the other.
 
-## What it exposes (all 27 skills, categorized)
+## What it exposes (all 28 skills, categorized)
 - **General:** **ask anything** — a plain question on any topic, not tied to the repo (runs Claude with no skill)
 - **Understand:** scan · rescan · ask · map · system-map · document
 - **Plan:** discover · plan · plan-review · **user-story** (requirement or a Slack thread → INVEST stories)
 - **Build & Fix:** build · fix-bug · migrate · simplify · perf · observe · **rails-to-spring** (contract-first stack port)
-- **Review & QA:** review · qa · qa-integration · security-audit · design-review · pr
+- **Review & QA:** review · qa · qa-integration · security-audit · design-review · pr · **drift** (docs vs reality audit)
 - **Ops & Docs:** splunk-report · retro · pdf · skillify
 
 Search to filter, click a card, fill the form, **Run** (or just press **Enter** — Shift+Enter makes a

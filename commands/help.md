@@ -17,6 +17,7 @@ Commands (all namespaced under `/namht-`):
 | `/namht-review [file\|PR#\|empty]` | Two-phase review: quality checklist + business consistency vs the KB. Empty = branch vs default (or working-tree diff); accepts a PR #/URL. |
 | `/namht-pr [review <PR#>]` | Prepare a PR description from the branch, or review a GitHub PR (two-phase + blast radius). |
 | `/namht-security-audit` | Whole-repo security audit (injection, authz/IDOR, secrets, exposure, AI) grounded in the KB. |
+| `/namht-drift [scope]` | Docs vs reality audit: stale KB entries, undocumented behavior, ACs promised but never shipped, broken architecture invariants. Read-only; routes each finding to rescan/build/review. |
 | `/namht-ask <question>` | Q&A grounded in the KB — plain language + Mermaid diagram + technical detail. |
 | `/namht-plan <epic>` | PO/BA: Epic → features → impact → user stories (Given/When/Then) → sprint plan. |
 | `/namht-qa <user story>` | QA: user story → test cases covering the NEW flow + regression for OLD flows (Gherkin + manual table + traceability). |

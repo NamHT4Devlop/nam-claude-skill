@@ -19,8 +19,8 @@ nam-claude-skill/
 ├── .claude-plugin/
 │   ├── plugin.json          # plugin manifest
 │   └── marketplace.json     # local marketplace (for one-command install)
-├── commands/                # 28 slash commands → /namht:build (plugin) or /namht-build (personal), …
-├── skills/                  # 27 skills (the methodology — also usable standalone)
+├── commands/                # 29 slash commands → /namht:build (plugin) or /namht-build (personal), …
+├── skills/                  # 28 skills (the methodology — also usable standalone)
 │   ├── namht-build/          #   13-step pipeline   (+ bundled review checklist)
 │   ├── namht-scan/           #   KB generation       (+ bundled kb-steps spec)
 │   ├── namht-rescan/         #   incremental KB update
@@ -96,7 +96,7 @@ commands are typed into Claude Code, not your shell):
 After install, commands are namespaced by the plugin (type `/` to see them):
 `/namht:scan`, `/namht:rescan`, `/namht:build`, `/namht:fix-bug`, `/namht:review`, `/namht:ask`,
 `/namht:plan`, `/namht:map`, `/namht:system-map`, `/namht:document`, `/namht:help`.
-The 27 skills and 7 sub-agents load automatically (skills also activate from plain English), and the
+The 28 skills and 7 sub-agents load automatically (skills also activate from plain English), and the
 **git-guard hook ships with the plugin** (`hooks/hooks.json`) so it's active right after install.
 (The personal symlink install — Option C — exposes the same commands as `/namht-build`, etc.)
 
@@ -245,6 +245,7 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
 | `/namht-qa <user story>` | QA: user story → test cases covering the **NEW flow + regression for OLD business flows** (Gherkin + manual table + AC↔case traceability). Designs tests; doesn't code them. |
 | `/namht-pr [review <PR#>]` | Prepare a PR description from the current branch, or review a GitHub PR (`gh pr diff` → two-phase review + blast radius). Read-only on the remote. |
 | `/namht-security-audit [scope]` | Whole-repo security audit: attack surface + injection/authz/IDOR/secrets/exposure/AI, grounded in the KB, with severities + fixes. Read-only. |
+| `/namht-drift [scope]` | Docs-vs-reality audit of the whole repo: stale KB entries, undocumented behavior, acceptance criteria promised but never shipped, broken architecture invariants. Read-only; routes each finding to rescan/build/review. |
 | `/namht-map [scope]` | Interactive HTML code graph (Cytoscape): files/classes + imports/DI/inheritance/calls; zoom, click, filter, search. Opens in browser. |
 | `/namht-system-map` | **Cross-service** map for a multi-repo microservices workspace: stitches each service's API/integrations into a dependency graph + end-to-end flows (sequence diagrams) + contracts/events + risks. Run at the workspace root. |
 | `/namht-document <topic>` | Business↔code field-level technical document for a feature/entity/module. |
