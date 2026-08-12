@@ -245,7 +245,7 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
 | `/namht-qa <user story>` | QA: user story → test cases covering the **NEW flow + regression for OLD business flows** (Gherkin + manual table + AC↔case traceability). Designs tests; doesn't code them. |
 | `/namht-pr [review <PR#>]` | Prepare a PR description from the current branch, or review a GitHub PR (`gh pr diff` → two-phase review + blast radius). Read-only on the remote. |
 | `/namht-security-audit [scope]` | Whole-repo security audit: attack surface + injection/authz/IDOR/secrets/exposure/AI, grounded in the KB, with severities + fixes. Read-only. |
-| `/namht-drift [scope]` | Docs-vs-reality audit of the whole repo: stale KB entries, undocumented behavior, acceptance criteria promised but never shipped, broken architecture invariants. Read-only; routes each finding to rescan/build/review. |
+| `/namht-drift [scope] [--fix-docs]` | Docs-vs-reality audit of the whole repo: stale KB entries, undocumented behavior, acceptance criteria promised but never shipped, broken architecture invariants. Read-only by default and routes each finding to rescan/build/review; `--fix-docs` additionally offers to refresh the stale **docs** (never source). See [Keeping docs and code from drifting apart](#keeping-docs-and-code-from-drifting-apart). |
 | `/namht-map [scope]` | Interactive HTML code graph (Cytoscape): files/classes + imports/DI/inheritance/calls; zoom, click, filter, search. Opens in browser. |
 | `/namht-system-map` | **Cross-service** map for a multi-repo microservices workspace: stitches each service's API/integrations into a dependency graph + end-to-end flows (sequence diagrams) + contracts/events + risks. Run at the workspace root. |
 | `/namht-document <topic>` | Business↔code field-level technical document for a feature/entity/module. |
@@ -267,7 +267,76 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
 
 **Recommended flow:** `discover` → `plan` → `plan-review` → `qa` (design tests) → `build` →
 `qa-integration` (run them) → `review`/`security-audit` → `pr`. Run `scan` once first; `rescan` to
-keep the KB fresh.
+keep the KB fresh, and `drift` every so often to find what `rescan` never heard about.
+
+---
+
+## Keeping docs and code from drifting apart
+
+Every other command works **one change at a time**. `/namht-build` updates the KB for what it just
+touched, `/namht-rescan` updates it for what git shows changed. Neither catches the slow rot: a
+hotfix applied by hand, a colleague's merge, a feature that was planned and quietly never built, an
+architecture rule broken once "just for now". After a few months the Knowledge Base is confidently
+describing software that no longer exists — and every answer built on it is wrong.
+
+`/namht-drift` is the periodic check for exactly that. It audits the whole repo and reports four
+kinds of drift:
+
+| | Drift | Question it answers | Fix route |
+|---|---|---|---|
+| **D1** | Stale doc | The KB describes something the code no longer does | `/namht-rescan` |
+| **D2** | Undocumented code | Real behavior no document mentions | `/namht-rescan` |
+| **D3** | Unbuilt promise | An AC from a story/plan in `namht-sessions/` that never shipped | `/namht-build` |
+| **D4** | Broken invariant | Code violates the documented "DO NOT BREAK" rules | `/namht-review` |
+
+Each finding must cite **`file:line` on one side and the document line on the other**, and state
+**which side is wrong** — sub-agents only produce leads; the skill re-verifies every one against the
+source before it appears in the report. It ends with a verdict (`CONVERGED` / `DRIFTING` / `STALE`)
+and appends a row to `namht-sessions/drift/_journal.md`, so successive runs show whether drift is
+growing or shrinking.
+
+**When to run it**
+
+| Moment | Why |
+|---|---|
+| Before a release or a handover | This is when a wrong document does real damage |
+| After a stretch of rushed work (crunch sprint, incident firefighting) | Exactly when drift is created |
+| Every ~month, or at each sprint boundary | The journal turns it into a trend instead of a snapshot |
+| Before onboarding someone new | They will trust the KB; a wrong KB teaches them the wrong system |
+| When `/namht-ask` starts answering *almost* right | That is the symptom of a KB going stale |
+| Before a large port or migration | Porting from wrong docs copies the mistake into the new stack |
+
+You don't need it after every task — `/namht-build` already keeps its own footprint documented.
+
+### `--fix-docs` — the one thing it will fix for you
+
+By default `/namht-drift` **changes nothing**: it reports and hands off. With `--fix-docs` it also
+offers to close the documentation half of the drift:
+
+```bash
+claude "/namht-drift --fix-docs"
+```
+
+What that mode will and will not do:
+
+- ✅ Only **D1/D2** findings where the audit concluded **the document** was wrong.
+- ✅ Shows the findings and the exact `knowledge-base/` files first, and needs **one explicit yes**
+  — a "go" in your original request does not count, because you have not seen the findings yet.
+- ✅ **Backs those KB files up** to `namht-sessions/drift/<date>-kb-backup/` before anything is
+  written. `knowledge-base/` is normally gitignored, so git is *not* your undo here.
+- ✅ Delegates the actual writing to `/namht-rescan` (one owner for KB writes), then **re-verifies**
+  each fixed claim and reports what it could not confirm.
+- ❌ Never edits **source code** — in any mode, with any flag. That is `/namht-build`'s job.
+- ❌ Never auto-resolves **D3** (writing an unbuilt AC into the docs as if shipped) or **D4**
+  (relaxing a documented invariant to match the code). Rewriting the rule to match the violation is
+  precisely the failure this command exists to catch.
+- ❌ Refuses surgical patching when the verdict is `STALE` — a KB that broadly stopped matching the
+  codebase needs a full `/namht-rescan`, not fifty patches.
+
+The reason it stops there: when a doc and the code disagree, **you do not yet know which one is
+wrong**. Sometimes the doc lags. Sometimes the doc is the agreed intent and the code is the bug.
+Auto-rewriting the doc to match the code would turn that bug into "the new spec" and delete the
+evidence that anything was ever wrong.
 
 ---
 

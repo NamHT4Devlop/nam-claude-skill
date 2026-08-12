@@ -1,6 +1,6 @@
 ---
 description: Audit the whole repo for drift between the docs/KB and the real code — stale entries, undocumented behavior, unshipped ACs, broken invariants
-argument-hint: "[scope, e.g. orders module / src/payments — blank = whole repo]"
+argument-hint: "[scope — blank = whole repo] [--fix-docs to also refresh the stale KB entries]"
 ---
 
 Use the **namht-drift** skill to audit this repository for **drift** between what the documents
@@ -15,5 +15,12 @@ say explicitly which side is wrong. Rank by consequence, give a verdict
 `/namht-build` for unshipped ACs, `/namht-review` for invariant breaks. Save the report under
 `namht-sessions/drift/` and append a row to its journal.
 
-Scope (blank = whole repo):
+If the arguments contain **`--fix-docs`**, run the skill's opt-in mode after the audit: offer to
+close only the findings Step 3 concluded were **the document's** fault (D1/D2), show exactly which
+`knowledge-base/` files would change, take ONE explicit yes, back those files up under
+`namht-sessions/drift/<date>-kb-backup/`, then delegate the write to `/namht-rescan` and re-verify.
+Never edit source code, never auto-resolve D3/D4, and never relax a documented invariant to match
+the code.
+
+Scope (blank = whole repo) and flags:
 $ARGUMENTS

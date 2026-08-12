@@ -37,7 +37,7 @@ const ACTIONS = [
   A('namht-security-audit', 'review', '🛡️', 'Security audit', 'Whole-repo OWASP + STRIDE sweep.', [one('scope', 'Scope (optional)', 'e.g. auth module', 'text', true)], v => v.scope || ''),
   A('namht-design-review', 'review', '🎨', 'Design / a11y review', 'UI/UX + accessibility (URL or components).', [one('target', 'URL or path', 'http://localhost:3000', 'text')], v => v.target),
   A('namht-pr', 'review', '🔀', 'Prepare / review PR', 'Draft a PR desc, or review a PR#.', [one('pr', 'PR# to review (blank = prepare from branch)', 'e.g. 123', 'text', true)], v => (v.pr ? `review ${v.pr}` : '')),
-  A('namht-drift', 'review', '🧭', 'Docs vs reality check', 'Find where the Knowledge Base, plans and code have drifted apart — read-only.', [one('scope', 'Scope (optional)', 'e.g. orders module (blank = whole repo)', 'text', true)], v => v.scope || ''),
+  A('namht-drift', 'review', '🧭', 'Docs vs reality check', 'Find where the Knowledge Base, plans and code have drifted apart — read-only.', [one('scope', 'Scope (optional)', 'e.g. orders module (blank = whole repo)', 'text', true), one('fix', 'Also refresh the stale docs it finds (--fix-docs)', 'Asks you first, backs the files up, and only updates the Knowledge Base — never your source code.', 'checkbox', true)], v => [v.scope || '', v.fix ? '--fix-docs' : ''].filter(Boolean).join(' ')),
   A('namht-splunk-report', 'ops', '🚨', 'Splunk error digest', 'Per-app errors → table → Slack.', [one('args', 'index / env / app / window / Slack URL (blank = it asks)', 'index=app_logs cai_enviroment=prod cai_app=payments 24h')], v => v.args || ''),
   A('namht-retro', 'ops', '🔄', 'Retrospective', 'What shipped + action items from git history.', [one('window', 'Time window', '7d', 'text')], v => v.window || ''),
   A('namht-pdf', 'ops', '📑', 'Export to PDF', 'Turn a report/doc into a PDF.', [one('file', 'File to export (.md/.html)', 'namht-sessions/…/report.md', 'text')], v => v.file),
@@ -242,7 +242,7 @@ function renderForm(a, values) {
   if (a.edits) root.appendChild(el('div', 'warn', '⚠ This changes code (auto-approve). Review the diff in Source Control afterwards; git-guard still blocks dangerous git.'));
   const inputs = {};
   const mdl = modelSelect(values && values.__model != null ? values.__model : defaultModel);
-  const collect = () => { const vals = {}; Object.keys(inputs).forEach(k => vals[k] = inputs[k].value.trim()); return vals; };
+  const collect = () => { const vals = {}; Object.keys(inputs).forEach(k => { const i = inputs[k]; vals[k] = i.type === 'checkbox' ? (i.checked ? 'yes' : '') : i.value.trim(); }); return vals; };
   const missingRequired = vals => a.fields.some(f => !f.optional && !vals[f.name]);
   const doRun = () => {
     const vals = collect();
@@ -255,6 +255,16 @@ function renderForm(a, values) {
     openRun(id);
   };
   a.fields.forEach(f => {
+    if (f.type === 'checkbox') {          // opt-in toggle (e.g. drift's --fix-docs) — label sits beside the box
+      const wrap = el('label', 'flabel checkrow');
+      const box = el('input', 'checkfield'); box.type = 'checkbox';
+      if (values && values[f.name]) box.checked = true;
+      inputs[f.name] = box;
+      wrap.appendChild(box); wrap.appendChild(el('span', '', f.label));
+      root.appendChild(wrap);
+      if (f.ph) root.appendChild(el('p', 'muted tiny', f.ph));
+      return;
+    }
     root.appendChild(el('label', 'flabel', f.label));
     const inp = f.type === 'textarea' ? el('textarea', 'field') : el('input', 'field'); if (f.type !== 'textarea') inp.type = 'text';
     inp.placeholder = f.ph || ''; if (values && values[f.name] != null) inp.value = values[f.name]; inputs[f.name] = inp;

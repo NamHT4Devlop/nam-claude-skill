@@ -16,7 +16,7 @@ It runs the **Claude Code CLI** under the hood — no API key of its own.
 - **Understand:** scan · rescan · ask · map · system-map · document
 - **Plan:** discover · plan · plan-review · **user-story** (requirement or a Slack thread → INVEST stories)
 - **Build & Fix:** build · fix-bug · migrate · simplify · perf · observe · **rails-to-spring** (contract-first stack port)
-- **Review & QA:** review · qa · qa-integration · security-audit · design-review · pr · **drift** (docs vs reality audit)
+- **Review & QA:** review · qa · qa-integration · security-audit · design-review · pr · **drift** (docs vs reality audit — optional checkbox refreshes the stale docs)
 - **Ops & Docs:** splunk-report · retro · pdf · skillify
 
 Search to filter, click a card, fill the form, **Run** (or just press **Enter** — Shift+Enter makes a

@@ -34,6 +34,8 @@ h2 { font-size: 16px; margin: .5em 0 .2em; }
   background: color-mix(in srgb, var(--vscode-editorWarning-foreground, #d7a020) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--vscode-editorWarning-foreground, #d7a020) 40%, transparent); }
 .flabel { display: block; font-weight: 600; margin: 12px 0 4px; font-size: 12px; }
+.flabel.checkrow { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.checkfield { width: auto; margin: 0; accent-color: var(--vscode-button-background); cursor: pointer; }
 .field { width: 100%; background: var(--vscode-input-background); color: var(--vscode-input-foreground);
   border: 1px solid var(--vscode-input-border, var(--vscode-widget-border)); border-radius: var(--r); padding: 7px 9px; font-family: inherit; }
 .field:focus { outline: 1px solid var(--vscode-focusBorder); }
