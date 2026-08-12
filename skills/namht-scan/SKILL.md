@@ -11,9 +11,9 @@ description: >-
 
 # Spec Scan — generate the Knowledge Base
 
-A native port of Auto Spec Kit's `/scan`. Produce a `knowledge-base/` folder that
+A native port of Auto Spec extension's `/scan`. Produce a `knowledge-base/` folder that
 captures **why the code exists and what problem it solves**, not just its structure.
-This KB is the grounding for every other Spec Kit command.
+This KB is the grounding for every other namht Kit command.
 
 > If the user already has a `knowledge-base/` (e.g. generated previously by the VS Code
 > extension), prefer `/namht-rescan` to update it. Only do a full scan for a new repo

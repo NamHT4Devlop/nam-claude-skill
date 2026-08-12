@@ -66,7 +66,7 @@ exports.LAYER_CONFIG = {
 };
 const SKIP_DIRS = new Set([
     'node_modules', '.git', 'dist', 'build', 'out', '__pycache__',
-    '.next', '.nuxt', 'coverage', 'spec-kit-sessions', 'knowledge-base',
+    '.next', '.nuxt', 'coverage', 'namht-sessions', 'knowledge-base',
     '.vscode', '.idea', 'vendor', 'target', '.gradle', 'bin', 'obj',
     'venv', '.venv', 'env', '.env', 'Pods', '.dart_tool',
 ]);

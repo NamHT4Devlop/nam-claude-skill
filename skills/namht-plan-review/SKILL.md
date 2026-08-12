@@ -15,7 +15,7 @@ A plan is the cheapest place
 to fix a mistake. Review the plan (from `/namht-plan`, `/namht-discover`, or pasted) before code.
 
 ## Input
-The plan / user stories (pasted, or a file under `spec-kit-sessions/`). Identify the feature + the
+The plan / user stories (pasted, or a file under `namht-sessions/`). Identify the feature + the
 modules/entities it targets. Ground in KB (`13-business-rules`, `16-architecture-patterns`,
 `10-core-flows`) and by tracing callers (blast radius of the proposed changes).
 
@@ -37,7 +37,7 @@ modules/entities it targets. Ground in KB (`13-business-rules`, `16-architecture
    (migration ↔ code), behavior under version skew, how to undo in production, new config/env vars,
    backfill. **A missing rollback plan is a ❌ blocker, not a ⚠️.**
 
-## Output (dual-audience; chat + offer to save `spec-kit-sessions/plan-reviews/<slug>-<date>.md`)
+## Output (dual-audience; chat + offer to save `namht-sessions/plan-reviews/<slug>-<date>.md`)
 ```
 ## In plain words            ← is the plan good to proceed? 2–3 sentences
 ## Scorecard                 ← | Lens | ✅/⚠️/❌ | one-line reason |

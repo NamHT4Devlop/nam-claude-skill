@@ -84,8 +84,10 @@ everything else OUT of scope) · DB (shared default) · async in scope (SQS/Came
 env / are there request specs or VCR cassettes to replay?).
 
 **Resume first — a port spans weeks and many sessions.** Before anything else, read
-`spec-kit-sessions/port/_progress.md`. If it exists, **continue from it**: report where the port
-stands (how many endpoints at each stage), pick the next endpoint, and do NOT redo finished work.
+`namht-sessions/port/_progress.md` (also check the pre-rename `spec-kit-sessions/port/_progress.md`
+— an in-flight port must never restart because the folder was renamed). If it exists, **continue
+from it**: report where the port stands (how many endpoints at each stage), pick the next endpoint,
+and do NOT redo finished work.
 If it doesn't exist, create it after the scope is agreed, one row per in-scope endpoint:
 ```markdown
 # Port progress — <source> → <target>   (single source of truth; update it as each endpoint moves)
@@ -179,7 +181,7 @@ enum-as-int, serialized/JSON columns, timezone, `created_at/updated_at` written 
   `_progress.md` for this: a row with an open stage IS the deferred list. Report coverage: N GraphQL
   resolvers + M REST APIs, X verified, Y deferred (why), and tick the **Cutover** cell for each
   endpoint the user actually switches over.
-- **Report (dual-audience):** save to `spec-kit-sessions/port/<service>-<date>.md`, then render it with
+- **Report (dual-audience):** save to `namht-sessions/port/<service>-<date>.md`, then render it with
   `node "$SKILL_DIR/render-html.cjs" <report.md> <report.html> "<service> — port report"` ($SKILL_DIR
   resolved as in the harness paragraph above) — the
   Scope & Parity Plan, the **Parity Matrix**, per-endpoint specs, cross-cutting results, risk tiers,

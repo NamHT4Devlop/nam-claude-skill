@@ -153,7 +153,7 @@ Each AC must be **specific and measurable** — a tester can execute it and get 
   PO (with your assumption). Do not silently fill gaps.
 
 ## Output (dual-audience; save + render HTML)
-Save to `spec-kit-sessions/user-stories/<slug>-<date>.md`, opening with a **plain-language summary**
+Save to `namht-sessions/user-stories/<slug>-<date>.md`, opening with a **plain-language summary**
 (3–5 sentences: what this delivers, how many features/stories, rough size, top things to confirm),
 then in order: **Investigation Notes** → **Feature map** → **Stories** (each with its granular ACs in
 Given/When/Then) → a **manual table** (`ID · title · role · priority · points · #ACs · source`) →
@@ -164,8 +164,8 @@ and open it. Resolve this skill's `references/` dir first (call it `$SKILL_DIR`)
 `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-user-story/references`.
 ```bash
 node "$SKILL_DIR/render-html.cjs" \
-  "<repo>/spec-kit-sessions/user-stories/<slug>-<date>.md" \
-  "<repo>/spec-kit-sessions/user-stories/<slug>-<date>.html" "<title>"
+  "<repo>/namht-sessions/user-stories/<slug>-<date>.md" \
+  "<repo>/namht-sessions/user-stories/<slug>-<date>.html" "<title>"
 # then: open / xdg-open / start  the printed path
 ```
 Requires Node — if absent, keep the `.md`, note HTML was skipped, and give the user the path.

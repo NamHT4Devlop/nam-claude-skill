@@ -1,8 +1,8 @@
 ---
-description: Show all Spec Kit commands, what they do, and the recommended workflow
+description: Show all namht Kit commands, what they do, and the recommended workflow
 ---
 
-Show the user a concise guide to the **Spec Kit** plugin. Then check whether the current repo
+Show the user a concise guide to the **namht Kit** plugin. Then check whether the current repo
 has a `knowledge-base/` folder (Glob for `knowledge-base/*.md`) and report its status
 (present + how many docs, or missing) with a suggested next step.
 

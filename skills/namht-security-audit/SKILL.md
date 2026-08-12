@@ -55,7 +55,7 @@ bypass). Output a small table — `| Component/flow | STRIDE category | Threat |
 3. Rate each finding: severity `[CRITICAL]/[MAJOR]/[MINOR]`, exploitability, and business impact.
 
 ## Output (dual-audience; save + render HTML)
-Save to `spec-kit-sessions/security/audit-<date>.md`, then render to HTML and open it.
+Save to `namht-sessions/security/audit-<date>.md`, then render to HTML and open it.
 Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-security-audit/references`
 if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-security-audit/references`.
 ```bash

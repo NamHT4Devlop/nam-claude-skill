@@ -31,7 +31,7 @@ consistency.
    ## Checklist                         ← [ ] tests pass [ ] no secrets [ ] docs/KB updated [ ] follows architecture
    ## Notes for reviewers               ← anything non-obvious to look at
    ```
-   Save to `spec-kit-sessions/pr/<branch>-<date>.md`. Offer to open `gh pr create` with this body
+   Save to `namht-sessions/pr/<branch>-<date>.md`. Offer to open `gh pr create` with this body
    **only if the user asks** (that's an outward action — confirm first; never auto-create).
 
 ## Mode B — REVIEW a PR (when given a PR number/URL)
@@ -50,7 +50,7 @@ consistency.
      impacted consumers the PR didn't touch (regression risk).
 4. **Output** the review in the `/namht-review` format (Section coverage · Business consistency ·
    Issues with bad/fixed code · Strengths · Verdict APPROVED/NEEDS_REVISION · Score). Save to
-   `spec-kit-sessions/pr/review-<n>-<date>.md`. Post as inline PR comments **only if the user
+   `namht-sessions/pr/review-<n>-<date>.md`. Post as inline PR comments **only if the user
    asks** (`gh pr comment` / review API) — confirm first.
 
 ## Rules

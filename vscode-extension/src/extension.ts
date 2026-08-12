@@ -43,7 +43,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   // Open the full app experience in the editor area (wide two-pane layout).
   openApp() {
     const panel = vscode.window.createWebviewPanel(
-      'namhtSpecApp', 'Spec Kit', vscode.ViewColumn.Active,
+      'namhtSpecApp', 'namht Kit', vscode.ViewColumn.Active,
       { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [vscode.Uri.joinPath(this.ctx.extensionUri, 'media')] }
     );
     panel.iconPath = vscode.Uri.joinPath(this.ctx.extensionUri, 'media', 'icon.svg');
@@ -310,7 +310,8 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   private findReport(out: string, finalText: string, cwd: string): string | undefined {
     // Prefer the final answer (the report the skill actually points at), else the LAST
     // path mentioned in the log — early matches are intermediate artifacts.
-    const re = /[\w./~-]*spec-kit-sessions[\w./-]+\.(?:html|md)/g;
+    // Accept the pre-rename `spec-kit-sessions/` too — old reports must still open.
+    const re = /[\w./~-]*(?:namht|spec-kit)-sessions[\w./-]+\.(?:html|md)/g;
     const last = (s: string) => { const all = s.match(re); return all ? all[all.length - 1] : undefined; };
     let p = last(finalText) || last(out + '\n' + finalText);
     if (!p) return undefined;

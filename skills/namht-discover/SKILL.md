@@ -27,7 +27,7 @@ Interrogate first, then restate a crisp problem. Conversational — output is a 
 If the stated "solution" hides a different real problem, say so and reframe ("you said X app, but you
 described Y"). Challenge scope creep, premature solutions, and unmeasurable goals. Be direct but brief.
 
-## Output — Sharpened brief (chat; offer to save to `spec-kit-sessions/discovery/<slug>-<date>.md`)
+## Output — Sharpened brief (chat; offer to save to `namht-sessions/discovery/<slug>-<date>.md`)
 ```
 ## In plain words            ← the real problem in 2–3 jargon-free sentences
 ## Who & the pain            ← the specific user + the concrete example

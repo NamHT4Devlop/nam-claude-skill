@@ -1,6 +1,6 @@
-# Spec Kit for Claude Code
+# namht Kit for Claude Code
 
-A native **Claude Code** port of the private Auto Spec Kit VS Code
+A native **Claude Code** port of the private Auto Spec extension VS Code
 extension. Same spec-driven workflow — **Requirement → Plan → Code → Review → Test →
 Evidence** — plus Knowledge Base generation, codebase Q&A, user stories, dependency mapping,
 and business↔code documentation. The difference: it runs on **Claude Code** (your own
@@ -149,9 +149,9 @@ all generated artifacts to a machine-wide gitignore.
 # 1) symlink skills/agents/commands into ~/.claude (commands get a namht- prefix)
 <PLUGIN_DIR>/scripts/personal-install.sh
 
-# 2) make every Spec Kit artifact invisible to git, machine-wide (no per-repo edits)
+# 2) make every namht Kit artifact invisible to git, machine-wide (no per-repo edits)
 touch ~/.gitignore_global
-printf '%s\n' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' '.spec-kit/' >> ~/.gitignore_global
+printf '%s\n' 'namht-sessions/' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' >> ~/.gitignore_global
 git config --global core.excludesfile ~/.gitignore_global
 ```
 
@@ -159,7 +159,7 @@ git config --global core.excludesfile ~/.gitignore_global
   built-ins like `/help`). Skills also auto-activate from plain English.
 - Because it's symlinks, `git pull` in `<PLUGIN_DIR>` instantly updates your install.
 - The global gitignore means even if you run `/namht-scan` inside a team repo, its
-  `knowledge-base/` and `spec-kit-sessions/` stay **local and uncommitted** — nothing leaks.
+  `knowledge-base/` and `namht-sessions/` stay **local and uncommitted** — nothing leaks.
 - **Pick ONE method** — if you use this, do *not* also `/plugin install` the same plugin.
 - Uninstall: `<PLUGIN_DIR>/scripts/personal-install.sh uninstall`.
 
@@ -220,7 +220,7 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
   from the workspace root and expect commands to guess which sub-project you mean. (A true
   **monorepo** — one git repo, many packages — is the opposite: run at the repo root; `scan`
   produces per-module docs under `knowledge-base/modules/`.)
-- **Per-project hygiene** — gitignore the generated `spec-kit-sessions/`, and drop a short
+- **Per-project hygiene** — gitignore the generated `namht-sessions/`, and drop a short
   `CLAUDE.md` so every session in that repo knows the KB exists. Automate it:
 
   ```bash
@@ -228,7 +228,7 @@ If you keep many repos under one parent folder (a "workspace"), follow this sepa
   scripts/onboard-project.sh /path/to/your/project   # idempotent; commits nothing
   ```
 
-  It adds `spec-kit-sessions/` to `.gitignore`, creates a starter `CLAUDE.md` (only if absent),
+  It adds `namht-sessions/` to `.gitignore`, creates a starter `CLAUDE.md` (only if absent),
   and reports whether the project has a KB yet (→ run `/namht-scan` if not).
 
 ## Commands
@@ -288,18 +288,18 @@ See **[SECURITY.md](SECURITY.md)** for the full audit. In short:
   local git (`reset --hard`, `clean -f`, `checkout --`, `rebase`, `branch -D`, …) — even in chained
   commands. See [SECURITY.md](SECURITY.md#git-guardrail-hard-blocked-readsync-in-only).
 - The real data-egress is the AI agent reading code (inherent to any AI assistant), fine under a
-  company **Team/Enterprise** Claude plan. `knowledge-base/` and `spec-kit-sessions/`
+  company **Team/Enterprise** Claude plan. `knowledge-base/` and `namht-sessions/`
   are gitignored machine-wide.
 
 ## How this maps to the original extension
 
-| Auto Spec Kit (VS Code + Copilot) | Spec Kit for Claude Code |
+| Auto Spec extension (VS Code + Copilot) | namht Kit for Claude Code |
 |-----------------------------------|--------------------------|
 | `vscode.lm` calls to Copilot | Claude Code itself (no external API key) |
 | `agent-orchestrator` parallel sub-agents | `Task` tool fan-out to the `agents/` specialists |
 | Emits ```### FILE:``` code blocks to copy | Applies changes directly with Edit/Write |
 | `testCommand` run by the extension | `Bash` runs the project's test command |
-| Session outputs in `spec-kit-sessions/` | Same — artifacts saved per run |
+| Session outputs in `namht-sessions/` | Same — artifacts saved per run |
 | `knowledge-base/` (16 docs + review-skills + modules) | **Identical format — reused as-is** |
 | Webview HTML (ask/plan/document) | Markdown + Mermaid; **`map` = interactive Cytoscape HTML** (bundled analyzer) |
 
@@ -316,7 +316,7 @@ See **[SECURITY.md](SECURITY.md)** for the full audit. In short:
   directly and suggest running `/namht-scan`, but results are richer with a KB.
 - `build` and `review` enforce the **"Architecture Invariants — DO NOT BREAK"** list from
   `knowledge-base/16-architecture-patterns.md` and the rules in `knowledge-base/review-skills.md`.
-- Source of truth for the methodology: the original prompts of the private Auto Spec Kit VS Code
+- Source of truth for the methodology: the original prompts of the private Auto Spec extension VS Code
   extension (pipeline steps, its `kb-steps` constants, and `review-skills-universal.md`).
 - **Slash-command prefix depends on install method:** `/namht-build` (personal symlink install) vs
   `/namht:build` (plugin install) vs `/build` (plain copy). Skills also auto-activate from plain English.

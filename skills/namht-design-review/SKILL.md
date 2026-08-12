@@ -30,7 +30,7 @@ have. Works on a **live URL** (preferred — real screenshots) or on **frontend 
 5. **Microcopy** — clear, consistent, not placeholder/lorem; error messages helpful.
 6. **Interaction** — hover/focus/disabled states; destructive actions confirmed; feedback on action.
 
-## Output (dual-audience; save `spec-kit-sessions/design/<app>-<date>.md`; render HTML; keep screenshots)
+## Output (dual-audience; save `namht-sessions/design/<app>-<date>.md`; render HTML; keep screenshots)
 Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-design-review/references`
 if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-design-review/references`.
 ```bash

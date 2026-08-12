@@ -5,7 +5,7 @@
 #
 # Usage:
 #   Copy this file into your project's knowledge-base/review-skills.md.
-#   Auto Spec Kit will automatically inject it into STEP 05 — Code Review.
+#   Auto Spec extension will automatically inject it into STEP 05 — Code Review.
 #   For pure backend/frontend projects: remove Section 8 (AI Engineering).
 #   For projects with AI components: keep all sections.
 #
@@ -490,6 +490,6 @@ Use this checklist to ensure nothing is missed during review:
 ## 14. PROJECT-SPECIFIC RULES
 
 > Fill this in after running `Generate Knowledge Base` to add rules specific to your project.
-> Auto Spec Kit will automatically update this section via Step 13 after each task.
+> Auto Spec extension will automatically update this section via Step 13 after each task.
 
-<!-- Placeholder — will be automatically updated by Auto Spec Kit final KB step -->
+<!-- Placeholder — will be automatically updated by Auto Spec extension final KB step -->

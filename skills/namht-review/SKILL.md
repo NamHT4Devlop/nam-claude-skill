@@ -11,7 +11,7 @@ description: >-
 
 # Spec Review — two-phase code review
 
-A native port of Auto Spec Kit's `/review`. Produce an **actionable** review: every issue
+A native port of Auto Spec extension's `/review`. Produce an **actionable** review: every issue
 must show the exact bad code and the complete fixed code — never "add X here".
 
 ## Inputs
@@ -116,4 +116,4 @@ follow the same change discipline as `/namht-build`:
 - **Don't leave the tree broken**: run the project's build/lint/tests after; if red and not
   quickly fixable, **revert** and report.
 - **Confirm before destructive/outward actions**; never touch secrets.
-Otherwise leave the review as a report. You may save it to `spec-kit-sessions/reviews/<file>-<date>.md`.
+Otherwise leave the review as a report. You may save it to `namht-sessions/reviews/<file>-<date>.md`.

@@ -46,7 +46,7 @@ spot a bug, you stop and report it, you do not "fix" it here.
 
 ## Output
 Chat summary: what got simpler and why (nesting/length/duplication reduced), tests green, diff kept
-reviewable. Optionally save `spec-kit-sessions/simplify/<area>-<date>.md`.
+reviewable. Optionally save `namht-sessions/simplify/<area>-<date>.md`.
 
 ## Rules
 - **Behavior-preserving — NON-NEGOTIABLE.** No functional change. Found a bug? Stop, flag it, hand to `/namht-fix-bug`.

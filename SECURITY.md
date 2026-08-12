@@ -52,7 +52,7 @@ Findings (as audited): no `eval`/`Function`, no dynamic `require`, no hardcoded 
 telemetry. Process/network use is limited to the three opt-in components listed in the TL;DR
 (shadow-parity → user-supplied endpoints; the extension → local `claude` CLI; splunk-report →
 env/MCP credentials). `graph-builder.js`/`html-builder.js` are readable `tsc` output (not
-minified) — provenance: the author's own Auto Spec Kit project.
+minified) — provenance: the author's own Auto Spec extension project.
 
 ## Data flow & egress
 - **KB / analyzer**: 100% local. The `knowledge-base/` never leaves the machine.
@@ -71,7 +71,7 @@ minified) — provenance: the author's own Auto Spec Kit project.
 - `personal-install.sh` only creates symlinks under `~/.claude/{skills,commands,agents}` and, on
   uninstall, **only removes symlinks whose target points back into this repo** (`case "$SRC"/*`).
   It cannot delete arbitrary files.
-- `onboard-project.sh` **writes into a target project** (`.gitignore` += `spec-kit-sessions/`,
+- `onboard-project.sh` **writes into a target project** (`.gitignore` += `namht-sessions/`,
   and a starter `CLAUDE.md` if absent). Do **not** run it on a shared/team repo if you want zero
   footprint — review its diff first.
 

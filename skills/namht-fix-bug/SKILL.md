@@ -71,8 +71,9 @@ Gather (ask 2–4 targeted questions if missing — don't guess):
 - **Traceability** — the **failing test case ID / acceptance criterion / user story** it came from, if
   QA has one (from a `/namht-qa` plan). This defines "correct".
 - Error text / **stack trace** / screenshots / logs, affected endpoint/feature/job, severity/urgency.
-Also skim `spec-kit-sessions/answers/_journal.md` if present — a past Q&A about this area may already
-name the flow/files involved (cheap: one small index).
+Also skim `namht-sessions/answers/_journal.md` if present — a past Q&A about this area may already
+name the flow/files involved (cheap: one small index). If the repo still has the pre-rename
+`spec-kit-sessions/` and no `namht-sessions/`, read from there; write new artifacts to `namht-sessions/`.
 
 ### 2. TRIAGE — is this even a code bug? (do this BEFORE editing code)
 Classify the root cause into one of these, gathering the matching evidence:
@@ -139,7 +140,7 @@ project's build/lint/typecheck. Confirm no regressions in blast-radius consumers
 green quickly, revert** and report what blocked you — never leave prod code broken.
 
 ### 11. Hotfix report + close the loop back to QA
-Also append ONE row to `spec-kit-sessions/fixes/_journal.md` (create with this header if missing) —
+Also append ONE row to `namht-sessions/fixes/_journal.md` (create with this header if missing) —
 this is how a repeatedly-broken area finally becomes visible instead of each fix looking isolated:
 ```markdown
 # Fix Journal — one line per bug (newest last)
@@ -149,7 +150,7 @@ this is how a repeatedly-broken area finally becomes visible instead of each fix
 Before writing it, **skim the existing rows**: if this area or root cause has appeared before, say so
 and treat the repetition itself as a finding (the real fix may be the shared source, not this instance).
 
-Save the report to `spec-kit-sessions/fixes/<slug>-<date>.md` (offer a PDF/HTML export via the namht-pdf skill if useful):
+Save the report to `namht-sessions/fixes/<slug>-<date>.md` (offer a PDF/HTML export via the namht-pdf skill if useful):
 - **In plain words** (incident comms / non-tech): what broke, impact, what we changed, status.
 - **Classification** (code / config / data / flag / spec — from step 2), **root cause** (cited), **the
   fix** (diff summary), **regression test** (+ the QA case it maps to), **test results**, **blast

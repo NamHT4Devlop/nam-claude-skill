@@ -4,7 +4,7 @@
     "name": "NamHT Labs"
   },
   "metadata": {
-    "description": "Local marketplace hosting the namht (Spec Kit) plugin."
+    "description": "Local marketplace hosting the namht (namht Kit) plugin."
   },
   "plugins": [
     {

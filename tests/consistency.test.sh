@@ -7,12 +7,15 @@ fail=0
 # Intentional exceptions:
 #   help — command-only (commands/help.md is documentation; there is no skills/namht-help/).
 CMD_ONLY="help"
+# Tokens that match the namht-* shape but are NOT skills — the artifact folder every skill
+# writes to. Keep this list tiny; anything else matching namht-* must be a real skill/agent.
+NON_SKILL="namht-sessions"
 
 echo "consistency: commands reference existing skills"
 bad=0
 for f in commands/*.md; do
   base=$(basename "$f" .md)
-  refs=$(grep -oE 'namht-[a-z-]+' "$f" | sort -u)
+  refs=$(grep -oE 'namht-[a-z-]+' "$f" | sort -u | grep -vxF "$NON_SKILL")
   if [ -z "$refs" ]; then echo "  ✗ $f references no namht-* skill"; bad=1; continue; fi
   for r in $refs; do
     [ -d "skills/$r" ] && continue

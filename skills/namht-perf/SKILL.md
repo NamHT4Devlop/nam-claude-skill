@@ -42,7 +42,7 @@ Ground in the KB (`10-core-flows`, `08-database-schema`) and get real data befor
 4. Continue only while the next gain justifies the complexity it adds.
 
 ## Output (dual-audience; save + report)
-Chat + `spec-kit-sessions/perf/<area>-<date>.md`: the bottleneck, the fix, and **before/after numbers**
+Chat + `namht-sessions/perf/<area>-<date>.md`: the bottleneck, the fix, and **before/after numbers**
 (the evidence), plus any trade-off (memory vs speed, cache staleness).
 
 ## Rules

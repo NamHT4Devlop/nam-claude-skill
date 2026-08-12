@@ -61,7 +61,7 @@ the polyglot fleet.
 4. Report the **new queryable fields/metrics** + 2–3 example Splunk queries the instrumentation unlocks.
 
 ## Output (dual-audience; save + report)
-Chat summary + `spec-kit-sessions/observe/<area>-<date>.md`: the field schema, what changed where,
+Chat summary + `namht-sessions/observe/<area>-<date>.md`: the field schema, what changed where,
 and example queries/dashboards it enables.
 
 ## Rules

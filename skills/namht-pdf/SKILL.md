@@ -1,8 +1,8 @@
 ---
 name: namht-pdf
 description: >-
-  Export a report to PDF — take a Markdown or HTML file (e.g. a Spec Kit
-  report/doc under spec-kit-sessions/, or any .md) and produce a PDF, rendering
+  Export a report to PDF — take a Markdown or HTML file (e.g. a namht Kit
+  report/doc under namht-sessions/, or any .md) and produce a PDF, rendering
   Markdown + Mermaid first if needed. Use when the user says "/pdf", "export to
   PDF", "make a PDF", "save this as PDF", "PDF the report/doc".
 ---
@@ -49,7 +49,7 @@ found. In that case: keep the HTML and tell the user to **open it in a browser �
 PDF** (one step, and it renders Mermaid correctly), or install Chrome. Don't fail silently.
 
 ## Notes
-- 100% local — no upload/network. Output beside the source (or under `spec-kit-sessions/`); both are
+- 100% local — no upload/network. Output beside the source (or under `namht-sessions/`); both are
   gitignored so nothing lands in a repo.
 - Works great on the outputs of `/namht-document`, `/namht-qa`, `/namht-security-audit`,
   `/namht-plan`, `/namht-retro`, etc.

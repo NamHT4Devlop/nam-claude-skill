@@ -20,9 +20,9 @@ the code (real endpoints/handlers). This is **test design** — it does NOT writ
 
 ## Inputs
 - The **user story** (role / action / benefit) + its **acceptance criteria**. Accept it pasted,
-  by ID, or from a `/namht-plan` output under `spec-kit-sessions/`. If ACs are missing or vague,
+  by ID, or from a `/namht-plan` output under `namht-sessions/`. If ACs are missing or vague,
   derive a draft set and flag assumptions (don't silently guess).
-- A **`/namht-build` session folder** (`spec-kit-sessions/builds/<…>/`), if one exists — read
+- A **`/namht-build` session folder** (`namht-sessions/builds/<…>/`), if one exists — read
   `01-plan/plan.md` §2 (blast radius, cross-service consumers, risk matrix) and
   `07-evidence/EVIDENCE.md` (the AC → named-test map) and **reuse them instead of re-deriving**: the
   build already traced the callers. Your job is then the **delta** — manual/UI cases automated tests
@@ -69,7 +69,7 @@ the code (real endpoints/handlers). This is **test design** — it does NOT writ
    Flag any AC with no case and any touched flow with no regression as a **coverage gap**.
 
 ## Output (dual-audience; save + render HTML)
-Save to `spec-kit-sessions/qa/<story-slug>-<date>.md`, then render to HTML and open it.
+Save to `namht-sessions/qa/<story-slug>-<date>.md`, then render to HTML and open it.
 Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-qa/references`
 if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-qa/references`.
 Then: `node "$SKILL_DIR/render-html.cjs" <md> <html> "<story>"`.

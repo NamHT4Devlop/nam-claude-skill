@@ -1,6 +1,6 @@
 # Knowledge Base — Section Specs (16 docs)
 
-> Ported from Auto Spec Kit's `KB_STEPS`. Each section becomes one file under
+> Ported from Auto Spec extension's `KB_STEPS`. Each section becomes one file under
 > `<repo>/knowledge-base/`. Every prompt is designed to reason about **business
 > intent** from code, not just describe technical structure.
 >

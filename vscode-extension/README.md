@@ -1,13 +1,13 @@
-# Spec Kit UI — VS Code extension (for PM / SM)
+# namht Kit UI — VS Code extension (for PM / SM)
 
 A **point-and-click** panel over the `namht-*` skills, so non-technical roles
 (Product Managers, Scrum Masters) can use them **without typing slash commands or opening a terminal**.
 It runs the **Claude Code CLI** under the hood — no API key of its own.
 
 **Two ways to view it:**
-- **Sidebar** — click the **Spec Kit** icon in the Activity Bar (compact, single column).
-- **App window** — click the **⧉ Open Spec Kit App** button in the sidebar's title bar (or run
-  *"Open Spec Kit App"* from the Command Palette). It opens a wide, app-like layout in the editor
+- **Sidebar** — click the **namht Kit** icon in the Activity Bar (compact, single column).
+- **App window** — click the **⧉ Open namht Kit App** button in the sidebar's title bar (or run
+  *"Open namht Kit App"* from the Command Palette). It opens a wide, app-like layout in the editor
   area: a **left nav rail** (Home + categories + recent/running + status) beside a roomy content
   area with a hero and skill cards. Both stay in sync — a run started in one shows in the other.
 
@@ -46,7 +46,7 @@ yarn install
 yarn compile
 ```
 Then open this `vscode-extension/` folder in VS Code and press **F5** (Run → Start Debugging). A second
-VS Code window opens with the extension loaded — click the **Spec Kit** icon in the Activity Bar.
+VS Code window opens with the extension loaded — click the **namht Kit** icon in the Activity Bar.
 
 ## Package + install (share with PM/SM)
 ```bash
@@ -61,7 +61,7 @@ Claude Code CLI + the skills installed on their machine.)
 webview (cards + form)  --run{command,args}-->  extension host
                                                    └─ spawn: claude -p "/<command> <args>"  (cwd = project)
                                                    └─ stream stdout back to the webview
-                                                   └─ detect the saved spec-kit-sessions report → "Open report"
+                                                   └─ detect the saved namht-sessions report → "Open report"
 ```
 - **Only whitelisted commands run** — the host rejects anything not in `ALLOWED` (see `src/extension.ts`).
 - The **git-guard hook** still applies (PreToolUse runs before the permission check). Note that the

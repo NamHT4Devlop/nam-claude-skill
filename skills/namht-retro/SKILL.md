@@ -14,15 +14,17 @@ A periodic look-back grounded in real history.
 ## Gather (read-only git + artifacts)
 - Window: default last 7 days (or what the user names). `git log --since=<window> --stat`,
   `git shortlog -sn --since`, `git diff --stat <since>..HEAD` for churn by area.
-- **Read the journals first** — `spec-kit-sessions/answers/_journal.md` (questions asked),
+- **Read the journals first** — `namht-sessions/answers/_journal.md` (questions asked),
   `builds/_journal.md` (what was built + the key decision) and `fixes/_journal.md` (bugs + root
   causes). They are one-line-per-entry indexes built for exactly this: the cheapest high-signal
   source for *what shipped*, *what people kept having to ask*, and *what keeps breaking*. A root
   cause or an area appearing repeatedly in the fix journal is a retro finding on its own.
-- Optional signals: `spec-kit-sessions/` reports (fixes/reviews/qa) from the window; open TODO/FIXME
+- **Legacy folder:** if the repo has `spec-kit-sessions/` (the pre-rename name) and no
+  `namht-sessions/`, read the journals from there — that history still counts.
+- Optional signals: `namht-sessions/` reports (fixes/reviews/qa) from the window; open TODO/FIXME
   added; test coverage gaps on changed areas (test-debt trend).
 
-## Produce (dual-audience; chat + save `spec-kit-sessions/retro/<date>.md`)
+## Produce (dual-audience; chat + save `namht-sessions/retro/<date>.md`)
 ```
 ## In plain words            ← the period in 3 bullets (shipped / notable / watch-outs)
 ## Shipped                   ← features/fixes merged (grouped by area), with size

@@ -39,7 +39,7 @@ const ACTIONS = [
   A('namht-pr', 'review', '🔀', 'Prepare / review PR', 'Draft a PR desc, or review a PR#.', [one('pr', 'PR# to review (blank = prepare from branch)', 'e.g. 123', 'text', true)], v => (v.pr ? `review ${v.pr}` : '')),
   A('namht-splunk-report', 'ops', '🚨', 'Splunk error digest', 'Per-app errors → table → Slack.', [one('args', 'index / env / app / window / Slack URL (blank = it asks)', 'index=app_logs cai_enviroment=prod cai_app=payments 24h')], v => v.args || ''),
   A('namht-retro', 'ops', '🔄', 'Retrospective', 'What shipped + action items from git history.', [one('window', 'Time window', '7d', 'text')], v => v.window || ''),
-  A('namht-pdf', 'ops', '📑', 'Export to PDF', 'Turn a report/doc into a PDF.', [one('file', 'File to export (.md/.html)', 'spec-kit-sessions/…/report.md', 'text')], v => v.file),
+  A('namht-pdf', 'ops', '📑', 'Export to PDF', 'Turn a report/doc into a PDF.', [one('file', 'File to export (.md/.html)', 'namht-sessions/…/report.md', 'text')], v => v.file),
   A('namht-skillify', 'ops', '🧩', 'Create a new skill', 'Scaffold a new namht-* skill (for devs).', [one('spec', 'Name + purpose', 'changelog — generate a release changelog from git')], v => v.spec),
 ];
 const byCmd = c => ACTIONS.find(a => a.cmd === c);
@@ -125,7 +125,7 @@ function mount() {
 }
 function renderRail(rail) {
   rail.innerHTML = '';
-  rail.appendChild(el('div', 'brand', '⬡ Spec Kit'));
+  rail.appendChild(el('div', 'brand', '⬡ namht Kit'));
   const search = el('input', 'search'); search.type = 'text'; search.placeholder = 'Search…'; search.value = filter;
   search.oninput = () => { filter = search.value.toLowerCase(); refreshContentGrid(); };
   rail.appendChild(search);
@@ -177,7 +177,7 @@ function renderHome() {
   // narrow (sidebar) layout
   root.appendChild(nav());
   const head = el('div', 'head');
-  head.appendChild(el('div', 'brand', '⬡ Spec Kit'));
+  head.appendChild(el('div', 'brand', '⬡ namht Kit'));
   head.appendChild(el('div', 'status ' + (statusOk === false ? 'bad' : statusOk ? 'ok' : ''), statusMsg));
   root.appendChild(head);
   if (history.length) {

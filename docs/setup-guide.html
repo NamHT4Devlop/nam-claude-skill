@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spec Kit for Claude Code — Setup guide (personal)</title>
+<title>namht Kit for Claude Code — Setup guide (personal)</title>
 <style>
   :root{
     --bg:#0f1115; --panel:#171a21; --panel2:#1d2129; --border:#2a2f3a;
@@ -85,9 +85,9 @@
 
   <header class="hero">
     <div class="eyebrow">Claude Code · Personal</div>
-    <h1>🚀 Spec Kit — Step-by-step setup guide</h1>
+    <h1>🚀 namht Kit — Step-by-step setup guide</h1>
     <p class="sub">A spec-driven toolkit (plan → code → review → test → evidence) running on <b>Claude Code</b>,
-    ported from the Auto Spec Kit extension (which used GitHub Copilot). This guide configures a
+    ported from the Auto Spec extension extension (which used GitHub Copilot). This guide configures a
     <b>you-only</b> mode: whatever you run leaves <b>no trace</b> in team/project repos.</p>
     <div style="margin-top:10px">
       <span class="pill">🔧 Tool: install once (global)</span>
@@ -126,7 +126,7 @@
     <tbody>
       <tr><td>🔧 <b>Tool</b></td><td>skills / commands / agents</td><td><code>~/.claude/</code> — install once, used by every project</td></tr>
       <tr><td>📚 <b>KB</b> (Knowledge Base)</td><td>knowledge about one specific project</td><td><code>&lt;project&gt;/knowledge-base/</code> — one copy per project, local</td></tr>
-      <tr><td>🗑️ <b>Artifact</b></td><td>plans, code, evidence generated on each run</td><td><code>&lt;project&gt;/spec-kit-sessions/</code> — ignored by git machine-wide</td></tr>
+      <tr><td>🗑️ <b>Artifact</b></td><td>plans, code, evidence generated on each run</td><td><code>&lt;project&gt;/namht-sessions/</code> — ignored by git machine-wide</td></tr>
     </tbody>
   </table>
   <div class="box info">
@@ -167,7 +167,7 @@ git clone git@github.com:NamHT4Devlop/nam-claude-skill.git ~/nam-claude-skill</c
       <h3>Prevent leaks — global gitignore (machine config, touches no repo)</h3>
       <p>So even if you accidentally run a command in a team repo, the generated KB &amp; sessions stay <b>local + never committed</b>.</p>
       <div class="cb"><button class="copy">Copy</button><pre><code>touch ~/.gitignore_global
-printf '%s\n' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' '.spec-kit/' &gt;&gt; ~/.gitignore_global
+printf '%s\n' 'namht-sessions/' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' &gt;&gt; ~/.gitignore_global
 git config --global core.excludesfile ~/.gitignore_global</code></pre></div>
     </div>
   </div>
@@ -255,7 +255,7 @@ claude
     <tbody>
       <tr><td>Tool (skills/commands)</td><td>Lives in <code>~/.claude</code> — a teammate cloning the repo <b>sees nothing</b></td></tr>
       <tr><td><code>knowledge-base/</code></td><td>Global gitignore → local forever, even <code>git add -A</code> won't add it</td></tr>
-      <tr><td><code>spec-kit-sessions/</code></td><td>Global gitignore → ignored in every repo</td></tr>
+      <tr><td><code>namht-sessions/</code></td><td>Global gitignore → ignored in every repo</td></tr>
       <tr><td>Personal notes</td><td><code>CLAUDE.local.md</code> ignored machine-wide</td></tr>
     </tbody>
   </table>
@@ -300,7 +300,7 @@ claude
 
   <hr>
   <footer>
-    Spec Kit for Claude Code — a port of Auto Spec Kit · Repo: <code>NamHT4Devlop/nam-claude-skill</code><br>
+    namht Kit for Claude Code — a port of Auto Spec extension · Repo: <code>NamHT4Devlop/nam-claude-skill</code><br>
     This document lives at <code>&lt;TOOL&gt;/docs/setup-guide.html</code> — open in any browser.
   </footer>
 

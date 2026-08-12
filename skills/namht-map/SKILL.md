@@ -29,7 +29,7 @@ Go, Ruby, C#, PHP and Rust, then injects the graph into `references/viewer-templ
    node "$SKILL_DIR/build-map.cjs" "<PROJECT_ROOT>" "" all
    ```
    - Arg 1 = project root (absolute path preferred). Arg 2 = `""` lets it default the output to
-     `<root>/spec-kit-sessions/maps/<name>-<date>.html` (gitignored). Arg 3 = mode.
+     `<root>/namht-sessions/maps/<name>-<date>.html` (gitignored). Arg 3 = mode.
    - The script prints the **output HTML path on stdout** (stats on stderr). Capture it.
    - If `node` isn't found, tell the user Node.js is required for the interactive graph.
 3. **Open the file** for the user:
@@ -55,6 +55,6 @@ Go, Ruby, C#, PHP and Rust, then injects the graph into `references/viewer-templ
   **inlines** it so the HTML is fully self-contained — zero external network calls (enterprise /
   air-gapped safe). Without `vendor/`, it falls back to a Cytoscape CDN link (needs internet).
   Either way your graph data is embedded inline — no code leaves the machine.
-- Output lives under `spec-kit-sessions/maps/` which is gitignored, so nothing lands in a commit.
+- Output lives under `namht-sessions/maps/` which is gitignored, so nothing lands in a commit.
 - If the user instead wants a graph the AGENT can query (an agent-queryable index) rather than a human
   visual, that's a different tool — say so rather than forcing this viewer to do it.

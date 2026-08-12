@@ -84,7 +84,7 @@ variable; **if a variable is NOT provided, OMIT that clause entirely** (do not g
    put the time window + a timestamp in the header.
 5. **Confirm, then post** to the Slack channel. Sending is an **outward action** — show the message
    and get an OK first, unless the user explicitly said to auto-send.
-6. **Save** a copy to `spec-kit-sessions/splunk/<date>.md` (gitignored).
+6. **Save** a copy to `namht-sessions/splunk/<date>.md` (gitignored).
 
 ## Output (Slack message shape)
 ```

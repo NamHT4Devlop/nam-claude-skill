@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spec Kit (namht-*) — Setup guide for a company machine (for Claude newcomers)</title>
+<title>namht Kit (the namht-* commands) — Setup guide for a company machine (for Claude newcomers)</title>
 <style>
   :root{ --bg:#0f1115; --panel:#171a21; --panel2:#1d2129; --border:#2a2f3a; --text:#e6e9ef;
     --muted:#9aa3b2; --accent:#7c9cff; --accent2:#5ad1a8; --warn:#ffcf6b; --danger:#ff7b72; --code:#0b0d12; --chip:#222734; }
@@ -56,7 +56,7 @@
 
   <header class="hero">
     <div class="eyebrow">Claude Code · Company machine setup · For newcomers</div>
-    <h1>🏢 Install “Spec Kit” (the <code>/namht-*</code> commands) on a company machine</h1>
+    <h1>🏢 Install “namht Kit” (the <code>/namht-*</code> commands) on a company machine</h1>
     <p class="sub">A step-by-step, beginner-friendly guide for people <b>new to Claude Code</b>: copy the
     <code>nam-claude-skill</code> toolkit onto your company machine, install it safely (no code leaks, no impact
     on team repos), and use it right away: understand the codebase, build features, fix bugs, review, write docs.</p>
@@ -128,9 +128,9 @@ git clone https://github.com/NamHT4Devlop/nam-claude-skill.git ~/nam-claude-skil
 
   <div class="step"><div class="num">A</div><div class="body">
     <h3>Global gitignore — keep artifacts out of commits</h3>
-    <p>Every <code>knowledge-base/</code> and <code>spec-kit-sessions/</code> is ignored by git machine-wide (no repo is modified):</p>
+    <p>Every <code>knowledge-base/</code> and <code>namht-sessions/</code> is ignored by git machine-wide (no repo is modified):</p>
     <div class="cb"><button class="copy">Copy</button><pre><code>touch ~/.gitignore_global
-printf '%s\n' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' '.spec-kit/' >> ~/.gitignore_global
+printf '%s\n' 'namht-sessions/' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' >> ~/.gitignore_global
 git config --global core.excludesfile ~/.gitignore_global</code></pre></div>
   </div></div>
 
@@ -257,7 +257,7 @@ cd ~/nam-claude-skill && git pull        <span class="cmt"># symlinked, so it ap
   <p>Yes. Claude Code has auto-memory (per-project) + you can keep general preferences in <code>~/.claude/CLAUDE.md</code> (loaded in every repo). Each repo's KB also grows over each build/rescan.</p>
 
   <footer>
-    Spec Kit (namht-*) · a port of Auto Spec Kit · Repo <code>NamHT4Devlop/nam-claude-skill</code><br>
+    namht Kit (the namht-* commands) · a port of Auto Spec extension · Repo <code>NamHT4Devlop/nam-claude-skill</code><br>
     This file: <code>&lt;TOOL&gt;/docs/company-setup-guide.html</code> — open in any browser. Security details: <code>SECURITY.md</code>.
   </footer>
 </div>

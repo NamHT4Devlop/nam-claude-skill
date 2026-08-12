@@ -49,7 +49,7 @@ window → remove only when usage is zero.
 4. **Prove old consumers still work** before contracting — hand the regression set to `/namht-qa`.
 
 ## Output (dual-audience; save + report)
-Chat summary + `spec-kit-sessions/migrate/<change>-<date>.md`: impacted consumers, the staged plan
+Chat summary + `namht-sessions/migrate/<change>-<date>.md`: impacted consumers, the staged plan
 with per-step rollback, migration scripts, and the deprecation timeline.
 
 ## Rules

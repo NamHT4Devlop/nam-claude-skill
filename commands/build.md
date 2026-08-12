@@ -1,6 +1,6 @@
 ---
 description: Build a feature end-to-end — size → plan → safety net → code → independent review → tests (incl. regression) → verify vs baseline → evidence → KB → handoff
-argument-hint: <requirement to implement, or a path to a story/plan under spec-kit-sessions/>
+argument-hint: <requirement to implement, or a path to a story/plan under namht-sessions/>
 ---
 
 Use the **namht-build** skill to implement the following requirement, following its pipeline exactly.

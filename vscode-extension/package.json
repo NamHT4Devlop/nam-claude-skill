@@ -1,7 +1,7 @@
 {
   "name": "namht-spec-ui",
-  "displayName": "Spec Kit UI",
-  "description": "Point-and-click UI over the namht-* Spec Kit skills for non-technical roles (PM/SM). Runs Claude Code under the hood.",
+  "displayName": "namht Kit UI",
+  "description": "Point-and-click UI over the namht-* namht Kit skills for non-technical roles (PM/SM). Runs Claude Code under the hood.",
   "version": "0.13.0",
   "publisher": "namht",
   "private": true,
@@ -24,7 +24,7 @@
       "activitybar": [
         {
           "id": "namhtSpec",
-          "title": "Spec Kit",
+          "title": "namht Kit",
           "icon": "media/icon.svg"
         }
       ]
@@ -34,12 +34,12 @@
         {
           "id": "namhtSpec.view",
           "type": "webview",
-          "name": "Spec Kit"
+          "name": "namht Kit"
         }
       ]
     },
     "configuration": {
-      "title": "Spec Kit UI",
+      "title": "namht Kit UI",
       "properties": {
         "namhtSpecUi.claudePath": {
           "type": "string",
@@ -94,8 +94,8 @@
     "commands": [
       {
         "command": "namhtSpec.openApp",
-        "title": "Open Spec Kit App",
-        "category": "Spec Kit",
+        "title": "Open namht Kit App",
+        "category": "namht Kit",
         "icon": "$(multiple-windows)"
       }
     ],

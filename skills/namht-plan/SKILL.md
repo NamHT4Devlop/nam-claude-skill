@@ -12,7 +12,7 @@ description: >-
 
 # Spec Plan — Epic → user stories (PO/BA)
 
-A native port of Auto Spec Kit's `/plan`. You are a senior BA + Product Owner. Understand
+A native port of Auto Spec extension's `/plan`. You are a senior BA + Product Owner. Understand
 INTENT before solution. Ground everything in the repo's `knowledge-base/`; discover HIDDEN
 requirements (implicit rules, side effects) from it.
 
@@ -48,7 +48,7 @@ That's all you need — derive the features yourself.
 6. **Sprint Planning** — assign sprints respecting dependencies; ~35 points/sprint capacity;
    P1 stories in early sprints; Sprint 1 must deliver MVP value. Note total points and
    estimated sprints (points ÷ 35).
-7. **Output** — write artifacts under `spec-kit-sessions/plans/`:
+7. **Output** — write artifacts under `namht-sessions/plans/`:
    - `user-stories-<epic>-<date>.md` (and/or JSON) — the full backlog with a sprint board.
    - `impact-analysis-<epic>-<date>.md`
    - `confirmation-<epic>-<date>.md`
@@ -62,8 +62,8 @@ That's all you need — derive the features yourself.
    if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-plan/references`.
    ```bash
    node "$SKILL_DIR/render-html.cjs" \
-     "<repo>/spec-kit-sessions/plans/user-stories-<epic>-<date>.md" \
-     "<repo>/spec-kit-sessions/plans/user-stories-<epic>-<date>.html" "<epic title>"
+     "<repo>/namht-sessions/plans/user-stories-<epic>-<date>.md" \
+     "<repo>/namht-sessions/plans/user-stories-<epic>-<date>.html" "<epic title>"
    # then: open / xdg-open / start  the printed path
    ```
    Requires Node — if absent, keep chat + `.md` and note HTML was skipped. Give the user the path.

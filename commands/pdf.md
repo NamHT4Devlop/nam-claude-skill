@@ -1,6 +1,6 @@
 ---
 description: Export a Markdown/HTML report to PDF (renders Markdown + Mermaid first); best-effort headless Chrome / wkhtmltopdf
-argument-hint: <path to .md or .html (e.g. a spec-kit-sessions report)>
+argument-hint: <path to .md or .html (e.g. a namht-sessions report)>
 ---
 
 Use the **namht-pdf** skill to export the file below to PDF: if it's Markdown, render to

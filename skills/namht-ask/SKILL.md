@@ -12,12 +12,17 @@ description: >-
 
 # Spec Ask — grounded codebase Q&A
 
-A native port of Auto Spec Kit's `/ask`. Answer grounded in the Knowledge Base (business meaning)
+A native port of Auto Spec extension's `/ask`. Answer grounded in the Knowledge Base (business meaning)
 and real source (technical detail) — never invent files, APIs, fields, or behavior.
+
+> **Legacy folder.** Session artifacts used to live in `spec-kit-sessions/` (renamed to avoid
+> confusion with GitHub's unrelated `spec-kit` project). If a repo still has `spec-kit-sessions/` and no
+> `namht-sessions/`, **read** the old folder so past work isn't lost, keep **writing** to
+> `namht-sessions/`, and mention `scripts/migrate-sessions.sh <repo>` once to merge them.
 
 ## Procedure
 0. **Check the Q&A journal first (cross-session memory).** If
-   `spec-kit-sessions/answers/_journal.md` exists, read it — it is a one-line-per-question index of
+   `namht-sessions/answers/_journal.md` exists, read it — it is a one-line-per-question index of
    every past answer in this repo. Use it to: (a) answer *"what did I ask before / what did we
    conclude about X?"* directly from the journal; (b) when today's question was already answered,
    **say so**, link the saved answer file, reuse its conclusion, and only re-derive what changed
@@ -76,18 +81,18 @@ Any technical term used above → a one-line everyday definition. Omit the secti
 
 ## Output — answer in chat, THEN save an HTML file
 1. **Answer in chat first** using the full dual-audience structure above (this is the primary output).
-2. **Save the same content** to `spec-kit-sessions/answers/<slug>-<date>.md` (slug from the question).
+2. **Save the same content** to `namht-sessions/answers/<slug>-<date>.md` (slug from the question).
 3. **Render a self-contained HTML** (styled, with the Mermaid diagram drawn) using the bundled renderer.
    Resolve this skill's `references/` dir first (call it `$SKILL_DIR`): `${CLAUDE_PLUGIN_ROOT}/skills/namht-ask/references`
    if `CLAUDE_PLUGIN_ROOT` is set, else the `references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-ask/references`.
    ```bash
    node "$SKILL_DIR/render-html.cjs" \
-     "<repo>/spec-kit-sessions/answers/<slug>-<date>.md" \
-     "<repo>/spec-kit-sessions/answers/<slug>-<date>.html" "<question>"
+     "<repo>/namht-sessions/answers/<slug>-<date>.md" \
+     "<repo>/namht-sessions/answers/<slug>-<date>.html" "<question>"
    ```
    (It prints the HTML path. Requires Node — if absent, keep the chat + `.md` and say HTML was skipped.)
 4. **Open it**: macOS `open "<path>"` · Linux `xdg-open` · Windows `start "" "<path>"`. Give the user the path.
-5. **Append ONE line to the Q&A journal** `spec-kit-sessions/answers/_journal.md` (create it with the
+5. **Append ONE line to the Q&A journal** `namht-sessions/answers/_journal.md` (create it with the
    header below if missing). This is the cross-session memory step — never skip it:
    ```markdown
    # Q&A Journal — one line per answered question (newest last)
@@ -99,4 +104,4 @@ Any technical term used above → a one-line everyday definition. Omit the secti
    just saved (filename only). If the journal grows past ~200 rows, note that consolidation is due —
    don't delete rows silently.
 
-Output lands under `spec-kit-sessions/` (gitignored) — no footprint in the repo.
+Output lands under `namht-sessions/` (gitignored) — no footprint in the repo.

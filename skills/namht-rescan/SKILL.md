@@ -10,7 +10,7 @@ description: >-
 
 # Spec Rescan — update the Knowledge Base incrementally
 
-A native port of Auto Spec Kit's `/rescan`. Keep `knowledge-base/` accurate without paying
+A native port of Auto Spec extension's `/rescan`. Keep `knowledge-base/` accurate without paying
 for a full rebuild. If there is no existing KB, fall back to a full `/namht-scan`.
 
 ## Procedure

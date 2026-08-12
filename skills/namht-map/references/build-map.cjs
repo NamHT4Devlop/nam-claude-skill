@@ -12,7 +12,7 @@
  *     mode = all | files | classes | routes | domain   (default: all)
  *
  * Examples:
- *   node build-map.cjs .                       # → ./spec-kit-sessions/maps/<name>-<date>.html
+ *   node build-map.cjs .                       # → ./namht-sessions/maps/<name>-<date>.html
  *   node build-map.cjs ../your-project out.html files
  */
 const fs = require('fs');
@@ -53,9 +53,9 @@ let html = tpl
   .replace('__GRAPH_DATA__', () => graphJson);
 html = inlineVendored(html, __dirname); // offline: inline Cytoscape from vendor/ if present
 
-// Default output: <root>/spec-kit-sessions/maps/<name>-<YYYY-MM-DD>.html  (gitignored)
+// Default output: <root>/namht-sessions/maps/<name>-<YYYY-MM-DD>.html  (gitignored)
 if (!out) {
-  const dir = path.join(root, 'spec-kit-sessions', 'maps');
+  const dir = path.join(root, 'namht-sessions', 'maps');
   fs.mkdirSync(dir, { recursive: true });
   const slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
   out = path.join(dir, `${slug}-${new Date().toISOString().slice(0, 10)}.html`);

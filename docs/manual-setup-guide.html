@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spec Kit (namht-*) — Cài thủ công (không clone, không tải)</title>
+<title>namht Kit (the namht-* commands) — Cài thủ công (không clone, không tải)</title>
 <style>
   :root{
     --bg:#0f1115; --panel:#171a21; --panel2:#1d2129; --border:#2a2f3a;
@@ -188,7 +188,7 @@ bash "$ROOT/scripts/personal-install.sh"
 
 <span class="cmt"># 4) chặn rò rỉ: global gitignore</span>
 touch ~/.gitignore_global
-printf '%s\n' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' '.spec-kit/' &gt;&gt; ~/.gitignore_global
+printf '%s\n' 'namht-sessions/' 'spec-kit-sessions/' 'knowledge-base/' 'CLAUDE.local.md' &gt;&gt; ~/.gitignore_global
 git config --global core.excludesfile ~/.gitignore_global</code></pre></div>
 
   <h3>5) Lắp rào git</h3>
@@ -226,7 +226,7 @@ printf '{"tool_input":{"command":"git push https://github.com/some-org/x"}}' | ~
 
   <hr>
   <footer>
-    Spec Kit (namht-*) · port của Auto Spec Kit · Repo: <code>NamHT4Devlop/nam-claude-skill</code><br>
+    namht Kit (the namht-* commands) · port của Auto Spec extension · Repo: <code>NamHT4Devlop/nam-claude-skill</code><br>
     File này: <code>&lt;TOOL&gt;/docs/manual-setup-guide.html</code> — mở bằng trình duyệt bất kỳ.
   </footer>
 
