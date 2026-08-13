@@ -14,6 +14,7 @@ echo; echo "== consistency =="; bash tests/consistency.test.sh || rc=1
 echo; echo "== migrate-sessions (touches real user data) =="; bash tests/migrate-sessions.test.sh || rc=1
 echo; echo "== schedule (edits the user's crontab) =="; bash tests/schedule.test.sh || rc=1
 echo; echo "== personal-install (deletes links under ~/.claude) =="; bash tests/personal-install.test.sh || rc=1
+echo; echo "== onboard-project (writes into other repos) =="; bash tests/onboard.test.sh || rc=1
 echo; echo "== kb hub export/import (moves real Knowledge Bases) =="; bash tests/kb-hub.test.sh || rc=1
 echo; echo "== webview markdown (renders untrusted model output) =="
 if command -v node >/dev/null 2>&1; then node tests/webview-markdown.test.cjs || rc=1

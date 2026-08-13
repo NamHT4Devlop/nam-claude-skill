@@ -56,5 +56,23 @@ const identical = Object.entries(VI).filter(([k, v]) => k === v);
 if (identical.length === 0) ok('no entry translates to itself');
 else { bad(`${identical.length} entr(y/ies) map to the same English text:`); identical.forEach(([k]) => console.log(`      "${k}"`)); }
 
+// Strings born in the extension HOST were invisible to this test — it only ever scanned main.js —
+// so a Vietnamese panel could show English status text forever with the suite green. The host now
+// sends keys; assert that every key it can send is assembled from translatable pieces.
+console.log('i18n: host-sent status keys are translatable');
+const extSrc = fs.readFileSync(path.join(__dirname, '..', 'vscode-extension', 'src', 'extension.ts'), 'utf8');
+const hostKeys = [...extSrc.matchAll(/type:\s*'status'[^}]*?key:\s*'([a-z-]+)'/g)].map(m => m[1]);
+if (!hostKeys.length) bad("no status keys found in extension.ts — did the host go back to sending finished sentences?");
+else {
+  const unhandled = hostKeys.filter(k => !mainSrc.includes(`'${k}'`));
+  if (unhandled.length) { bad(`status key(s) the webview never handles: ${unhandled.join(', ')}`); }
+  else ok(`all ${hostKeys.length} host status keys are handled in main.js`);
+  // and the human-readable pieces those branches translate must exist in the dictionary
+  const pieces = ['Claude Code ready', 'Claude Code CLI not found', 'Install it and sign in, or set namhtSpecUi.claudePath.'];
+  const missingPieces = pieces.filter(x => !VI[x] && !same.has(x));
+  if (missingPieces.length) bad(`status wording with no Vietnamese: ${missingPieces.join(' | ')}`);
+  else ok('status wording is translated');
+}
+
 console.log(`i18n: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -88,9 +88,12 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   private checkClaude() {
     const { claudePath } = this.cfg();
     execFile(claudePath, ['--version'], (err, stdout) => {
+      // Send a KEY, not a finished sentence: a status born here used to arrive as English and
+      // overwrite whatever the webview had translated — so the Vietnamese panel always showed its
+      // setup instructions in English, to exactly the non-technical reader who needs them least.
       this.post(err
-        ? { type: 'status', ok: false, msg: `Claude Code CLI not found ("${claudePath}"). Install it and sign in, or set namhtSpecUi.claudePath.` }
-        : { type: 'status', ok: true, msg: `Claude Code ready (${String(stdout).trim()})` });
+        ? { type: 'status', ok: false, key: 'cli-missing', arg: claudePath }
+        : { type: 'status', ok: true, key: 'cli-ready', arg: String(stdout).trim() });
     });
   }
 

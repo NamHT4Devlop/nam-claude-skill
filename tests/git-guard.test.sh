@@ -104,6 +104,37 @@ allow "git config user.name Nam"
 deny "g=git; \$g push https://github.com/acme-corp/app main"
 deny "G=/usr/bin/git; \$G push"
 
+echo "git-guard: every deny rule has at least one case (several had none)"
+# A deny arm with no test fails OPEN silently the day someone edits it. One case per rule.
+deny "git config remote.origin.url https://github.com/acme-corp/app"
+deny "git config --local remote.origin.pushurl x"
+deny "git filter-branch --tree-filter rm -rf secrets"
+deny "git filter-repo --path secrets --invert-paths"
+deny "git reflog expire --expire=now --all"
+deny "git gc --prune=now"
+deny "git gc --prune"
+deny "git update-ref -d refs/heads/main"
+deny "git svn dcommit"
+deny "git p4 submit"
+deny "git worktree prune"
+deny "git worktree remove wt"
+deny "git remote prune origin"
+deny "git remote rename origin upstream"
+deny "git checkout -f main"
+deny "git switch --force main"
+deny "git branch --delete --force feature"
+# ...and the near-misses that must NOT trip those rules
+allow "git gc"
+allow "git reflog"
+allow "git update-ref refs/heads/tmp HEAD"
+allow "git remote -v"
+allow "git remote show origin"
+allow "git branch --delete merged"
+# Known and accepted: the guard splits on whitespace and drops quotes (header, line 20), so a commit
+# MESSAGE containing a rule word — `git commit -m "stop using --amend"` — is denied as if it were the
+# flag. Fail-closed is the right direction for a security control, and the denial says why; honouring
+# quotes would mean a second, divergent shell parser, which is a worse trade.
+
 echo "git-guard: remote resolved from the session cwd (real fixture repos)"
 FIX=$(mktemp -d "${TMPDIR:-/tmp}/git-guard-fix.XXXXXX")
 git init -q "$FIX/team"     && git -C "$FIX/team"     remote add origin https://github.com/acme-corp/app.git

@@ -427,7 +427,15 @@ function renderChat(r) {
 // ---------- messages ----------
 window.addEventListener('message', ev => {
   const m = ev.data; const id = m.runId;
-  if (m.type === 'status') { statusOk = m.ok; statusMsg = m.msg; if (cur.view === 'home') renderHome(); return; }
+  if (m.type === 'status') {
+    statusOk = m.ok;
+    // The host sends a key + one argument; the sentence is assembled here so it can be translated.
+    statusMsg = m.key === 'cli-ready' ? t('Claude Code ready') + ' (' + (m.arg || '') + ')'
+      : m.key === 'cli-missing' ? t('Claude Code CLI not found') + ' ("' + (m.arg || '') + '"). ' + t('Install it and sign in, or set namhtSpecUi.claudePath.')
+      : (m.msg || statusMsg);
+    if (cur.view === 'home') renderHome();
+    return;
+  }
   if (m.type === 'spend') { spend = m; if (cur.view === 'home') renderHome(); return; }
   if (m.type === 'config') { if (m.defaultModel !== undefined) defaultModel = m.defaultModel; if (m.mode) uiMode = m.mode; if (m.language) { LANG = m.language; if (LANG === 'vi') statusMsg = t(statusMsg); } if (cur.view === 'home') renderHome(); return; }
   if (m.type === 'history') { history = m.items || []; if (cur.view === 'home') renderHome(); return; }

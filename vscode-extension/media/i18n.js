@@ -161,6 +161,10 @@ const I18N_VI = {
   'Cancel': 'Huỷ',
   '📄 Report': '📄 Báo cáo',
   'Checking Claude Code…': 'Đang kiểm tra Claude Code…',
+  'Claude Code ready': 'Claude Code đã sẵn sàng',
+  'Claude Code CLI not found': 'Không tìm thấy Claude Code CLI',
+  'Install it and sign in, or set namhtSpecUi.claudePath.':
+    'Hãy cài đặt và đăng nhập, hoặc chỉnh namhtSpecUi.claudePath.',
   '↵ Enter to run · ⇧ Shift+Enter for a new line': '↵ Enter để chạy · ⇧ Shift+Enter để xuống dòng',
   '  ·  ⚡ Interactive = terminal with approve/reject per edit':
     '  ·  ⚡ Tương tác = terminal, duyệt/từ chối từng thay đổi',
