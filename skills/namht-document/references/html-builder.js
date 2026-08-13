@@ -47,7 +47,7 @@ exports.markdownToHtml = (md) => markdownToHtml(md);
 exports.buildKnowledgeGraphHtml = buildKnowledgeGraphHtml;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function esc(s) {
-    return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 function priorityClass(p) {
     return p === 'P1' ? 'p1' : p === 'P2' ? 'p2' : 'p3';
@@ -558,7 +558,10 @@ function markdownToHtml(md) {
             const lang = (fence[1] || '').toLowerCase();
             if (lang === 'mermaid') {
                 // Mermaid renders the div's text as a diagram. Strip any tags defensively.
-                out.push(`<div class="mermaid">${buf.join('\n').replace(/<[^>]*>/g, '')}</div>`);
+                // HTML-escape rather than regex-strip: /<[^>]*>/g only removes COMPLETE tags, so an
+                // unterminated `<img src=x onerror=…` survived and the parser reassembled it from the
+                // following markup. Mermaid reads textContent, so escaping the source is lossless.
+                out.push(`<div class="mermaid">${esc(buf.join('\n'))}</div>`);
             }
             else {
                 out.push(`<pre><code>${esc(buf.join('\n'))}</code></pre>`);
@@ -1123,7 +1126,7 @@ function selectNode(id, simNodes, simEdges) {
 
   content.innerHTML = [
     '<h2>' + esc(node.label) + '</h2>',
-    '<span class="badge" style="background:' + color + '">' + node.layer + '</span>',
+    '<span class="badge" style="background:' + esc(color) + '">' + esc(node.layer) + '</span>',
     metaHtml,
     '<p class="desc">' + esc(node.description || '') + '</p>',
     fileHtml,
@@ -1148,7 +1151,7 @@ function buildLegend(nodes) {
   const legend = document.getElementById('legend');
   legend.innerHTML = layers.map(l => {
     const cfg = RAW_GRAPH.layers.find(x => x.id === l) || { label: l, color: '#555' };
-    return '<div class="legend-item"><div class="legend-dot" style="background:' + cfg.color + '"></div>' + cfg.label + '</div>';
+    return '<div class="legend-item"><div class="legend-dot" style="background:' + esc(cfg.color) + '"></div>' + esc(cfg.label) + '</div>';
   }).join('');
 }
 

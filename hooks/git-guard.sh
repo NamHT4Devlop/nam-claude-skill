@@ -77,10 +77,26 @@ oldIFS=$IFS; IFS=';'; segs=($s); IFS=$oldIFS
 
 CLEAN_F_RE='^-[A-Za-z]*f'
 
+# Aliasing the binary through a variable (`g=git; $g push …`) would sail past the token match below,
+# because `$g` is not `git`. We cannot follow shell variables, so refuse to reason about it at all.
+printf '%s' "$cmd" |
+  grep -qE '(^|[;&|[:space:]])[A-Za-z_][A-Za-z0-9_]*=("|'"'"')?(/[^[:space:];&|]*/)?git("|'"'"')?([[:space:]]|;|$)' &&
+  deny "git assigned to a shell variable (the real command cannot be verified)"
+
+# `cd`/`pushd` seen in an EARLIER segment — this is how a later `git push` resolves its remote.
+# It must never be scraped from the whole command line: a `cd` that runs AFTER the push would then
+# decide which repo the push is validated against, which is a straight bypass of the whitelist.
+chdir_prefix=""
+
 for seg in "${segs[@]}"; do
   toks=($seg)
   n=${#toks[@]}
   [ "$n" -eq 0 ] && continue
+
+  # record a directory change for the segments that follow (segments are already in execution order)
+  case "$(unq "${toks[0]}")" in
+    cd|pushd) [ "$n" -ge 2 ] && chdir_prefix=$(unq "${toks[1]}");;
+  esac
 
   # find the `git` word (also /usr/bin/git, \git, "git", $(git …)
   gi=-1; i=0
@@ -131,7 +147,9 @@ for seg in "${segs[@]}"; do
   cmdpos=1; k=0
   while [ $k -lt $gi ]; do
     case "$(unq "${toks[$k]}")" in
-      *=*|sudo|env|command|nohup|time|exec) ;;
+      # shell grouping and launcher words keep git in command position — `{ git zz; }` must still be
+      # classified as an invocation, or the unknown-subcommand/alias check below can be skipped.
+      *=*|sudo|env|command|nohup|time|exec|xargs|nice|ionice|timeout|stdbuf|'{'|'}'|'!'|then|do|else|elif) ;;
       *) cmdpos=0; break;;
     esac
     k=$((k+1))
@@ -168,13 +186,30 @@ for seg in "${segs[@]}"; do
       esac
     done
 
+    # `git push --repo=<repository>` is git's documented way to name the target with no positional
+    # argument. It starts with `-`, so the loop above skips it and the code would fall through to the
+    # local default remote — validating a whitelisted origin while git pushes somewhere else.
+    # (git: the positional argument wins when both are given, so only fill in when target is empty.)
+    if [ -z "$target" ]; then
+      k=0
+      while [ $k -lt ${#args[@]} ]; do
+        case "${args[$k]}" in
+          \#*) break;;
+          --repo=*) target=${args[$k]#--repo=}; break;;
+          --repo)   k=$((k+1)); target=${args[$k]:-}; break;;
+        esac
+        k=$((k+1))
+      done
+    fi
+
     url=""
     case "$target" in
       https://*|ssh://*|git@*|http://*|ftp*://*|file://*) url=$target;;
       *)
-        # resolve working dir: segment's `git -C <dir>`, else a leading cd/pushd, else the hook's cwd
+        # resolve working dir: segment's `git -C <dir>`, else a cd/pushd from a PRECEDING segment,
+        # else the hook's cwd. Never scan the whole command — see chdir_prefix above.
         dir=$cdir
-        [ -z "$dir" ] && dir=$(printf '%s' "$cmd" | sed -nE 's/.*(^|[;&|(){}[:space:]])(pushd|cd)[[:space:]]+([^ &;|)]+).*/\3/p' | head -1)
+        [ -z "$dir" ] && dir=$chdir_prefix
         [ -z "$dir" ] && dir=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)
         [ -z "$dir" ] && dir="$PWD"
         dir="${dir/#\~/$HOME}"
@@ -198,7 +233,12 @@ for seg in "${segs[@]}"; do
     p4)  [ "${args[0]:-}" = submit ]  && deny "git p4 submit";;
     config)
       for a in "${args[@]}"; do
-        case "$a" in *remote.*) deny "modifies git config remote.*";; esac
+        case "$a" in
+          *remote.*) deny "modifies git config remote.*";;
+          # Persisting an alias is the same arbitrary-shell hazard as the transient `-c alias.*`
+          # already blocked above — `git config alias.x '!sh'` then makes `git x` run a shell.
+          alias.*|*[[:space:]]alias.*) deny "git config alias.* (an alias can run an arbitrary shell command)";;
+        esac
       done;;
 
     # ── destructive LOCAL → forbidden ─────────────────────────────────────────

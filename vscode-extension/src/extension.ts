@@ -16,6 +16,9 @@ const EDITS_CODE = new Set([
   'namht-build', 'namht-fix-bug', 'namht-migrate', 'namht-simplify', 'namht-perf', 'namht-observe',
   'namht-rails-to-spring',
 ]);
+// The models the UI offers. Anything the webview sends is checked against this before it reaches a
+// command line — an unvalidated value would be the only unquoted token in a shell-executed string.
+const MODELS = new Set(['', 'haiku', 'sonnet', 'opus']);
 const HIST_KEY = 'namhtSpecUi.history';
 const HIST_MAX = 40;
 // Spend is per machine, not per workspace — globalState, one bucket per day, pruned to SPEND_DAYS.
@@ -93,12 +96,22 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
 
   // A form field can hold a secret (the Slack webhook of namht-splunk-report). History is written to
   // VS Code workspace storage in plaintext, so strip anything URL-shaped before persisting it.
+  private static readonly SECRET_RE = /(https?:\/\/\S+|xox[abposr]-[A-Za-z0-9-]+|gh[pousr]_[A-Za-z0-9]{16,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/gi;
   private scrubValues(values: any): any {
     if (!values || typeof values !== 'object') return values;
     const out: any = {};
     for (const [k, v] of Object.entries(values)) {
-      out[k] = (typeof v === 'string' && /https?:\/\/\S/i.test(v)) ? '<redacted URL — not stored>' : v;
+      out[k] = (typeof v === 'string' && SpecKitViewProvider.SECRET_RE.test(v)) ? '<redacted — not stored>' : v;
+      SpecKitViewProvider.SECRET_RE.lastIndex = 0;   // /g regexes are stateful across .test() calls
     }
+    return out;
+  }
+  // Redacting only the `values` map was not enough: the same secret is inside the prompt we echo
+  // into the run log, and follow-up text was never scrubbed at all — and the log is persisted to
+  // workspace storage in plaintext. Scrub anything secret-shaped on the way into the log.
+  private scrubText(t: string): string {
+    const out = String(t).replace(SpecKitViewProvider.SECRET_RE, '<redacted>');
+    SpecKitViewProvider.SECRET_RE.lastIndex = 0;
     return out;
   }
 
@@ -162,12 +175,25 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   }
 
   // ---- runs ----
+  // Read-only mode is enforced here and NOWHERE ELSE is allowed to skip it. Three paths reach the
+  // CLI — start(), followup() and interactive() — and each must ask this question, because the CLI
+  // runs with --permission-mode bypassPermissions by default: whatever the prompt asks for happens.
+  private refusedByReadonly(command: string): string | undefined {
+    if (this.cfg().mode !== 'readonly') return undefined;
+    if (EDITS_CODE.has(command)) return `"${command}" changes code and this panel is in read-only mode`;
+    // Free chat is a raw prompt with no skill, so nothing constrains what it asks the CLI to do —
+    // "edit src/foo.ts" in the chat box is a code edit. It must not be reachable in read-only mode.
+    if (command === '__chat') return 'free chat can ask for anything, including code edits — it is disabled in read-only mode';
+    return undefined;
+  }
+
   private start(m: any) {
     const runId = String(m.runId); const command = String(m.command || '');
     const isChat = command === '__chat';   // free chat: raw prompt, no skill, whitelist bypassed
     if (!isChat && !ALLOWED.has(command)) { this.post({ type: 'log', runId, text: `[blocked: "${command}" is not allowed]` }); this.post({ type: 'done', runId, code: 1 }); return; }
-    if (this.cfg().mode === 'readonly' && EDITS_CODE.has(command)) {
-      this.post({ type: 'log', runId, text: `[blocked: "${command}" changes code and this panel is in read-only mode]` });
+    const refusal = this.refusedByReadonly(command);
+    if (refusal) {
+      this.post({ type: 'log', runId, text: `[blocked: ${refusal}]` });
       this.post({ type: 'done', runId, code: 1 }); return;
     }
     const cwd = this.cwd() || (isChat ? require('os').homedir() : undefined);
@@ -178,11 +204,20 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     this.histUpsert({ runId, command, title: m.title || command, values: this.scrubValues(m.values || {}), when: Date.now(), status: 'running', model });
     this.state.set(runId, { runId, command, title: String(m.title || command), log: '', result: '', status: 'running', sessionId: null, report: null, when: Date.now(), model });
     this.evict();
-    this.spawnClaude(runId, ['-p', prompt], cwd, `${isChat ? '💬' : '▶'} ${prompt}\n(cwd: ${cwd})\n\n`);
+    this.spawnClaude(runId, ['-p', prompt], cwd, `${isChat ? '💬' : '▶'} ${this.scrubText(prompt)}\n(cwd: ${cwd})\n\n`);
   }
 
   private followup(runId: string, text: string, sessionId?: string, model?: string) {
     if (!text.trim()) return;
+    // A follow-up is an unconstrained prompt resumed into the same bypassPermissions session, so it
+    // is the widest door in this panel. In read-only mode it stays shut: without this, "now edit
+    // src/foo.ts" typed after an innocent /namht-ask run edits the source, and the read-only .vsix
+    // handed to a PM would be a promise the host does not keep.
+    if (this.cfg().mode === 'readonly') {
+      this.post({ type: 'log', runId, text: '\n[blocked: follow-ups can ask for anything, including code edits — this panel is in read-only mode]' });
+      this.post({ type: 'done', runId, code: 1 });
+      return;
+    }
     const cwd = this.cwd(); if (!cwd) return;
     // A follow-up may pick a DIFFERENT model — the resumed session keeps its full context on disk,
     // so switching model mid-session still "knows" what it was doing.
@@ -192,7 +227,7 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     const sid = (sessionId && sessionId.trim()) ? sessionId.trim() : this.sessions.get(runId);
     if (sid) this.sessions.set(runId, sid);
     const resume = sid ? ['--resume', sid] : ['--continue'];
-    this.spawnClaude(runId, ['-p', text, ...resume], cwd, `\n\n────────\n💬 ${text}\n\n`);
+    this.spawnClaude(runId, ['-p', text, ...resume], cwd, `\n\n────────\n💬 ${this.scrubText(text)}\n\n`);
   }
 
   private spawnClaude(runId: string, baseArgs: string[], cwd: string, header: string) {
@@ -321,31 +356,59 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
   // ---- interactive handoff: run the same skill in a terminal so a dev reviews each diff / approves-rejects ----
   private interactive(m: any) {
     const command = String(m.command || ''); if (!ALLOWED.has(command)) return;
-    if (this.cfg().mode === 'readonly' && EDITS_CODE.has(command)) {
-      vscode.window.showWarningMessage('This panel is in read-only mode — skills that change code are disabled.');
-      return;
-    }
+    const refusal = this.refusedByReadonly(command);
+    if (refusal) { vscode.window.showWarningMessage(`Read-only mode: ${refusal}`); return; }
     const cwd = this.cwd(); if (!cwd) { vscode.window.showWarningMessage('Open a project folder first — skills read that project.'); return; }
     const { claudePath, model: cfgModel } = this.cfg();
-    const model = (m.model !== undefined && m.model !== null) ? String(m.model) : cfgModel;
+    const model = MODELS.has(String(m.model)) ? String(m.model) : (MODELS.has(cfgModel) ? cfgModel : '');
     const prompt = `/${command} ${String(m.args || '')}`.replace(/\s*\n\s*/g, ' ').trim();
     const q = (s: string) => `'` + s.replace(/'/g, `'\\''`) + `'`;
-    const line = `${q(claudePath)}${model ? ' --model ' + model : ''} ${q(prompt)}`;
+    // `model` is the one token spliced into a line that a SHELL executes (sendText below), so it is
+    // allowlisted above AND quoted here — the other two tokens were already quoted.
+    const line = `${q(claudePath)}${model ? ' --model ' + q(model) : ''} ${q(prompt)}`;
     const term = vscode.window.createTerminal({ cwd, name: `Claude ⚡ ${String(m.title || command)}` });
     term.show(true);
     term.sendText(line, true);
   }
 
+  // The webview may name a path, but the host decides whether it is allowed to open it. Without
+  // this, a crafted postMessage opens any file on disk — and openReport hands .html straight to the
+  // system browser. Everything this panel legitimately opens lives under the workspace.
+  private insideWorkspace(abs: string): boolean {
+    const cwd = this.cwd(); if (!cwd) return false;
+    const path = require('path');
+    const rel = path.relative(path.resolve(cwd), path.resolve(abs));
+    return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+  }
+  private resolveInWorkspace(p: string): string | undefined {
+    if (!p) return undefined;
+    const path = require('path');
+    if (p.startsWith('~')) p = require('os').homedir() + p.slice(1);
+    const cwd = this.cwd();
+    const abs = path.isAbsolute(p) ? p : (cwd ? path.resolve(cwd, p) : undefined);
+    if (!abs || !this.insideWorkspace(abs)) {
+      vscode.window.showWarningMessage(`Refused to open a path outside this workspace: ${p}`);
+      return undefined;
+    }
+    return abs;
+  }
+
   private openFile(p: string) {
-    if (!p) return;
-    if (!p.startsWith('/')) { const cwd = this.cwd(); if (cwd) p = require('path').resolve(cwd, p); }
-    vscode.window.showTextDocument(vscode.Uri.file(p), { preview: true })
-      .then(undefined, (err) => vscode.window.showWarningMessage(`Cannot open ${p}: ${err}`));
+    const abs = this.resolveInWorkspace(p); if (!abs) return;
+    vscode.window.showTextDocument(vscode.Uri.file(abs), { preview: true })
+      .then(undefined, (err) => vscode.window.showWarningMessage(`Cannot open ${abs}: ${err}`));
   }
 
   private cancel(runId: string) {
     const p = this.procs.get(runId);
-    if (p) { p.kill('SIGTERM'); this.procs.delete(runId); const st = this.state.get(runId); if (st) st.status = 'cancelled'; this.post({ type: 'log', runId, text: '\n[cancelled]' }); this.post({ type: 'done', runId, code: 130 }); this.histPatch(runId, { status: 'cancelled' }); }
+    if (!p) return;
+    // Mark it and let the process's own 'close' handler post the single terminal event. Posting
+    // `done` here (and deleting from procs) used to fire a SECOND done when the child actually
+    // exited, and re-opened the busy-guard in between — so a follow-up sent the moment the UI
+    // re-enabled could spawn a new process for the same runId, which the dying one then clobbered.
+    const st = this.state.get(runId); if (st) st.status = 'cancelled';
+    this.post({ type: 'log', runId, text: '\n[cancelling…]' });
+    p.kill('SIGTERM');
   }
 
   private findReport(out: string, finalText: string, cwd: string): string | undefined {
@@ -361,8 +424,9 @@ class SpecKitViewProvider implements vscode.WebviewViewProvider {
     return p;
   }
   private openReport(p: string) {
-    if (!p) return; const uri = vscode.Uri.file(p);
-    if (p.endsWith('.html')) vscode.env.openExternal(uri); else vscode.commands.executeCommand('markdown.showPreview', uri);
+    const abs = this.resolveInWorkspace(p); if (!abs) return;
+    const uri = vscode.Uri.file(abs);
+    if (abs.endsWith('.html')) vscode.env.openExternal(uri); else vscode.commands.executeCommand('markdown.showPreview', uri);
   }
 
   private getHtml(webview: vscode.Webview): string {

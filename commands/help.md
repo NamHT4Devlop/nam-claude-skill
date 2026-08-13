@@ -20,7 +20,7 @@ Commands (all namespaced under `/namht-`):
 | `/namht-drift [scope] [--fix-docs]` | Docs vs reality audit: stale KB entries, undocumented behavior, ACs promised but never shipped, broken architecture invariants. Read-only; routes each finding to rescan/build/review. `--fix-docs` also refreshes the stale KB entries (asks first, backs them up, never touches source). |
 | `/namht-ask <question>` | Q&A grounded in the KB — plain language + Mermaid diagram + technical detail. |
 | `/namht-plan <epic>` | PO/BA: Epic → features → impact → user stories (Given/When/Then) → sprint plan. |
-| `/namht-issues [plan] [target]` | Turn a plan / user stories into tracker issues (GitHub via `gh`, Jira/Linear via MCP) — one issue per story with its ACs as a checklist. Previews first; never creates without an explicit yes; re-runs update instead of duplicating. |
+| `/namht-issues [plan] [target] [--create]` | Turn a plan / user stories into tracker issues (GitHub via `gh`, Jira/Linear via MCP) — one issue per story with its ACs as a checklist. Previews first; never creates without an explicit yes; re-runs update instead of duplicating. |
 | `/namht-qa <user story>` | QA: user story → test cases covering the NEW flow + regression for OLD flows (Gherkin + manual table + traceability). |
 | `/namht-map [scope]` | Interactive HTML code graph (Cytoscape) for humans — zoom/click/filter, opens in browser. |
 | `/namht-system-map` | Multi-service workspace: cross-service dependency graph + end-to-end business flows (run at workspace root). |

@@ -77,7 +77,14 @@ for spec in "${LIBS[@]}"; do
   fi
 
   actual="$(sha "$got")"
-  if [ -n "$expect" ] && [ "$actual" != "$expect" ]; then
+  # An empty $expect means the file has no pinned hash. Installing it anyway would contradict
+  # this script's own promise, and the bytes end up inlined verbatim into KB/report HTML that
+  # gets shared — so refuse rather than install something unverifiable.
+  if [ -z "$expect" ]; then
+    echo "  ✖ $file has no pinned hash in $VENDOR/SHA256SUMS — refusing to install it"
+    missing=1; continue
+  fi
+  if [ "$actual" != "$expect" ]; then
     echo "  ✖ $file hash MISMATCH — refusing to install"
     echo "      expected $expect"
     echo "      got      $actual"
@@ -86,7 +93,7 @@ for spec in "${LIBS[@]}"; do
     missing=1; continue
   fi
   cp "$got" "$dest"
-  echo "  ✓ $file installed$([ -n "$expect" ] && echo ' and verified')"
+  echo "  ✓ $file installed and verified"
 done
 
 if [ "$missing" -ne 0 ]; then
@@ -101,4 +108,4 @@ EOS
 fi
 
 echo
-verify_all >/dev/null && echo "✔ vendor/ complete and verified — reports will render offline"
+verify_all && echo "✔ vendor/ complete and verified — reports will render offline"

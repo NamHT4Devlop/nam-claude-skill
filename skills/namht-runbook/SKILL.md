@@ -73,8 +73,13 @@ Read **both** halves, and cite files for everything:
    of plausible-looking commands that don't exist is the failure mode to avoid.
 
 ## Output (dual-audience; save + render HTML)
-Save to `namht-sessions/runbook/<service>-<date>.md`, render with the bundled renderer
-(`node "$SKILL_DIR/render-html.cjs" <md> <html> "Runbook — <service>"`), and open it.
+Save to `namht-sessions/runbook/<service>-<date>.md`, render with the bundled renderer, and open it.
+Resolve this skill's `references/` dir first (call it `$SKILL_DIR`):
+`${CLAUDE_PLUGIN_ROOT}/skills/namht-runbook/references` if `CLAUDE_PLUGIN_ROOT` is set, else the
+`references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-runbook/references`.
+```bash
+node "$SKILL_DIR/render-html.cjs" <md> <html> "Runbook — <service>"
+```
 
 ```
 # Runbook — <service>

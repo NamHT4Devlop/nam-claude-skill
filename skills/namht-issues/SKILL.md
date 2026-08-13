@@ -27,6 +27,8 @@ Its default mode writes a file, not a ticket.
   exists. Never infer it from the git remote alone: the current repo is often *not* where the
   backlog lives, and creating issues in the wrong project is the expensive mistake here.
 - **Mode** — `preview` (default, writes a file only) or `create` (actually creates them).
+  `--create` anywhere in the arguments signals the *intent* to create after the preview. It is
+  **not itself the yes** — step 5 still shows the full set and waits for one.
 
 ## Providers — use whatever is connected, in this order
 1. **A connected tracker MCP** (`mcp__*jira*`, `mcp__*linear*`, `mcp__*atlassian*`, …) — preferred:
@@ -100,3 +102,12 @@ Its default mode writes a file, not a ticket.
 - **Idempotent by story id.** Two runs of the same plan produce one set of issues, not two.
 - Keep the issue wording the plan's wording — this skill transports stories, it does not rewrite
   them. If a story is too vague to be an issue, flag it rather than improving it silently.
+
+**Render it to HTML too.** Resolve this skill's `references/` dir first (call it `$SKILL_DIR`):
+`${CLAUDE_PLUGIN_ROOT}/skills/namht-issues/references` if `CLAUDE_PLUGIN_ROOT` is set, else the
+`references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-issues/references`.
+```bash
+node "$SKILL_DIR/render-html.cjs" "<the .md just saved>" "<same path>.html" "Issues preview — <plan>"
+```
+Then open it and give the user the path. (This is also what the VS Code panel's **📄 Report** button
+looks for — without it the button has nothing to open.)

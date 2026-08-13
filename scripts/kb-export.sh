@@ -66,6 +66,20 @@ for repo in "$@"; do
   origin=$(git -C "$repo" config --get remote.origin.url 2>/dev/null || echo "(no remote)")
   today=$(date +%F)
 
+  # Two repos can share a folder name (~/clientA/api and ~/clientB/api). Namespacing by basename
+  # alone would silently replace one client's business rules with another's, under a name that still
+  # looks right — and the export is what the team then reads. Refuse instead.
+  if [ -f "$dest/_meta.yml" ]; then
+    prev=$(grep -m1 '^exported_from:' "$dest/_meta.yml" 2>/dev/null | cut -d: -f2- | sed 's/^ *//')
+    if [ -n "$prev" ] && [ "$prev" != "$repo" ]; then
+      echo "✗ $project — this hub already holds an export of a DIFFERENT repo under that name:" >&2
+      echo "    existing: $prev" >&2
+      echo "    incoming: $repo" >&2
+      echo "    Rename one of the folders, or export it to a separate hub." >&2
+      skipped=$((skipped+1)); continue
+    fi
+  fi
+
   echo "→ $project — $files KB files @ $branch/$commit"
   run mkdir -p "$dest"
   run rm -rf "$dest/knowledge-base"

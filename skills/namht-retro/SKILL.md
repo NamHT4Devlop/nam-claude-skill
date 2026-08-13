@@ -38,3 +38,12 @@ A periodic look-back grounded in real history.
 - Ground every claim in git/artifacts (cite commits/files). No vague "team did great".
 - Read-only — never mutate git. Keep it honest: surface the pain, not just wins.
 - Tie action items to the toolkit where useful (e.g. "run /namht-qa on module X — it has no tests").
+
+**Render it to HTML too.** Resolve this skill's `references/` dir first (call it `$SKILL_DIR`):
+`${CLAUDE_PLUGIN_ROOT}/skills/namht-retro/references` if `CLAUDE_PLUGIN_ROOT` is set, else the
+`references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-retro/references`.
+```bash
+node "$SKILL_DIR/render-html.cjs" "<the .md just saved>" "<same path>.html" "Retrospective — <window>"
+```
+Then open it and give the user the path. (This is also what the VS Code panel's **📄 Report** button
+looks for — without it the button has nothing to open.)

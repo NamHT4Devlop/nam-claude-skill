@@ -17,7 +17,10 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # repo root
-DEST="$HOME/.claude"
+# Overridable so the install/uninstall logic can be exercised against a throwaway directory.
+# This is the only script in the kit that DELETES files under ~/.claude, and it was previously
+# untestable for exactly that reason — a regression widening unlink_ours would have shipped blind.
+DEST="${NAMHT_CLAUDE_DIR:-$HOME/.claude}"
 
 # Remove any symlink under $DEST/{skills,commands,agents} that resolves back into $SRC.
 unlink_ours() {

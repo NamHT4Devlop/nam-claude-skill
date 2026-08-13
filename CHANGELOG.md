@@ -14,7 +14,104 @@ noted per release when it changed.
 
 ---
 
+## [2.4.0] — 2026-08-13
+
+### Security
+
+A six-lens multi-agent audit of the whole repo, with every High finding independently re-verified
+against source before it was accepted. Two live bypasses of the git guard were reproduced and closed:
+
+- **`git push --repo=<url>` evaded the push whitelist.** The target resolver only accepted a bare
+  positional remote and skipped every `-` token, so git's documented no-positional form fell through
+  to the local default origin — the guard validated a whitelisted remote while git pushed to
+  whatever URL `--repo` named.
+- **A `cd` that runs *after* the push decided which repo the push was checked against.** The working
+  directory was scraped from the whole command with a greedy regex, so a trailing `cd` into a
+  personal repo laundered a push to a team remote. Directory changes are now tracked from preceding
+  segments only — which is what the file always claimed it did.
+- Persisting an alias through `config` was allowed, giving back exactly the arbitrary-shell alias
+  that the transient `-c alias.*` rule already blocked.
+- `{ git zz; }` and other shell-grouping prefixes dropped git out of "command position", skipping the
+  unknown-subcommand/alias check entirely.
+- Assigning the binary to a shell variable hid the real command from every rule — now refused.
+- The guard suite went 56 → **74 cases**, including the previously untested path that resolves a bare
+  push from the session's cwd, against real fixture repos.
+
+Also hardened:
+
+- **Read-only mode was not read-only.** Follow-ups and the free-chat card both reached the CLI (which
+  runs with `bypassPermissions`) without passing the readonly gate, so "now edit src/foo.ts" typed as
+  a follow-up edited source in the `.vsix` handed to non-developers. All three entry points — run,
+  follow-up, interactive — now go through one shared check.
+- The model value from the webview is allowlisted **and** quoted before it reaches the one
+  shell-executed command line in the extension.
+- Secret scrubbing covered the stored form values but not the prompt echoed into the persisted run
+  log, and never covered follow-up text; the pattern now also catches Slack/GitHub tokens and JWTs.
+- `openReport`/`openFile` accepted any path from the webview; they are confined to the workspace.
+- `cancel()` posted its own terminal event and dropped the busy-guard before the child exited,
+  allowing a duplicate `done` and a follow-up racing the dying process.
+- Mermaid fenced blocks were "sanitised" with a regex tag-stripper that misses unterminated tags;
+  they are HTML-escaped now. `esc()` also escapes the single quote, and two unescaped graph-panel
+  interpolations were closed.
+- `fetch-vendor.sh` installed a downloaded library with **no** verification when it had no pinned
+  hash — contradicting its own documented promise — and swallowed the final verification error.
+
+### Fixed
+
+- **`/namht-pdf` was broken on Linux.** `mktemp -d -t namht-pdf` is BSD-only; GNU coreutils rejects a
+  `-t` template without X's, so under `set -e` the script died before trying any PDF engine. Only
+  testing on macOS hid it.
+- **`schedule.sh` could silently delete another repo's cron job.** Its marker tag was matched as an
+  unanchored substring, so `/x/api` also matched the line for `/x/api-v2`. Percent signs are escaped
+  now too — cron reads a bare `%` as a newline and truncates the command.
+- **`kb-export.sh` silently overwrote a snapshot from a different repo** with the same folder name
+  (`clientA/api` vs `clientB/api`); it now refuses and names both paths.
+- Four skills (`pr`, `plan-review`, `retro`, `issues`) shipped the HTML renderer but never invoked
+  it, so the panel's **📄 Report** button had nothing to open.
+- Docs drift: skillify's checklist omitted `i18n.js` (its own verify step then failed), the extension
+  README still described localisation as a manual edit, `--create` was undocumented in the issues
+  skill and help table, `namht-runbook` never defined `$SKILL_DIR`, and the changelog was missing its
+  `[2.2.0]` entry and the extension versions.
+
+### Added
+
+- **Tests for the three scripts that touch things outside the repo**: `schedule.sh` (20 cases, via a
+  PATH-stubbed `crontab` — the real one is never touched), `personal-install.sh` (10 cases; `DEST` is
+  now overridable with `NAMHT_CLAUDE_DIR`, so the one script that *deletes* from `~/.claude` is
+  finally testable, including that a foreign symlink survives an uninstall), and kb-site's
+  single-repo, refusal and hostile-`_meta.yml` paths.
+- `tests/run.sh` and CI now `node --check` the webview scripts — `tsc` only ever parsed `src/`, so a
+  syntax error in `media/main.js` shipped a blank panel with a green build.
+
+---
+
 ## [2.3.0] — 2026-08-13
+
+### Added
+
+- **`scripts/kb-site.cjs` — the hub as one browsable page.** A hub was a folder of Markdown that
+  nobody opens; twelve projects times twenty documents is 240 files. This renders all of them into a
+  single self-contained `index.html`: project rail with freshness badges, a tab per document, Mermaid
+  drawn, and search across every document in every project. Zero network calls, opens with a
+  double-click, works on a single repo's `knowledge-base/` too. `kb-export.sh` builds it
+  automatically at the end of an export.
+- Diagrams in that page are framed panels with an **⤢ Expand** overlay, and the Mermaid palette is
+  pinned to the page (its own dark theme assumes a mid-grey background and turns clusters flat grey
+  and nodes near-black on `#0f1420`).
+- **The hub is readable, not just a distribution point.** `/namht-system-map` and `/namht-ask`
+  detect the `projects/*/knowledge-base/` layout and work straight from a hub — the cross-service map
+  and cross-project questions without cloning any repo. Both must state the limits: no source to
+  verify against, and every project is a snapshot at the commit in its `_meta.yml`.
+
+### Changed
+
+- The folder name stays `knowledge-base/` on purpose — renaming it per project would break existing
+  KBs, the machine-wide ignore and every skill's lookup path at once. Identity lives *inside* the
+  KB, and the namespace is applied at collection time.
+
+---
+
+## [2.2.0] — 2026-08-13
 
 ### Added
 
@@ -36,26 +133,7 @@ noted per release when it changed.
   readable distillation of your source) and never commits or pushes; import refuses to overwrite an
   existing KB without `--force`, keeps a timestamped backup when it does, and warns when the
   snapshot's commit is not in that checkout.
-
-- **`scripts/kb-site.cjs` — the hub as one browsable page.** A hub was a folder of Markdown that
-  nobody opens; twelve projects times twenty documents is 240 files. This renders all of them into a
-  single self-contained `index.html`: project rail with freshness badges, a tab per document, Mermaid
-  drawn, and search across every document in every project. Zero network calls, opens with a
-  double-click, works on a single repo's `knowledge-base/` too. `kb-export.sh` builds it
-  automatically at the end of an export.
-- Diagrams in that page are framed panels with an **⤢ Expand** overlay, and the Mermaid palette is
-  pinned to the page (its own dark theme assumes a mid-grey background and turns clusters flat grey
-  and nodes near-black on `#0f1420`).
-- **The hub is readable, not just a distribution point.** `/namht-system-map` and `/namht-ask`
-  detect the `projects/*/knowledge-base/` layout and work straight from a hub — the cross-service map
-  and cross-project questions without cloning any repo. Both must state the limits: no source to
-  verify against, and every project is a snapshot at the commit in its `_meta.yml`.
-
-### Changed
-
-- The folder name stays `knowledge-base/` on purpose — renaming it per project would break existing
-  KBs, the machine-wide ignore and every skill's lookup path at once. Identity lives *inside* the
-  KB, and the namespace is applied at collection time.
+- VS Code extension **v0.16.0**.
 
 ---
 
@@ -86,6 +164,7 @@ noted per release when it changed.
 - The extension's form fields support a checkbox type (used by `--fix-docs` and by `--create`).
 - `/namht-skillify`'s registration checklist now names all eight places a skill must appear,
   matching what the consistency test enforces.
+- VS Code extension **v0.15.0**.
 
 ---
 

@@ -65,3 +65,12 @@ consistency.
 - Never include secrets in the PR body or comments.
 - Want the change implemented/automated instead of described? → `/namht-build`. Just the diff
   reviewed for quality? → `/namht-review`.
+
+**Render it to HTML too.** Resolve this skill's `references/` dir first (call it `$SKILL_DIR`):
+`${CLAUDE_PLUGIN_ROOT}/skills/namht-pr/references` if `CLAUDE_PLUGIN_ROOT` is set, else the
+`references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-pr/references`.
+```bash
+node "$SKILL_DIR/render-html.cjs" "<the .md just saved>" "<same path>.html" "PR — <branch>"
+```
+Then open it and give the user the path. (This is also what the VS Code panel's **📄 Report** button
+looks for — without it the button has nothing to open.)

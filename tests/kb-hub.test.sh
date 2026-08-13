@@ -94,5 +94,36 @@ else
   echo "  – skipped (node not installed)"
 fi
 
+echo "kb-site: the single-repo shape and the refusal path"
+if command -v node >/dev/null 2>&1; then
+  mkdir -p "$TMP/solo/knowledge-base"
+  printf '# solo doc\n' > "$TMP/solo/knowledge-base/01-x.md"
+  node "$PWD/scripts/kb-site.cjs" "$TMP/solo" "$TMP/solo.html" >/dev/null 2>&1
+  check "single-repo page written"  "$([ -f "$TMP/solo.html" ] && echo yes || echo no)" yes
+  check "project named after the dir" "$(grep -c '"name":"solo"' "$TMP/solo.html")" 1
+  mkdir -p "$TMP/nokb"
+  node "$PWD/scripts/kb-site.cjs" "$TMP/nokb" "$TMP/nokb.html" >/dev/null 2>&1
+  check "no-KB dir exits non-zero"  "$([ $? -ne 0 ] && echo yes || echo no)" yes
+  check "and writes nothing"        "$([ -e "$TMP/nokb.html" ] && echo yes || echo no)" no
+
+  # _meta.yml is rendered into the page chrome. It is safe today only because the client builds those
+  # nodes with textContent — pin that, so a later switch to innerHTML cannot silently reintroduce XSS
+  # into a page whose whole purpose is to be emailed around.
+  printf 'project: alpha\nbranch: <img src=x onerror=alert(1)>\ncommit: "abc\n' >> "$TMP/hub/projects/alpha/_meta.yml"
+  node "$PWD/scripts/kb-site.cjs" "$TMP/hub" "$TMP/site3.html" >/dev/null 2>&1
+  check "meta payload escaped in the data blob" "$(grep -c 'u003cimg src=x' "$TMP/site3.html")" 1
+  check "meta payload is not live markup"       "$(grep -c '<img src=x onerror' "$TMP/site3.html")" 0
+else
+  echo "  – skipped (node not installed)"
+fi
+
+echo "kb-export: refuses to overwrite a snapshot taken from a DIFFERENT repo"
+mkdir -p "$TMP/clientA/api/knowledge-base" "$TMP/clientB/api/knowledge-base"
+printf '# A\n' > "$TMP/clientA/api/knowledge-base/01-x.md"
+printf '# B\n' > "$TMP/clientB/api/knowledge-base/01-x.md"
+"$EXPORT" "$TMP/hub2" "$TMP/clientA/api" >/dev/null 2>&1
+"$EXPORT" "$TMP/hub2" "$TMP/clientB/api" >/dev/null 2>&1
+check "client A's KB was not replaced" "$(cat "$TMP/hub2/projects/api/knowledge-base/01-x.md")" "# A"
+
 echo "kb-hub: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

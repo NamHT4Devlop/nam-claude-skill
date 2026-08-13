@@ -10,6 +10,11 @@ pass=0; fail=0
 run() { printf '{"tool_input":{"command":"%s"}}' "$1" | bash "$GUARD"; }
 deny()  { if run "$1" | grep -q '"permissionDecision":"deny"'; then pass=$((pass+1)); else echo "  ✗ expected BLOCK: $1"; fail=$((fail+1)); fi; }
 allow() { local o; o=$(run "$1"); if [ -z "$o" ]; then pass=$((pass+1)); else echo "  ✗ expected ALLOW: $1"; fail=$((fail+1)); fi; }
+# The hook also receives the session's cwd, and the bare-push path resolves its remote from it.
+# Nothing exercised that branch — the most common real command was the least tested one.
+runc()   { printf '{"tool_input":{"command":"%s"},"cwd":"%s"}' "$1" "$2" | bash "$GUARD"; }
+denyc()  { if runc "$1" "$2" | grep -q '"permissionDecision":"deny"'; then pass=$((pass+1)); else echo "  ✗ expected BLOCK (cwd=$2): $1"; fail=$((fail+1)); fi; }
+allowc() { local o; o=$(runc "$1" "$2"); if [ -z "$o" ]; then pass=$((pass+1)); else echo "  ✗ expected ALLOW (cwd=$2): $1"; fail=$((fail+1)); fi; }
 
 echo "git-guard: BLOCK cases"
 deny "git push https://github.com/acme-corp/app main"
@@ -73,6 +78,44 @@ allow "git clone https://github.com/NamHT4Devlop/x && git push https://github.co
 allow "git -c user.name=X commit -m y"
 allow "git worktree list"
 allow "git clean -n"
+
+echo "git-guard: second audit — each case below was reproduced as a live bypass before the fix"
+# --repo=<url> is git's documented no-positional form. It starts with '-', so a "first non-option
+# token" scan skipped it and the guard validated the LOCAL origin while git pushed elsewhere.
+deny "git push --repo=https://github.com/acme-corp/secret.git"
+deny "git push --repo https://github.com/acme-corp/secret.git"
+allow "git push --repo=https://github.com/NamHT4Devlop/mine.git"
+# A cd that runs AFTER the push must not decide which repo the push is validated against.
+# (Asserted with an explicit cwd in the fixture block below — without one the answer depends on
+# whatever repo the suite happens to run in, which for this repo is a whitelisted remote.)
+# ...while a cd BEFORE the push still resolves it, as designed.
+deny "cd /team && git push origin main"
+# Shell grouping used to drop git out of "command position", skipping the alias/unknown check.
+deny "{ git zz; }"
+deny "xargs git zz"
+# Known limit, recorded rather than hidden: a launcher with its OWN arguments before git
+# (`timeout 5 git zz`) still reads as not-command-position, so the alias check is skipped there.
+# Enumerating every wrapper's argument grammar is not something token matching can do safely.
+# Persisting an alias is the same arbitrary-shell hazard as the transient -c alias.* already blocked.
+deny "git config alias.pwn '!sh'"
+deny "git config --global alias.pwn '!sh -c id'"
+allow "git config user.name Nam"
+# Aliasing the binary through a shell variable hides the real command from every rule above.
+deny "g=git; \$g push https://github.com/acme-corp/app main"
+deny "G=/usr/bin/git; \$G push"
+
+echo "git-guard: remote resolved from the session cwd (real fixture repos)"
+FIX=$(mktemp -d "${TMPDIR:-/tmp}/git-guard-fix.XXXXXX")
+git init -q "$FIX/team"     && git -C "$FIX/team"     remote add origin https://github.com/acme-corp/app.git
+git init -q "$FIX/personal" && git -C "$FIX/personal" remote add origin https://github.com/NamHT4Devlop/mine.git
+denyc  "git push"             "$FIX/team"
+denyc  "git push origin main" "$FIX/team"
+allowc "git push"             "$FIX/personal"
+allowc "git push origin main" "$FIX/personal"
+denyc  "git push && cd $FIX/personal"             "$FIX/team"   # trailing cd must not launder it
+denyc  "git push origin main && cd $FIX/personal" "$FIX/team"
+allowc "cd $FIX/personal && git push"             "$FIX/team"   # a LEADING cd legitimately does
+rm -rf "$FIX"
 
 echo "git-guard: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

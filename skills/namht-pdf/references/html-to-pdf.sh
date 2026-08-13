@@ -24,7 +24,10 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -z "${PDF_NO_PRINT_FIX:-}" ] && command -v node >/dev/null 2>&1 && [ -f "$HERE/print-fix.cjs" ]; then
   # mktemp -d, not "$(mktemp).html": appending a suffix names a file that does not exist yet, so the
   # write is not atomic and a shared /tmp allows a symlink race. A private dir has no such window.
-  TMPDIR_D="$(mktemp -d -t namht-pdf)"
+  # Explicit template, not `-t namht-pdf`: BSD mktemp (macOS) accepts a bare -t prefix, GNU
+  # coreutils rejects it ("too few X's in template") — so under `set -e` the whole script died on
+  # Linux before it ever tried an engine. Only macOS testing hid it.
+  TMPDIR_D="$(mktemp -d "${TMPDIR:-/tmp}/namht-pdf.XXXXXX")"
   trap 'rm -rf "$TMPDIR_D"' EXIT
   TMPHTML="$TMPDIR_D/print.html"
   if node "$HERE/print-fix.cjs" "$INABS" "$TMPHTML" 2>/dev/null && [ -s "$TMPHTML" ]; then

@@ -32,6 +32,9 @@ and document it. Operate inside the `nam-claude-skill` repo (the toolkit source,
    - `vscode-extension/media/main.js` → add an `A(...)` **card** in `ACTIONS`: pick the category,
      an icon, a short title/description, the form fields, and the `build(v)` that assembles the
      arguments. Pass `true` as the last argument if it edits code.
+   - `vscode-extension/media/i18n.js` → Vietnamese strings for the new card's title, description
+     and every field label (or list the term in `I18N_VI_SAME` if it stays English on purpose) —
+     `tests/i18n.test.cjs` fails the suite otherwise.
    - `commands/help.md` → one table row.
    - `README.md` → the command table row (and the skill/command counts near the top).
    - `docs/skills-catalog.html` → one `<tr>` with the **Edits code / Read-only** badge, and bump the

@@ -60,9 +60,12 @@ if [ "$cmd" = "remove" ]; then
   repo=$(cd "$repo" 2>/dev/null && pwd) || die "no such directory: ${3}"
   tag="$MARK:$name:$repo"
   current=$(crontab -l 2>/dev/null || true)
-  echo "$current" | grep -qF "$tag" || die "no entry for '$name' in $repo"
-  new=$(echo "$current" | grep -vF "$tag")
-  echo "Will remove:"; echo "$current" | grep -F "$tag" | sed 's/^/  - /'
+  # The tag sits at END OF LINE, so match it anchored. A substring match makes the tag for /x/api
+  # also match the line for /x/api-v2 — removing or replacing a DIFFERENT repo's job silently.
+  tag_re=$(printf '%s' "$tag" | sed 's/[][\.^$*\/&]/\\&/g')
+  echo "$current" | grep -qE "${tag_re}\$" || die "no entry for '$name' in $repo"
+  new=$(echo "$current" | grep -vE "${tag_re}\$" || true)
+  echo "Will remove:"; echo "$current" | grep -E "${tag_re}\$" | sed 's/^/  - /'
   if [ "$DRY" = 1 ]; then echo "(dry run — nothing written)"; exit 0; fi
   if [ "$YES" != 1 ]; then printf 'Write this crontab? [y/N] '; read -r ans; [ "$ans" = y ] || [ "$ans" = Y ] || die "aborted"; fi
   printf '%s\n' "$new" | crontab -
@@ -89,12 +92,18 @@ tag="$MARK:$name:$repo"
 prompt="$slash${extra:+ $extra}"
 # cron gives you a bare environment: cd into the repo, use the absolute binary, append to a log.
 line="$sched cd $(printf '%q' "$repo") && $(printf '%q' "$claude_bin") -p $(printf '%q' "$prompt") >> $(printf '%q' "$log") 2>&1 $tag"
+# cron treats an unescaped % as a newline and feeds the remainder to the command on stdin,
+# so a Splunk window like `earliest=-1d@d%2B7h` would silently truncate the scheduled command.
+# printf %q quotes for the shell, not for crontab(5) — escape percent signs separately.
+line=${line//%/\\%}
 
 current=$(crontab -l 2>/dev/null || true)
-if echo "$current" | grep -qF "$tag"; then
+tag_re=$(printf '%s' "$tag" | sed 's/[][\.^$*\/&]/\\&/g')
+if echo "$current" | grep -qE "${tag_re}\$"; then
   echo "Replacing the existing entry for '$name' in $repo:"
-  echo "$current" | grep -F "$tag" | sed 's/^/  - /'
-  current=$(echo "$current" | grep -vF "$tag")
+  echo "$current" | grep -E "${tag_re}\$" | sed 's/^/  - /'
+  # `|| true`: with set -e, a grep that filters away the ONLY line returns 1 and would abort here.
+  current=$(echo "$current" | grep -vE "${tag_re}\$" || true)
 fi
 echo "Will add:"; echo "  + $line"
 echo

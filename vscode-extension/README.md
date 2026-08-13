@@ -123,5 +123,6 @@ Q&A/planning; ask **specific** questions (shorter answers); keep the KB lean; us
 Add an action in `media/main.js` (`ACTIONS`) **and** add its command to `ALLOWED` in `src/extension.ts`.
 
 ## Localization
-The UI is **English** (this repo is English-only at the source level). To present it to Vietnamese
-PM/SM, translate the `title`/`desc`/`label` strings in `media/main.js` — they are the only user-facing text.
+Set `namhtSpecUi.language` to `vi` — the translations live in `media/i18n.js`, keyed by the English
+string, so anything untranslated falls back to English rather than breaking. Adding a card means
+adding its strings there too; `tests/i18n.test.cjs` fails the build if you forget.

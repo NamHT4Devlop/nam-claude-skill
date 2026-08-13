@@ -51,3 +51,12 @@ modules/entities it targets. Ground in KB (`13-business-rules`, `16-architecture
 - Ground every "this will break X" in the KB (+ grep) (real flow/consumer), not speculation.
 - If the plan is solid, say so plainly — don't invent objections.
 - After revisions, hand to **`/namht-build`** (or `/namht-qa` for test design).
+
+**Render it to HTML too.** Resolve this skill's `references/` dir first (call it `$SKILL_DIR`):
+`${CLAUDE_PLUGIN_ROOT}/skills/namht-plan-review/references` if `CLAUDE_PLUGIN_ROOT` is set, else the
+`references/` folder next to this SKILL.md, else `$HOME/.claude/skills/namht-plan-review/references`.
+```bash
+node "$SKILL_DIR/render-html.cjs" "<the .md just saved>" "<same path>.html" "Plan review — <slug>"
+```
+Then open it and give the user the path. (This is also what the VS Code panel's **📄 Report** button
+looks for — without it the button has nothing to open.)
