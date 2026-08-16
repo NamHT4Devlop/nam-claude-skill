@@ -14,6 +14,36 @@ noted per release when it changed.
 
 ---
 
+## [2.5.1] — 2026-08-13
+
+### Documentation
+
+The docs were describing the kit as it was two releases ago. Corrected against the code, not from
+memory:
+
+- **`SECURITY.md` described guard behaviour that was, in fact, the bug.** It claimed a push target
+  was resolved from "a leading `cd`" — the v2.4.0 audit found it was scraped from the *whole*
+  command, which is what let a trailing `cd` launder a push to a team remote. The section now states
+  the real resolution order, lists the five closed bypasses in a table, records the accepted
+  quoting limitation, and cites the current **97** guard cases.
+- **`SECURITY.md` never mentioned six scripts that write outside the repo** — `personal-install.sh`
+  (deletes symlinks under `~/.claude`), `onboard-project.sh` (writes into other repos),
+  `schedule.sh` (your crontab), `kb-export.sh` / `kb-import.sh` (move Knowledge Bases),
+  `migrate-sessions.sh`. A new section names each one, what stops it going wrong, and the test count
+  behind that claim.
+- **The extension's read-only guarantee was understated.** The README described it as hiding and
+  refusing the seven code-editing skills; since v2.4.0 the host also refuses free chat and
+  **follow-ups**, which were the two paths that actually reached an edit.
+- **`README.md` gained a Tests section.** The suite is the reason to trust a kit that edits your
+  code and your crontab, and it was not documented anywhere — including the principle behind it: a
+  script that touches something outside this repo does not ship without a test, because its failures
+  are silent.
+- Skill catalog notes the trailer the ten high-stakes skills now carry.
+
+Every number quoted in these docs was re-derived by running the suites, not copied forward.
+
+---
+
 ## [2.5.0] — 2026-08-13
 
 ### Added

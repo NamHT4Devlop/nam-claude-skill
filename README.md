@@ -483,6 +483,39 @@ log rather than hanging.
 
 ---
 
+## Tests — what actually stops this kit breaking your machine
+
+```bash
+bash tests/run.sh          # everything below, ~20 seconds
+```
+
+The suite is weighted toward the parts that can do damage, not the parts that are easy to test:
+
+| Suite | Cases | Why it exists |
+|---|---:|---|
+| `git-guard.test.sh` | 97 | Every deny rule, every bypass ever found (each reproduced before it was fixed), and the bare-`push`-resolved-from-cwd path against real fixture repos |
+| `kb-hub.test.sh` | 32 | Export/import move real Knowledge Bases between repos; also pins the page generator's escaping and CSP |
+| `schedule.test.sh` | 20 | Edits your **crontab** — behind a stubbed `crontab`, so the real one is never touched |
+| `webview-markdown.test.cjs` | 18 | The panel renders model output as HTML; pins escaping and that only `http(s)` links become links |
+| `migrate-sessions.test.sh` | 15 | Renames a folder full of your past work |
+| `onboard.test.sh` | 14 | Writes into **other people's repos** (`.gitignore`, `CLAUDE.md`) |
+| `personal-install.test.sh` | 10 | The one script that **deletes** from `~/.claude` — including that a foreign symlink survives an uninstall |
+| `i18n.test.cjs` | 5 | Catches a card reworded out of its translation, and status text the host sends in English |
+| `consistency.test.sh` | 9 groups | Commands ↔ skills ↔ extension ↔ catalog ↔ counts ↔ changelog ↔ the skill-anatomy trailer |
+
+Plus: bundle sync, skill-name == folder, the vendored libraries' pinned hashes, and `node --check` on
+the webview scripts (`tsc` only ever parses `src/`, so a syntax error in `media/` would otherwise ship
+a blank panel with a green build).
+
+CI runs the same suite, `yarn compile`, and `shellcheck` on every shell file
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+
+**The principle:** a script that touches something outside this repo — your crontab, your `~/.claude`,
+another repo's files — does not ship without a test, because its failures are silent. That rule is
+newer than the scripts, which is exactly how several of them turned out to have real bugs.
+
+---
+
 ## Security & enterprise
 
 See **[SECURITY.md](SECURITY.md)** for the full audit. In short:

@@ -54,6 +54,26 @@ telemetry. Process/network use is limited to the three opt-in components listed 
 env/MCP credentials). `graph-builder.js`/`html-builder.js` are readable `tsc` output (not
 minified) — provenance: the author's own Auto Spec extension project.
 
+## Scripts that write outside this repo
+
+Most of the kit only reads. Six scripts do not, and each one is listed here with what it touches,
+what stops it going wrong, and where that is pinned by a test. **None of them runs on its own** — you
+invoke them.
+
+| Script | Writes to | Guards |
+|---|---|---|
+| `scripts/personal-install.sh` | `~/.claude/{skills,commands,agents,hooks}` — symlinks | Uninstall removes **only** links that resolve back into this repo; a foreign symlink survives. `NAMHT_CLAUDE_DIR` overrides the destination so the logic is testable. *(10 cases)* |
+| `scripts/onboard-project.sh` | a target repo's `.gitignore`, and `CLAUDE.md` if absent | Whole-line ignore matching (a near-miss line does not count as present); an existing `CLAUDE.md` — root or `.claude/` — is never overwritten. *(14 cases)* |
+| `scripts/schedule.sh` | your **crontab** | Only lines carrying its own end-anchored marker; prints the change and asks before writing; refuses to schedule any code-editing skill; escapes `%`, which cron would otherwise read as a newline. *(20 cases, behind a stubbed `crontab`)* |
+| `scripts/kb-export.sh` | a hub directory | Refuses to write into a repo it can see is **public** (a KB is a readable distillation of your source); refuses to overwrite a snapshot taken from a *different* repo with the same folder name; never commits or pushes. *(part of 32 cases)* |
+| `scripts/kb-import.sh` | a target repo's `knowledge-base/` | Refuses to overwrite an existing KB without `--force`, and keeps a timestamped backup when forced — `knowledge-base/` is gitignored, so git is not an undo here. Warns when the snapshot's commit is absent from that checkout. |
+| `scripts/migrate-sessions.sh` | renames `spec-kit-sessions/` → `namht-sessions/` in a repo | Never overwrites on merge; leaves anything it could not merge in place; `--dry-run`. *(15 cases)* |
+
+`scripts/kb-site.cjs` and the other Node generators only read and write inside the directory you
+point them at. Their output is a self-contained HTML page: every document is JSON-escaped before it
+is embedded (a `</script>` inside a scanned repo's comment must not close the data block), the page
+declares a CSP whose `script-src` carries a nonce, and no external host is contacted.
+
 ## Data flow & egress
 - **KB / analyzer**: 100% local. The `knowledge-base/` never leaves the machine.
 - **The real egress is the AI agent itself**: when Claude reads code (via `Read`),
@@ -88,21 +108,40 @@ minified) — provenance: the author's own Auto Spec extension project.
 A **PreToolUse hook** (`hooks/git-guard.sh`) + **`permissions.deny`** rules block git commands that
 touch the **remote** or **destroy local work**, enforced by the Claude Code harness rather than the
 model's goodwill — and PreToolUse runs *before* the permission-mode check, so a `deny` still holds
-under `--permission-mode bypassPermissions`. It handles chained commands (`cd x && git push`),
-`git -C`, quoted subcommands, `GIT_DIR=`/`--git-dir` retargeting, and refuses any unknown subcommand
-(an alias can be `!<shell>`); `tests/git-guard.test.sh` pins each of those as a regression.
+under `--permission-mode bypassPermissions`.
+
+It splits chained commands into segments and resolves each segment's real subcommand, so a rule word
+inside an unrelated argument does not false-positive. A push's target is resolved from an explicit
+URL, `git -C <dir>`, a `cd`/`pushd` in a **preceding** segment, or the session's working directory —
+and from nowhere else. `tests/git-guard.test.sh` pins every rule below plus each bypass that was
+found and closed, **97 cases**, including the bare-`push`-resolved-from-cwd path against real
+fixture repositories.
+
+**Second audit (v2.4.0).** A multi-agent review found and reproduced five live bypasses, all closed:
+
+| Bypass | What it did |
+|---|---|
+| `--repo=<url>` | git's documented no-positional form starts with `-`, so the target scan skipped it and the guard validated the local origin while git pushed elsewhere |
+| a trailing `cd` | the working directory was scraped from the **whole** command, so a `cd` running *after* the push chose which repo the push was validated against |
+| `config alias.*` | persisting an alias re-created the arbitrary-shell hazard that the transient `-c alias.*` rule already blocked |
+| shell grouping | `{ … }` and similar prefixes dropped git out of "command position", skipping the unknown-subcommand/alias check |
+| binary aliasing | assigning git to a shell variable and calling it through that variable matched no rule at all |
 
 Treat it as **best-effort defense-in-depth, not a hard boundary**: it parses shell text, so a
-sufficiently creative construction may still slip past. It is one layer — not a substitute for
-running the toolkit under an account and workspace you would trust anyway.
+sufficiently creative construction may still slip past. One known and accepted limitation is that it
+does not honour quoting, so a **commit message** containing a rule word is denied as if it were the
+flag — failing closed is the intended direction, and a second shell parser that disagreed with the
+first would be worse.
 
 - **Allowed** (read / sync-in): `fetch`, `pull`, `status`, `log`, `diff`, `show`, `blame`,
   `branch` (list), `add`, `commit`, `stash`, `merge`, `checkout <branch>` — **plus `push` ONLY
   to a whitelisted personal remote** (default `github.com/NamHT4Devlop/*`; edit `ALLOW_OWNER_RE`
-  in `hooks/git-guard.sh`). The guard resolves the actual target (explicit URL, `git -C <dir>`,
-  leading `cd`, or the remote's configured URL) and allows the push only if its owner is whitelisted.
+  in `hooks/git-guard.sh`). The guard resolves the actual target — an explicit URL, a `--repo=` value,
+  the directory named by the segment's own `-C` option, a `cd`/`pushd` in a **preceding** segment, or
+  the remote configured in the session's working directory — and allows the push only if its owner is
+  whitelisted.
 - **Blocked**: `push` to **any non-whitelisted remote** (team/org repos), `remote add/set-url/remove/rename/set-head/set-branches/prune`, `send-email`,
-  `svn dcommit`, `p4 submit`, `config remote.*`; and destructive local: `reset --hard`,
+  `svn dcommit`, `p4 submit`, `config remote.*`, `config alias.*`; and destructive local: `reset --hard`,
   `clean -f`, `checkout -- / . / -f / --force`, `restore`, `branch -D`, `commit --amend`,
   `rebase`, `filter-branch/filter-repo`, `reflog expire`, `gc --prune`, `update-ref -d`.
 

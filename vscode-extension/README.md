@@ -107,9 +107,12 @@ fails the build if a card is reworded and leaves its translation stranded.
   before the permission check — verified by `tests/git-guard.test.sh`), but it is **defense-in-depth,
   not a sandbox**. Prefer approval prompts? Set `--permission-mode acceptEdits` — then map/build/test
   commands fail with "error" here; use **⚡ Interactive** (a real terminal) for those.
-- `namhtSpecUi.mode` — `full` (default) or `readonly`. In **readonly** the seven code-editing skills
-  are hidden AND refused by the extension host, so a PM/SM build cannot change source even if the
-  command is sent by hand. Package a separate `.vsix` with this default flipped and hand that one out.
+- `namhtSpecUi.mode` — `full` (default) or `readonly`. In **readonly** the host refuses **every path
+  that could reach an edit**, not just the cards: the seven code-editing skills, the free-chat
+  "Ask anything" card (a raw prompt can ask for anything), and **follow-ups** (a follow-up resumes
+  the same session with the same permissions, so "now edit src/foo.ts" typed after an innocent run
+  used to land). Hiding the cards is a convenience; the host check is the control. Package a separate
+  `.vsix` with this default flipped and hand that one out.
 - `namhtSpecUi.usdToVnd` — VND rate to show next to the USD cost (0 = off; e.g. `25400`).
 - `namhtSpecUi.language` — `en` (default) or `vi` for the panel's own labels. Does not affect Claude's answers.
 - `namhtSpecUi.model` — model for the UI's runs (default **`sonnet`** — ~5x cheaper than Opus for
