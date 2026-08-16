@@ -26,7 +26,11 @@ for a full rebuild. If there is no existing KB, fall back to a full `/namht-scan
    - new/changed entities or migrations → `05-domain-model.md`, `08-database-schema.md`
    - new/changed endpoints → `11-api-docs.md`, `03-entry-points.md`
    - changed flows/services → `10-core-flows.md`, `06-modules.md`, the relevant `modules/<m>.md`
-   - new validation/business logic → `13-business-rules.md`, `04-business-domain.md`
+   - new validation/business logic → `13-business-rules.md`, `04-business-domain.md`.
+     **Rule ids are append-only:** an amended rule keeps its id, a new rule takes the next free one,
+     and a rule whose code is gone is marked `[REMOVED <date>]` rather than deleted — test names,
+     evidence reports and journals cite these ids and this rescan cannot see them. Renumbering is
+     the one edit that silently invalidates work outside the KB.
    - auth changes → `09-auth-security.md`
    - new/changed integrations, SQS queues/topics, events, Camel routes → `14-integrations.md`, `17-async-events.md` (Event/Contract Catalog)
    - structural/dependency changes → `01-project-structure.md`, `16-architecture-patterns.md`

@@ -74,7 +74,22 @@ Check ALL sources: JPA `@Entity`, Prisma schema, TypeORM, Django models, ActiveR
 1. **Authentication Mechanism**  2. **Authorization Model**  3. **Permission Matrix**  4. **Auth Flow Sequence Diagrams**  5. **Security Hardening**.
 
 ## 10 — `10-core-flows.md` — Core Business Flows (End-to-End) ★DEEP — MOST IMPORTANT
-Identify and diagram ALL important core flows (min 3, max 7). For each flow, trace through EVERY layer (entry → service → domain → data → response), with state transitions and error/rollback paths.
+Identify and diagram **every flow a stakeholder would name** — the ones people say out loud in a
+standup or a support ticket. There is **no upper limit**: a business-heavy system legitimately has
+twenty, and a cap would silently drop the ones that matter to somebody. Practical handling:
+- Fewer than ~8 → document them all here, in full.
+- More than that → keep the **cross-cutting** ones here (the flows that span modules, move money,
+  or change state other modules depend on) and put the module-local ones in `modules/<m>.md`,
+  with a one-line index here pointing at each. Splitting is fine; **dropping is not**.
+- If you deferred any flow for cost, **list it by name** in `_coverage-report.md` under
+  *Flows not yet documented*. An undocumented flow the reader knows about is a gap; an
+  undocumented flow nobody mentions is a landmine.
+
+Give each flow a stable id — `CF-01`, `CF-02`, … — and **never renumber** them (see the id rule
+under §13; `/namht-qa` and `/namht-build` cite these).
+
+For each flow, trace through EVERY layer (entry → service → domain → data → response), with state
+transitions and error/rollback paths.
 
 ## 11 — `11-api-docs.md` — API Reference
 **API Overview** · **Endpoints by Module** · **Rate Limits & Special Behaviors**. List ALL endpoints.
@@ -86,6 +101,23 @@ Every rule MUST have a real code example.
 ## 13 — `13-business-rules.md` — Business Rules & Invariants ★DEEP — MOST IMPORTANT
 Document ALL business rules implemented in code.
 1. Validation Rules  2. Business State Rules (state-machine)  3. Business Calculation Rules  4. Access-Control Business Rules  5. Time-Based Rules  6. Business Invariants  7. **Under-Enforced Business Rules (Risk)**.
+
+**Every rule gets a stable id — this is not optional.** `/namht-build`, `/namht-qa` and
+`/namht-review` cite rules by id (`BR-V2`, `CF-03`) to tie a test or a finding to the rule it
+protects. Without ids that traceability is prose, and a regression test cannot say what it defends.
+
+- Format: `BR-<AREA><n>` where `<AREA>` is one letter per category — **V**alidation, **S**tate,
+  **C**alculation, **A**ccess, **T**ime, **I**nvariant — e.g. `BR-V7`, `BR-S2`, `BR-A1`.
+- **Append-only. Never renumber, never reuse a retired id.** Ids are cited from test names,
+  evidence reports and journals that this scan cannot see; renumbering silently repoints every
+  one of them. A rule that no longer exists is marked `[REMOVED <date>]` and kept in place.
+- Each rule is one row:
+  `| id | rule in one plain sentence | severity | where it is ENFORCED (file:line) | how it is tested (test name, or NONE) |`
+- **`NONE` in the last column is a finding, not a blank.** Roll those up into §7
+  (Under-Enforced) — an unenforced or untested business rule is the highest-value thing this
+  whole document produces.
+- State the rule in **business language first**, then the code that implements it. "Total must
+  never exceed the credit limit" is the rule; `if (t > lim) throw` is the implementation.
 
 ## 14 — `14-integrations.md` — Integration Map & External Dependencies
 1. **Integration Map** — all external systems (REST, SOAP, SQS/Kafka/RabbitMQ, AWS/GCP/Azure, payment, email/SMS, Elasticsearch, Redis).

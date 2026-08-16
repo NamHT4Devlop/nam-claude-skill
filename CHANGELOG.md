@@ -14,6 +14,42 @@ noted per release when it changed.
 
 ---
 
+## [2.6.0] — 2026-08-13
+
+### Fixed — the KB was not deep enough for a business-heavy repo
+
+Three defects found by reading `kb-steps.md` against the skills that consume it:
+
+- **Rule ids were cited but never created.** `/namht-build`, `/namht-qa` and `/namht-review` all cite
+  business rules by id (`BR-V2`, `core-flow #3`) to tie a regression test or a review finding to the
+  rule it protects — but `kb-steps.md` never told `/namht-scan` to assign ids at all. That
+  traceability rested on a convention nothing produced. Section 13 now mandates `BR-<AREA><n>`
+  (Validation · State · Calculation · Access · Time · Invariant) and core flows get `CF-01`…, with an
+  **append-only** rule: never renumber, never reuse a retired id, mark a dead rule `[REMOVED <date>]`
+  instead of deleting it. Ids are cited from test names, evidence reports and journals that a rescan
+  cannot see, so renumbering silently repoints all of them. `/namht-rescan` carries the same rule.
+- **Core flows were capped at seven.** `10-core-flows.md` said "min 3, max 7" — a hard ceiling on
+  exactly the repos that need the document most, which drops real flows with no trace. The cap is
+  gone: document every flow a stakeholder would name; past ~8, keep the cross-cutting ones in
+  `10-core-flows.md` and push module-local ones into `modules/<m>.md` with an index line. Splitting is
+  fine, dropping is not — anything deferred for cost is **listed by name** in `_coverage-report.md`.
+- **`standard` depth sampled the business layer.** Sampling kicked in for any layer over ~40 files,
+  including domain/service/use-case code, state machines, validators and calculation logic — the exact
+  content the rest of the kit is built to protect. The business layer is now **never sampled at any
+  depth**; controllers and DTOs are sampled instead, where the loss is cosmetic.
+
+### Changed
+
+- Per-module docs (`modules/<m>.md`) are written whenever a repo has more than ~3 modules, and always
+  for a business-heavy one — previously "for larger projects", which left it to feel.
+- Each business rule is now one row carrying **where it is enforced** (`file:line`) and **how it is
+  tested** (test name, or `NONE`). A `NONE` is a finding, not a blank: those roll up into the
+  Under-Enforced section, which is the highest-value output the document has.
+- `tests/consistency.test.sh` fails if `kb-steps.md` stops mandating the ids that other skills cite —
+  the citations would otherwise become dangling with nothing noticing.
+
+---
+
 ## [2.5.1] — 2026-08-13
 
 ### Documentation

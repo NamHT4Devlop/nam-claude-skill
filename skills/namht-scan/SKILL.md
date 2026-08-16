@@ -33,7 +33,11 @@ This KB is the grounding for every other namht Kit command.
   - **quick** — entry points, models/schema and tests only, sampled; the 5 deep docs written from that
     sample; module docs for the ~5 largest modules; everything sampled is marked as such in
     `_coverage-report.md`. Good for a first look or a repo you'll scan properly later.
-  - **standard** (default) — the full 16 docs, with per-layer sampling once a layer exceeds ~40 files.
+  - **standard** (default) — the full 16 docs, with per-layer sampling once a layer exceeds ~40 files
+    — **except the business layer, which is never sampled.** Domain/service/use-case code, state
+    machines, validators and calculation logic are read in full at every depth. Sampling the
+    business layer produces a KB that looks complete and is missing the rules the whole kit is
+    built to protect; sample controllers and DTOs instead, where the loss is cosmetic.
   - **deep** — exhaustive, no sampling, module docs for every module. For a repo you're about to
     migrate or audit.
   Above ~1500 source files, propose **quick** first and let the user upgrade — don't silently spend an
@@ -96,9 +100,12 @@ Angles to split across sub-agents (then merge, deduplicate, keep every cited ite
    Project-Specific Rules**: project naming conventions, mandatory patterns, banned anti-patterns, and the
    business rules every new feature must respect — **each with a real code citation**.
    This file is injected into every code review, so make it accurate.
-2. **`modules/<module>.md` + `modules/_index.md`** — for larger projects, deep per-module
-   docs: exhaustive (numbered) business flows, business rules with severity, entities,
-   API/entry points, and dependencies. Process modules with a concurrency limit; for very
+2. **`modules/<module>.md` + `modules/_index.md`** — deep per-module docs: exhaustive (numbered)
+   business flows, business rules with severity, entities, API/entry points, and dependencies.
+   **Write them whenever the repo has more than ~3 modules, and always for a business-heavy repo** —
+   "larger project" is not a judgement call you should be making by feel. These files are where a
+   system with many core flows actually gets documented: the global `10-core-flows.md` keeps the
+   cross-cutting flows, and each module's own flows live here rather than being dropped to fit. Process modules with a concurrency limit; for very
    large modules, analyze in chunks then merge (deduplicate, preserve every flow/rule).
 3. **`_coverage-report.md`** — files discovered vs analyzed; note that all files are also
    covered by the global section docs.

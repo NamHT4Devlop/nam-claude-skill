@@ -119,6 +119,19 @@ for sk in namht-build namht-fix-bug namht-migrate namht-simplify namht-perf namh
 done
 [ "$bad" -eq 0 ] && echo "  ✓ all $(echo $HIGH_STAKES | wc -w | tr -d ' ') high-stakes skills carry the trailer" || fail=1
 
+# build/qa/review cite rule ids (BR-V2, CF-03) to tie a test or a finding to the rule it protects.
+# Those ids only exist because kb-steps tells scan to create them — if that instruction is ever
+# dropped, the citations become dangling and nothing else would notice.
+echo "consistency: rule ids are mandated where they are cited"
+bad=0
+grep -q 'BR-<AREA>' resources/kb-steps.md || { echo "  ✗ kb-steps.md no longer defines the BR-<AREA><n> id format"; bad=1; }
+grep -q 'Append-only' resources/kb-steps.md || { echo "  ✗ kb-steps.md lost the append-only id rule"; bad=1; }
+grep -q 'CF-01' resources/kb-steps.md       || { echo "  ✗ kb-steps.md no longer gives core flows stable ids"; bad=1; }
+for sk in namht-build namht-qa; do
+  grep -qE 'BR-[A-Z]?[0-9]' "skills/$sk/SKILL.md" || echo "  – note: $sk no longer cites rule ids"
+done
+[ "$bad" -eq 0 ] && echo "  ✓ kb-steps mandates the ids that other skills cite" || fail=1
+
 echo "consistency: version + changelog"
 bad=0
 plugin_v=$(grep -oE '"version": "[0-9.]+"' .claude-plugin/plugin.json | grep -oE '[0-9.]+')
