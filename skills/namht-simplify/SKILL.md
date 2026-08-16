@@ -64,3 +64,26 @@ reviewable. Optionally save `namht-sessions/simplify/<area>-<date>.md`.
   `git apply -R <your diff>` — the git-guard denies `git restore`, `git checkout .`/`--`,
   `git reset --hard`, `git clean -f`. A test that was red before you started is not your regression.
 - Change-discipline: scope-lock, verify + rollback, never touch secrets, confirm before destructive actions.
+
+## Common rationalizations
+
+| What you'll tell yourself | What's actually true |
+|---|---|
+| "While I'm in here I'll fix this too" | That is how a behaviour-preserving refactor becomes an unreviewed change. One refactor at a time; the other thing goes on a list. |
+| "The test is asserting the wrong thing anyway" | Then that is a **separate** conversation, with evidence. Changing a test during a refactor destroys the only proof that behaviour was preserved. |
+| "It's obviously equivalent" | Obvious equivalence is where the null handling, the short-circuit and the ordering guarantee quietly change. Let the tests say it. |
+| "This abstraction will be useful later" | Simplify means removing needless abstraction, not adding speculative ones. Delete beats generalise. |
+
+## Red flags
+
+- The test suite was **not run between** two refactors.
+- A test changed in the same diff as the refactor.
+- The diff contains a behaviour change you would struggle to describe in one sentence.
+- You are renaming things across files that the task never mentioned.
+
+## Verification
+
+- [ ] Tests were green **before**, and are green **after** — with no test modified.
+- [ ] Each refactor is separable: you could revert one without unpicking the others.
+- [ ] Public behaviour is identical — same inputs, same outputs, same errors, same order.
+- [ ] Anything you chose not to simplify, and why, is stated.

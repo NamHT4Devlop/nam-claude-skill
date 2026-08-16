@@ -81,3 +81,27 @@ and example queries/dashboards it enables.
   `git apply -R <your diff>` — the git-guard denies `git restore`, `git checkout .`/`--`,
   `git reset --hard`, `git clean -f`.
 - Change-discipline: minimal diff, verify + rollback, confirm outward actions, never touch secrets.
+
+## Common rationalizations
+
+| What you'll tell yourself | What's actually true |
+|---|---|
+| "I'll add the correlation id later" | Without it the logs are a pile of unrelated lines, which is most of the value gone. It is the part that must not be deferred. |
+| "More logging is better" | Logging at the wrong level, in a hot loop, or with a payload in it costs money and buries the one line that mattered. Fewer, better-shaped events. |
+| "I'll just log the object" | That is how customer data and tokens end up in a log aggregator that a whole org can search. Log field names and ids, never raw payloads. |
+| "It emits, so it works" | Emitting is not the same as being queryable. If the field names don't match the team's schema, no dashboard will ever find them. |
+
+## Red flags
+
+- A log line that contains a whole request/response object.
+- Field names invented here that don't match what the rest of the services emit.
+- A trace id that stops at a queue boundary.
+- Instrumentation added but never triggered once to see what comes out.
+
+## Verification
+
+- [ ] Field names match the project's existing schema — checked against real emitted logs, not memory.
+- [ ] A correlation id flows across **every** hop, including async ones.
+- [ ] You triggered the path and **read the actual output** — it is not assumed to work.
+- [ ] No secrets, tokens or personal data in any emitted field.
+- [ ] Error events carry enough context to group by, not just a message.

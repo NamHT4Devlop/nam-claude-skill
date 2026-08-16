@@ -33,7 +33,7 @@ nam-claude-skill/
 ├── resources/               # review-skills-universal.md, kb-steps.md
 ├── hooks/                   # git-guard.sh + hooks.json (PreToolUse git guardrail)
 ├── scripts/                 # personal-install.sh, onboard-project.sh, sync-bundles.sh
-├── docs/                    # HTML setup guides (personal / company / manual)
+├── docs/                    # setup guides (HTML) + skill-anatomy.md (the standard skills follow)
 ├── tests/                   # toolkit self-tests
 └── vscode-extension/        # optional VS Code panel that drives the local claude CLI (proprietary)
 ```

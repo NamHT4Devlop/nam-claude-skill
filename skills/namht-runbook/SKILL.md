@@ -144,3 +144,27 @@ default is zero footprint in repos you don't own.
 - **Say when a failure mode has no known fix.** "We don't have a procedure for this" is real
   information; an invented procedure is not.
 - Keep it short enough to be read under stress: imperative sentences, no essays, tables over prose.
+
+## Common rationalizations
+
+| What you'll tell yourself | What's actually true |
+|---|---|
+| "I'll put a sensible default escalation path" | An invented escalation path is worse than an empty one: at 2am someone will follow it. Leave `❓`. |
+| "This command is standard, no need to cite it" | Standard for which version, which cluster, which account? A command nobody verified is the one that fails when it matters. |
+| "A generic incident list is better than nothing" | It is not. It buries the two failures this system actually has under twenty it cannot have. |
+| "The README says the deploy command is X" | And CI says Y. Believe CI, and record the discrepancy — a stale README is how a runbook gets someone into trouble. |
+
+## Red flags
+
+- A command in the document that you did not read out of a file.
+- A playbook with a Fix step but no Contain step.
+- A destructive action with no ⚠ and no named approver.
+- The rollback section does not say what rollback **cannot** undo.
+
+## Verification
+
+- [ ] Every command is cited to a file, or labelled `UNVERIFIED`.
+- [ ] The "Fill this in" `❓` block is present — owners/on-call/SLA are not invented.
+- [ ] Every playbook has Confirm → Contain → Diagnose → Fix → Verify → Escalate.
+- [ ] Destructive steps marked, with what they cannot be undone from.
+- [ ] Known gaps listed with **who** can answer each.

@@ -212,3 +212,27 @@ DTO mapping.
   delete or narrow a case to reach green.
 - Port **only the scoped set**; never invent rules (cite the Ruby); never migrate data unless asked;
   reproduce every DB side effect; reads-before-writes on cutover; never big-bang. You don't deploy.
+
+## Common rationalizations
+
+| What you'll tell yourself | What's actually true |
+|---|---|
+| "The logic is obvious from the source — skip the golden test" | Parity **is** the deliverable. Without a recorded response from the old system, "it looks equivalent" is the only evidence you will have, and it isn't evidence. |
+| "This endpoint is trivial, port it in one go" | Trivial endpoints are where the undocumented behaviour hides: default values, null handling, error shapes, ordering. |
+| "I'll reconcile the differences at the end" | The allowed-diff list is frozen after it is agreed. A difference discovered later is a **finding**, not a new entry. |
+| "I reviewed the parity myself" | The person who wrote the port cannot certify the port. The parity reviewer must be an independent agent. |
+
+## Red flags
+
+- The allowed-diff list **grew** during implementation.
+- A golden test was captured *after* the new implementation existed.
+- `_progress.md` was not updated at the end of a session — the next session will redo work.
+- An endpoint moved to "done" with parity "not run".
+
+## Verification
+
+- [ ] Golden/shadow responses captured from the **source** system before porting.
+- [ ] Byte-for-byte parity proven, or every difference is on the frozen allowed-diff list.
+- [ ] An **independent** reviewer confirmed parity — not the implementer.
+- [ ] `namht-sessions/port/_progress.md` reflects reality, endpoint by endpoint.
+- [ ] Cutover for this endpoint is reversible, and the reversal was stated.

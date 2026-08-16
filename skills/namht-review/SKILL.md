@@ -117,3 +117,26 @@ follow the same change discipline as `/namht-build`:
   quickly fixable, **revert** and report.
 - **Confirm before destructive/outward actions**; never touch secrets.
 Otherwise leave the review as a report. You may save it to `namht-sessions/reviews/<file>-<date>.md`.
+
+## Common rationalizations
+
+| What you'll tell yourself | What's actually true |
+|---|---|
+| "It looks fine" | "Seems right" is not a review finding. Cite `file:line` or drop the point. |
+| "Phase 2 is redundant, the code is clean" | Phase 1 asks whether the code is good. Phase 2 asks whether it still does what the **business** requires — clean code can quietly delete a rule. |
+| "The diff is small, a quick skim will do" | Blast radius is not proportional to diff size. A three-line change to a shared helper is the dangerous one. |
+| "I'll flag everything I noticed" | A review that reports everything reports nothing. Rank by consequence and say what is **not** worth fixing. |
+
+## Red flags
+
+- A finding with no `file:line`.
+- Only the changed lines were read — not the callers of what changed.
+- The business-consistency phase produced zero findings **and** zero explicit "rules intact" statements.
+- Severity assigned by feel, with no statement of what breaks.
+
+## Verification
+
+- [ ] **Both** phases ran — quality checklist and business consistency vs the KB.
+- [ ] Every finding cites evidence and names the consequence.
+- [ ] Blast radius considered: the callers of every changed symbol.
+- [ ] Severity assigned, and the "not worth fixing" list is explicit.

@@ -205,3 +205,27 @@ successive runs show whether drift is growing or shrinking:
 - **Say when the answer is "nothing's wrong."** CONVERGED is a valid, useful verdict; do not
   manufacture findings to look thorough.
 - Never copy secrets or customer data into the report — it persists on disk and gets exported.
+
+## Common rationalizations
+
+| What you'll tell yourself | What's actually true |
+|---|---|
+| "This entry is obviously stale — just fix the doc" | Decide **which side is wrong** first. Doc-lags-code and code-is-buggy have opposite fixes, and rewriting the doc to match a bug makes the bug official. |
+| "The sub-agent found it, that's good enough" | A sub-agent produces leads. A finding is something you re-opened the source and confirmed. |
+| "Close enough to count as implemented" | An acceptance criterion is met or it isn't. "Partly" is a finding, with what's missing named. |
+| "Nothing turned up, the run was a waste" | `CONVERGED` is a real result and worth reporting. Manufacturing findings to look thorough is the failure here. |
+
+## Red flags
+
+- A finding that cites only **one** side (code without the doc line, or the doc without `file:line`).
+- Five findings that are really one refactor, listed five times.
+- A D3 "unbuilt promise" you cannot quote from a story.
+- `--fix-docs` about to run while the verdict is `STALE`.
+
+## Verification
+
+- [ ] Every finding cites `file:line` **and** the document line.
+- [ ] Every finding states which side is wrong, and why.
+- [ ] Verdict stated (`CONVERGED` / `DRIFTING` / `STALE`) with the counts behind it.
+- [ ] Findings routed to `rescan` / `build` / `review`, and the not-worth-fixing list is explicit.
+- [ ] Journal row appended so the trend is visible next run.

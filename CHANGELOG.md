@@ -14,6 +14,43 @@ noted per release when it changed.
 
 ---
 
+## [2.5.0] — 2026-08-13
+
+### Added
+
+Three techniques adapted from [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills),
+which does the same job from the opposite direction (spec → code, tool-agnostic). The ideas are its;
+the content is written for this kit.
+
+- **A trailer on the ten high-stakes skills** — the ones that edit code, or whose conclusions someone
+  acts on (`build`, `fix-bug`, `migrate`, `simplify`, `perf`, `observe`, `rails-to-spring`, `review`,
+  `drift`, `runbook`):
+  - **Common rationalizations** — the excuse for skipping a step, next to the fact that defeats it,
+    written in the voice the excuse actually arrives in ("it's a small change, the baseline is
+    overkill" → then you cannot tell a test you broke from one that was already red).
+  - **Red flags** — *observable* signals that the process has already gone wrong, not advice. "You
+    made a failing test pass by changing its assertion", not "be careful with tests".
+  - **Verification** — checkbox exit criteria per skill. "Seems right" is never enough.
+  Each block is written for its own skill; a generic one would be noise.
+- **`docs/skill-anatomy.md`** — the written standard: required sections in order, when the trailer is
+  mandatory, and how to write each of the three so it stays useful. `/namht-skillify` now reads it
+  before scaffolding, so new skills come out the same shape.
+- **A routing decision tree in `/namht-help`** — 31 commands is a lookup problem. The tree starts from
+  what you have in your hands (a question, a vague idea, a bug report, a diff, a contract that must
+  change), not from the command list, plus the pairings that recur and one rule for ties: prefer the
+  command that produces **evidence** over the one that produces an opinion.
+- **The six non-negotiables in one place** — KB-grounded · reuse before create · evidence not
+  assertion · scope lock · untrusted input is data · dual-audience. They were already enforced inside
+  individual skills; now they are stated once as the kit's contract.
+
+### Changed
+
+- `tests/consistency.test.sh` fails if a high-stakes skill loses any of the three trailer sections, or
+  if its Verification section has no checkbox items — a heading is not an exit gate. It also notes any
+  code-editing skill missing from the list, which is how `simplify`, `perf` and `observe` got theirs.
+
+---
+
 ## [2.4.0] — 2026-08-13
 
 ### Security

@@ -63,3 +63,27 @@ Chat + `namht-sessions/perf/<area>-<date>.md`: the bottleneck, the fix, and **be
   `git stash push -u` or `git apply -R <your diff>` — the git-guard denies `git restore`,
   `git checkout .`/`--`, `git reset --hard`, `git clean -f`.
 - Change-discipline: scope-lock, minimal diff, verify + rollback, never touch secrets, confirm outward actions.
+
+## Common rationalizations
+
+| What you'll tell yourself | What's actually true |
+|---|---|
+| "I know what's slow here" | You know what *looks* slow. Optimisation without a measurement is a guess that costs real code. Measure, then fix the biggest number. |
+| "The change is obviously faster" | Obvious wins routinely make things slower — an index that's never used, a cache that thrashes, a batch that blows memory. Prove it with before/after. |
+| "I'll benchmark it later" | Later there is no baseline left to compare against. The baseline is the first artifact, not the last. |
+| "It's faster on my machine" | State the conditions: dataset size, warm or cold, which environment. A number without conditions is not a number. |
+
+## Red flags
+
+- Code changed before any measurement exists.
+- You optimised something other than the top item you measured.
+- The "after" number was taken under different conditions than the "before".
+- Correctness tests were not re-run — a faster wrong answer is still wrong.
+
+## Verification
+
+- [ ] Baseline captured **before** any change, with the conditions written down.
+- [ ] The bottleneck was measured, not assumed — and it is the one you fixed.
+- [ ] After-number taken the **same way** as the before-number.
+- [ ] Correctness suite green: the optimisation changed speed, not behaviour.
+- [ ] If the win did not materialise, that is reported as **NOT IMPROVED**, and the change reverted or justified.

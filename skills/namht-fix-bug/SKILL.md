@@ -169,3 +169,28 @@ path. Be honest if it's a config/spec issue (not a code fix), or if you couldn't
 
 Fits the loop: `/namht-build` → `/namht-qa` (cases) → deploy → QA finds a bug → **`/namht-fix-bug`** →
 `/namht-qa-integration` (re-verify on the env) → done.
+
+## Common rationalizations
+
+| What you'll tell yourself | What's actually true |
+|---|---|
+| "I can see the bug — just fix it" | Then you are fixing a symptom you never reproduced, and you will not know whether it worked. Reproduce first, or state plainly that you could not. |
+| "It's one line, it doesn't need a test" | The regression test is the only thing standing between this bug and its second appearance. One line of fix earns one test. |
+| "Triage is overhead, it's clearly a code bug" | A large share of reported bugs are config, data, env-var, feature-flag or deploy-skew. A code change for one of those **adds** a bug. |
+| "QA's repro steps are good enough evidence" | They are a starting point written from the outside. Confirm the failure yourself in the environment it was reported in. |
+
+## Red flags
+
+- You changed code **before** reproducing the failure.
+- The fix touches more than the root cause you identified.
+- You cannot say which change introduced it — or that you looked and could not tell.
+- The regression test passes **with and without** your fix.
+- You are closing the loop to QA without naming the environment you verified in.
+
+## Verification
+
+- [ ] Reproduced **before** the fix; the new test fails without it and passes with it.
+- [ ] The regression test is tied to the **broken acceptance criterion**, not to the stack trace.
+- [ ] Blast radius checked — every caller of what you touched.
+- [ ] Gates green **against the baseline**, not in isolation.
+- [ ] Hotfix report + `fixes/_journal.md` row, including the root cause in one sentence.

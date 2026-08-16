@@ -69,3 +69,27 @@ with per-step rollback, migration scripts, and the deprecation timeline.
   `git reset --hard`, `git clean -f`. (Note this is separate from a **DB** rollback: every migration
   step still needs its own reversible down-migration.)
 - Change-discipline: scope-lock, minimal diff, verify + rollback, never touch secrets, confirm outward/destructive actions.
+
+## Common rationalizations
+
+| What you'll tell yourself | What's actually true |
+|---|---|
+| "The consumers will just update" | Name them. If you cannot list them, you have not finished searching — and cross-service consumers do not read your commit. |
+| "Expand → migrate → contract is overkill here" | Then say **which step you are skipping** and what breaks for a consumer that lags a release. If you can't answer that, don't skip it. |
+| "We can contract in the same deploy" | Only if no consumer can still be running the old shape at that instant. That is a claim about deploy order — verify it, don't assume it. |
+| "It's backward compatible, I'm sure" | Adding a required field, narrowing a type, or removing an enum value is not. Check against the real contract, not memory. |
+
+## Red flags
+
+- The contract step is scheduled in the **same deploy** as expand.
+- A step has no stated rollback.
+- The deprecation window is "soon" rather than a date or a release.
+- You found consumers by grep in **one** repo, in a system that has several.
+
+## Verification
+
+- [ ] Every consumer found and listed, across services — with how you found them.
+- [ ] Each step has a rollback that was actually thought through.
+- [ ] An **executable gate** exists before the contract step (a test that fails while a consumer still needs the old shape).
+- [ ] Deprecation window stated as a date/release, and communicated.
+- [ ] Old and new shapes both work for the whole window.

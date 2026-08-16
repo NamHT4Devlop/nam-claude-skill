@@ -348,3 +348,34 @@ Name the next steps explicitly (don't dead-end):
 Summarize for the user: what changed, size class, test status + coverage (or `UNVERIFIED` + why), the
 session folder path, rollout notes, and any follow-ups. Be honest if tests were skipped or failing —
 never claim success you didn't verify.
+
+## Common rationalizations
+
+| What you'll tell yourself | What's actually true |
+|---|---|
+| "This change is small — skip the baseline" | Then you cannot tell a test *you* broke from one that was already red, and you will spend the next hour finding out. It costs one command. |
+| "The plan is obvious, just start coding" | The approval gate has objective triggers (migration · dependency · published contract · >3 callers · >5 files · Medium/Complex · auth/money). "Obvious" is not one of them — check the list. |
+| "I'll add the tests once it works" | A test written after the code is written to match the code, not the acceptance criterion. Write the failing test for the AC first. |
+| "I reviewed it while writing it" | The author is the worst reviewer of their own change. Step 5 spawns agents that did **not** write the code, deliberately. |
+| "They said 'go', so the migration is covered" | A blanket go authorises the **reversible** work only. Migrations, dependencies, published contracts and deletions still need their own yes. |
+| "Nothing similar exists, I'll write it fresh" | Say that only after searching by *capability* and reading the module's siblings. Record the one-line justification — if you can't, you didn't search. |
+
+## Red flags
+
+Stop when you notice any of these — they mean the process already went wrong, not that it might:
+
+- You are editing a file that is **not in the approved plan**.
+- You made a failing test pass by **changing its assertion**.
+- You cannot name the **AC that the code you just wrote satisfies**.
+- Your diff contains a rename, a reformat or an import reshuffle you did not need.
+- You are about to say "done" and the gates have **not run since your last edit**.
+- Step 5 findings were dismissed without either fixing them or writing down why.
+
+## Verification — the run is not finished until every box is true
+
+- [ ] Every AC maps to a **named test**, and those tests actually ran.
+- [ ] Gates compared **against `01-plan/baseline.md`** — nothing newly red.
+- [ ] No test was weakened; anything skipped is labelled `NOT RUN (<reason>)`.
+- [ ] Code changed **after** Step 5 was re-reviewed.
+- [ ] Evidence written to `07-evidence/EVIDENCE.md`, journal row appended.
+- [ ] Anything unproven is reported as **UNVERIFIED** — not as success.

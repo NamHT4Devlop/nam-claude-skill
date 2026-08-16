@@ -15,17 +15,22 @@ and document it. Operate inside the `nam-claude-skill` repo (the toolkit source,
 ## Steps
 1. **Clarify** the new skill: name (kebab, will become `namht-<name>`), one-line purpose, when it
    should trigger, inputs, output, whether it needs the HTML renderer or the review checklist.
-2. **Create `skills/namht-<name>/SKILL.md`** with frontmatter:
+2. **Read [`docs/skill-anatomy.md`](../../docs/skill-anatomy.md) first** — it is the standard this
+   step generates against: required sections in order, and the extra trailer
+   (**Common rationalizations · Red flags · Verification**) that every high-stakes skill carries.
+   A skill that edits code, or whose conclusions someone will act on, MUST have that trailer;
+   `tests/consistency.test.sh` fails without it.
+3. **Create `skills/namht-<name>/SKILL.md`** with frontmatter:
    - `name: namht-<name>` (MUST equal the folder name), `description: >-` a 1–3 sentence trigger
      description (when to use + key verbs/aliases). Body = the methodology, grounded in the KB
      where relevant, with a clear Output section and Rules. Reuse the house style: KB-first,
      dual-audience output, change-discipline if it edits code.
-3. **Create `commands/<name>.md`** (UNPREFIXED filename) — thin entry: frontmatter `description` +
+4. **Create `commands/<name>.md`** (UNPREFIXED filename) — thin entry: frontmatter `description` +
    `argument-hint`, body "Use the **namht-<name>** skill to … $ARGUMENTS".
-4. **If it needs bundles** (HTML render / review checklist): add `namht-<name>` to the right list in
+5. **If it needs bundles** (HTML render / review checklist): add `namht-<name>` to the right list in
    `scripts/sync-bundles.sh` (`map_html` for the renderer, `map_review` for the checklist), then run
    `bash scripts/sync-bundles.sh`.
-5. **Register it in EVERY place a skill is listed.** Missing one is how the kit drifts — and
+6. **Register it in EVERY place a skill is listed.** Missing one is how the kit drifts — and
    `tests/consistency.test.sh` fails on each of these, so check them off before running it:
    - `vscode-extension/src/extension.ts` → add the command to the **`ALLOWED`** set (and to
      `EDITS_CODE` if it modifies source).
@@ -41,8 +46,8 @@ and document it. Operate inside the `nam-claude-skill` repo (the toolkit source,
      `<b>N</b> skills` fact.
    - `docs/manual-setup-guide.html` → the file counts shown in the copy-paste blocks.
    - `CHANGELOG.md` → an entry under **Added** (MINOR bump; MAJOR only if users must act).
-6. **Install:** `bash scripts/personal-install.sh` (symlinks the new skill + command into `~/.claude`).
-7. **Verify:** `bash tests/run.sh` — it checks skill-name==folder, bundle sync, `ALLOWED` ↔ `skills/`,
+7. **Install:** `bash scripts/personal-install.sh` (symlinks the new skill + command into `~/.claude`).
+8. **Verify:** `bash tests/run.sh` — it checks skill-name==folder, bundle sync, `ALLOWED` ↔ `skills/`,
    command ↔ skill, `help.md` coverage, catalog coverage and the documented counts.
 
 ## Rules

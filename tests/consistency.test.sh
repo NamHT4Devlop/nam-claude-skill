@@ -95,6 +95,30 @@ check_count docs/manual-setup-guide.html '# [0-9]+ skill →'                  "
 check_count docs/manual-setup-guide.html '# [0-9]+ command'                  "$n_cmds"   commands
 [ "$bad" -eq 0 ] && echo "  ✓ documented counts match ($n_skills skills / $n_cmds commands)" || fail=1
 
+# A skill that edits code, or whose conclusions someone acts on, carries the three trailer sections
+# (see docs/skill-anatomy.md). Without a check they get written once and then omitted from the next
+# skill, and the standard quietly stops being one.
+echo "consistency: high-stakes skills carry rationalizations / red flags / verification"
+HIGH_STAKES="namht-build namht-fix-bug namht-migrate namht-simplify namht-perf namht-observe
+  namht-rails-to-spring namht-review namht-drift namht-runbook"
+bad=0
+for sk in $HIGH_STAKES; do
+  f="skills/$sk/SKILL.md"
+  [ -f "$f" ] || { echo "  ✗ $f missing"; bad=1; continue; }
+  for sec in "Common rationalizations" "Red flags" "Verification"; do
+    grep -qi "^## .*$sec" "$f" || { echo "  ✗ $sk has no '## $sec' section"; bad=1; }
+  done
+  # a Verification section with no checkboxes is a heading, not an exit gate
+  awk '/^## Verification/,0' "$f" | grep -q '^- \[ \]' || { echo "  ✗ $sk: Verification has no checkbox items"; bad=1; }
+done
+# every code-editing skill must be on the list — a new one must not slip past this check
+for sk in namht-build namht-fix-bug namht-migrate namht-simplify namht-perf namht-observe namht-rails-to-spring; do
+  # collapse the newline in the list before matching — the same whitespace trap that once made
+  # git-guard's multi-line subcommand allowlist miss whichever name sat at a line boundary.
+  case " ${HIGH_STAKES//[$'\n\t']/ } " in *" $sk "*) ;; *) echo "  – note: $sk edits code but is not in HIGH_STAKES (deliberate?)";; esac
+done
+[ "$bad" -eq 0 ] && echo "  ✓ all $(echo $HIGH_STAKES | wc -w | tr -d ' ') high-stakes skills carry the trailer" || fail=1
+
 echo "consistency: version + changelog"
 bad=0
 plugin_v=$(grep -oE '"version": "[0-9.]+"' .claude-plugin/plugin.json | grep -oE '[0-9.]+')
