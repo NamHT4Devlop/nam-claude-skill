@@ -14,6 +14,34 @@ noted per release when it changed.
 
 ---
 
+## [2.6.1] — 2026-08-13
+
+### Documentation
+
+Propagated the 2.6.0 Knowledge-Base changes into everything that describes them — the skills were
+updated but the docs still described the old behaviour:
+
+- **README gained a Knowledge Base section**, which it never had: the full file tree, which two
+  documents carry most of the value, the depth table, and a subsection for business-heavy repos
+  covering stable rule ids, the enforced/tested columns, the removed flow cap and the business-layer
+  sampling exemption. Plus the two checks worth doing right after a first scan — how many rules show
+  `NONE` in the test column, and what `_coverage-report.md` says was deferred.
+- `/namht-scan` and `/namht-rescan` command stubs now state the id convention and the depth advice
+  rather than only naming the flag.
+- The personal and company setup guides get a `deep` row aimed at business-heavy services; the skills
+  catalog's scan/rescan descriptions no longer understate what they now guarantee.
+
+### Fixed
+
+- **`17-async-events.md` was produced by `/namht-scan` and referenced by `rescan`, `system-map`,
+  `qa` and `build` — but never defined in `kb-steps.md`,** the file that is supposed to specify
+  every KB section. It is documented now, including the instruction to record channel field names
+  verbatim (a producer sending `order_id` to a consumer reading `orderId` is invisible until the two
+  catalogs sit side by side). `consistency.test.sh` now fails if a section the skills reference is
+  missing from the spec.
+
+---
+
 ## [2.6.0] — 2026-08-13
 
 ### Fixed — the KB was not deep enough for a business-heavy repo

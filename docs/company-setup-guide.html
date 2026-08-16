@@ -184,6 +184,7 @@ claude</code></pre></div>
     <thead><tr><th>Command</th><th>What it does</th></tr></thead>
     <tbody>
       <tr><td><code>/namht-scan</code></td><td>Generate the Knowledge Base from the codebase (run first).</td></tr>
+      <tr><td><code>/namht-scan deep</code></td><td>Use this one when the service carries a lot of business logic: nothing is sampled, every module gets its own document, and each business rule records where it is enforced and whether a test covers it.</td></tr>
       <tr><td><code>/namht-rescan</code></td><td>Update the KB after the code changes.</td></tr>
       <tr><td><code>/namht-build</code></td><td>Build a feature: plan → code → review → test → evidence.</td></tr>
       <tr><td><code>/namht-fix-bug</code></td><td>Production bug → root cause → regression test → minimal fix → verify.</td></tr>

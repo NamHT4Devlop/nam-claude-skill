@@ -127,6 +127,10 @@ bad=0
 grep -q 'BR-<AREA>' resources/kb-steps.md || { echo "  ✗ kb-steps.md no longer defines the BR-<AREA><n> id format"; bad=1; }
 grep -q 'Append-only' resources/kb-steps.md || { echo "  ✗ kb-steps.md lost the append-only id rule"; bad=1; }
 grep -q 'CF-01' resources/kb-steps.md       || { echo "  ✗ kb-steps.md no longer gives core flows stable ids"; bad=1; }
+# every KB section the skills reference must be DEFINED in the canonical spec, not just produced
+for doc in 13-business-rules 10-core-flows 16-architecture-patterns 17-async-events; do
+  grep -q "$doc" resources/kb-steps.md || { echo "  ✗ kb-steps.md does not define $doc.md, but skills reference it"; bad=1; }
+done
 for sk in namht-build namht-qa; do
   grep -qE 'BR-[A-Z]?[0-9]' "skills/$sk/SKILL.md" || echo "  – note: $sk no longer cites rule ids"
 done

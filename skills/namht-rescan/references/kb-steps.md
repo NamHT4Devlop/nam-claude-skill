@@ -140,6 +140,15 @@ Document the ACTUAL architecture so future changes follow it and DO NOT break th
 
 ---
 
+## 17 — `17-async-events.md` — Event / Contract Catalog (only if the service uses messaging)
+The language-agnostic surface `/namht-system-map`, `/namht-qa` and `/namht-build` use for
+**cross-service** impact — publisher→consumer is matched by exact channel name, so this table is what
+answers "if I change this message, who breaks?". One row per channel:
+`channel (queue/topic/event) · role (produce/consume) · message schema · trigger · FIFO? · DLQ? ·
+idempotency key`, plus Camel routes and outbound HTTP/gRPC targets. Record the **field names**
+verbatim — a producer sending `order_id` to a consumer reading `orderId` is invisible until the two
+catalogs are put side by side.
+
 ## Auxiliary outputs (also written by Scan)
 - `review-skills.md` — the universal review checklist (see `review-skills-universal.md`) with a **Section 14 — Project-Specific Rules** appended (naming, mandatory patterns, banned anti-patterns, business rules every new feature must respect — each with a code citation).
 - `modules/<module>.md` + `modules/_index.md` — deep per-module docs for large projects (exhaustive flows + rules + entities + API + dependencies).

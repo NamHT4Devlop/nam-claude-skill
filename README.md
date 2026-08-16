@@ -300,6 +300,82 @@ keep the KB fresh, and `drift` every so often to find what `rescan` never heard 
 
 ---
 
+## The Knowledge Base — what `/namht-scan` actually produces
+
+Every other command reads this. It is the difference between an assistant that guesses about your
+system and one that cites it.
+
+```
+knowledge-base/
+├── 01-project-structure.md    07-architecture-diagram.md   13-business-rules.md   ★
+├── 02-tech-stack.md           08-database-schema.md        14-integrations.md
+├── 03-entry-points.md         09-auth-security.md          15-error-scenarios.md
+├── 04-business-domain.md  ★   10-core-flows.md         ★   16-architecture-patterns.md ★
+├── 05-domain-model.md     ★   11-api-docs.md               17-async-events.md  (if it uses queues)
+├── 06-modules.md              12-conventions.md
+├── modules/<module>.md        — per-module deep docs + _index.md
+├── review-skills.md           — the universal review checklist + a project-specific Section 14
+├── _coverage-report.md        — what was analysed vs sampled, and what was deferred BY NAME
+└── _meta.yml                  — project · repo · branch · commit · date · depth · modules
+```
+
+★ = the five deep documents. Two of them carry most of the value: **`10-core-flows.md`** (what the
+system does, end to end) and **`13-business-rules.md`** (the rules it enforces).
+
+### If your system has a lot of business logic, read this part
+
+```bash
+claude "/namht-scan deep"
+```
+
+- **Rules and flows get stable ids.** `BR-V2` (Validation #2), `BR-S1` (State), `CF-03` (core flow),
+  and so on. `/namht-qa` writes a regression test that says *which* rule it protects; `/namht-build`
+  ties an acceptance criterion to one; `/namht-review` cites one in a finding. Ids are **append-only**
+  — never renumbered, never reused, and a rule whose code is gone is marked `[REMOVED <date>]` rather
+  than deleted, because those ids live on in test names and past reports that a rescan cannot see.
+- **Each rule records where it is enforced and how it is tested.** A `NONE` in the test column is a
+  finding, not a blank — they roll up into *Under-Enforced Business Rules*, which is usually the most
+  valuable page in the whole KB. Read that section first.
+- **There is no cap on core flows.** Past ~8, the cross-cutting ones stay in `10-core-flows.md` and
+  module-local ones move into `modules/<m>.md` with an index line. Splitting is fine; dropping is not,
+  and anything deferred is named in `_coverage-report.md`.
+- **The business layer is never sampled**, at any depth. Domain/service code, state machines,
+  validators and calculations are read in full; controllers and DTOs get sampled instead, where the
+  loss is cosmetic. A sampled business layer produces a KB that *looks* complete and is missing the
+  rules everything else depends on.
+
+### Depth is the cost dial
+
+| Depth | What it does | Use it when |
+|---|---|---|
+| `quick` | Entry points, models and tests, sampled; the five deep docs written from that sample; module docs for the ~5 largest modules | First look at an unfamiliar repo |
+| `standard` | All 16 docs, sampling per layer above ~40 files (business layer excluded) | The usual choice |
+| `deep` | No sampling at all; a module document for **every** module | A repo you are about to migrate, audit, or build heavily in — **and any business-heavy system** |
+
+Above ~1500 source files the skill proposes `quick` first rather than silently spending an hour of
+tokens. Whichever it used is stated at the top of `_coverage-report.md`.
+
+### Keeping it true
+
+```bash
+claude "/namht-rescan"      # after code changes — git-diff aware, updates only what moved
+claude "/namht-drift"       # every so often — finds what rescan never heard about
+```
+
+`rescan` refreshes `_meta.yml`'s commit and date, so a stale KB stops passing itself off as current.
+`drift` is the wider check: hand-applied hotfixes, acceptance criteria promised but never built,
+architecture invariants quietly broken — see
+[Keeping docs and code from drifting apart](#keeping-docs-and-code-from-drifting-apart).
+
+Two checks worth doing right after a first scan:
+
+1. `13-business-rules.md` — how many rules show `NONE` in the test column? That list is your
+   untested business logic, ranked by the severity already assigned to each rule.
+2. `_coverage-report.md` — is anything under *Flows not yet documented*? Those are the gaps the
+   scan knows about; decide whether to spend `deep` on them.
+
+---
+
 ## Keeping docs and code from drifting apart
 
 Every other command works **one change at a time**. `/namht-build` updates the KB for what it just
